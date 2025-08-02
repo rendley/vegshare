@@ -5,6 +5,9 @@
 docker compose exec postgres psql -U vegshare
 
 docker compose exec postgres bash
+
+docker compose exec postgres psql -U vegshare -c "CREATE TABLE users (id SERIAL PRIMARY KEY, email TEXT UNIQUE);"
+
 ```
 
 ```

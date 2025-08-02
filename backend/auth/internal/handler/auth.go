@@ -21,12 +21,25 @@ func (h *Handler) homeHandler(w http.ResponseWriter, r *http.Request) {
 
 // registerHandler обрабатывает POST запросы "/register"
 func (h *Handler) registerHandler(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info("Register request received")
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		fmt.Fprintf(w, "Method not allowed! Use POST method!")
 		return
 	}
-	fmt.Fprintf(w, "Register endpoint (will be implemented later)")
+	// fmt.Fprintf(w, "Register endpoint (will be implemented later)")
+	var userID int
+	err := h.db.QueryRow("INSERT INTO users (email) VALUES ($1) RETURNING id",
+		"test@example.com").Scan(&userID)
+	if err != nil {
+		h.logger.Errorf("Database error: %v", err)
+		http.Error(w, "Registration failed", http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Infof("User regisered with ID: %d", userID)
+	fmt.Fprintf(w, "User ID: %d", userID)
+
 }
 
 // loginHandler обрабатывает POST /login.
