@@ -1,0 +1,15 @@
+http:
+  port: "8080"          # Порт сервера
+  host: "0.0.0.0"       # Хост
+
+database:
+  url: "postgres://vegshare:vegshare123@localhost:5432/db?sslmode=disable"
+  max_connections: 10
+
+jwt:
+  secret: "my_super_secret_key"
+  expires_in: "24h"     # Время жизни токена
+
+redis:
+  url: "redis://localhost:6379"
+  ttl: 3600             # TTL кеша в секундах
