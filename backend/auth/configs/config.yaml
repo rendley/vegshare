@@ -15,8 +15,9 @@ database:
 #  url: "postgres://vegshare:vegshare123@localhost:5432/db?sslmode=disable"
 
 jwt:
-  secret: "my_super_secret_key"
-  expires_in: "24h"     # Время жизни токена
+  secret: "my_super_secret_key" # Секретный ключ для подписи токенов
+  access_token_ttl: "15m"  # 15 минут
+  refresh_token_ttl: "168h" # 7 дней
 
 redis:
   url: "redis://localhost:6379"

@@ -6,6 +6,7 @@ import (
 	"github.com/rendley/auth/pkg/config"
 	"github.com/rendley/auth/pkg/database"
 	"github.com/rendley/auth/pkg/logger"
+	"github.com/rendley/auth/pkg/security"
 )
 
 func main() {
@@ -18,6 +19,9 @@ func main() {
 	log := logger.New()
 	log.Info("Starting application...")
 
+	// Создаём password hasher
+	hasher := security.NewBcryptHasher(10)
+
 	// 3. Подключаемся к PostgreSQL
 	db, err := database.New(cfg)
 	if err != nil {
@@ -28,7 +32,7 @@ func main() {
 
 	//  Создаём экземпляр сервера, передавая ему конфиг.
 	// `New()` — это конструктор, который инициализирует `Server`.
-	srv := server.New(cfg, db, log)
+	srv := server.New(cfg, hasher, db, log)
 
 	// Запускаем сервер.
 	// Если `Start()` вернёт ошибку, программа завершится с логом.

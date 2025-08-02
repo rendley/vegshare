@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // Загрузчик конфигов
@@ -32,8 +33,9 @@ type DatabaseConfig struct {
 }
 
 type JWTConfig struct {
-	Secret    string `yaml:"secret"`
-	ExpiresIn string `yaml:"expires_in"`
+	Secret          string        `yaml:"secret"`
+	AccessTokenTTL  time.Duration `yaml:"access_token_ttl"`
+	RefreshTokenTTL time.Duration `yaml:"refresh_token_ttl"`
 }
 
 type RedisConfig struct {
@@ -63,6 +65,9 @@ func Load() *Config {
 	// Валидация (пример).
 	if cfg.JWT.Secret == "" {
 		log.Fatal("JWT secret is required")
+	}
+	if cfg.JWT.AccessTokenTTL == 0 {
+		cfg.JWT.AccessTokenTTL = 15 * time.Minute // Дефолтное значение
 	}
 
 	return &cfg
