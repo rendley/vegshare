@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"github.com/rendley/auth/internal/handler"
 	"github.com/rendley/auth/pkg/config"
+	"github.com/rendley/auth/pkg/security"
 	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
@@ -15,9 +16,10 @@ import (
 // - cfg: конфигурацию (порт, хост и т.д.),
 // - handler: роутер (пока не используется, добавим позже).
 type Server struct {
-	cfg    *config.Config
-	db     *sql.DB        // Добавляем поле для БД
-	logger *logrus.Logger // Добавляем поле для логгера
+	cfg            *config.Config
+	db             *sql.DB        // Добавляем поле для БД
+	logger         *logrus.Logger // Добавляем поле для логгера
+	passwordHasher security.PasswordHasher
 }
 
 // Функция `New` — это конструктор для `Server`.
@@ -28,11 +30,12 @@ type Server struct {
 // Возвращает:
 // - Указатель на новый экземпляр `Server`.
 
-func New(cfg *config.Config, db *sql.DB, logger *logrus.Logger) *Server {
+func New(cfg *config.Config, hasher security.PasswordHasher, db *sql.DB, logger *logrus.Logger) *Server {
 	return &Server{
-		cfg:    cfg, // Инициализируем поле `cfg` переданным конфигом.
-		db:     db,
-		logger: logger,
+		cfg:            cfg, // Инициализируем поле `cfg` переданным конфигом.
+		db:             db,
+		logger:         logger,
+		passwordHasher: hasher,
 	}
 }
 
@@ -48,7 +51,7 @@ func (s *Server) Start() error {
 
 	mux := http.NewServeMux()
 	// Передаём зависимости в handler.New()
-	h := handler.New(s.db, s.logger)
+	h := handler.New(s.db, s.passwordHasher, s.logger)
 	h.SetupRoutes(mux) // Регистрируем роуты
 
 	// Запускаем сервер:

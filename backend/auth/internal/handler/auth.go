@@ -21,25 +21,69 @@ func (h *Handler) homeHandler(w http.ResponseWriter, r *http.Request) {
 
 // registerHandler обрабатывает POST запросы "/register"
 func (h *Handler) registerHandler(w http.ResponseWriter, r *http.Request) {
+	// 1. Логируем начало обработки запроса
 	h.logger.Info("Register request received")
+
+	// 2. Проверяем метод запроса (должен быть POST)
 	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		fmt.Fprintf(w, "Method not allowed! Use POST method!")
+		h.logger.Warn("Wrong method used for registration")
+		h.respondWithError(w, "Only POST method allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	// fmt.Fprintf(w, "Register endpoint (will be implemented later)")
-	var userID int
-	err := h.db.QueryRow("INSERT INTO users (email) VALUES ($1) RETURNING id",
-		"test@example.com").Scan(&userID)
+
+	// 3. Читаем тело запроса делаем это из локальной структуры
+	// стоит начинать с них а если будут повторения всегда можно вынести в types.go
+	// как это сделано в loginHandler
+	var request struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	// 4. Парсим JSON из тела запроса
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		h.logger.Warn("Failed to parse JSON: %v", err)
+		h.respondWithError(w, "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	// 5. Проверяем обязательные поля
+	if request.Email == "" || request.Password == "" {
+		h.respondWithError(w, "Email and passwoed are required", http.StatusBadRequest)
+		return
+	}
+
+	// 6. Хешируем пароль перед сохранением в БД
+	hashedPassword, err := h.passwordHasher.Hash(request.Password)
 	if err != nil {
-		h.logger.Errorf("Database error: %v", err)
-		http.Error(w, "Registration failed", http.StatusInternalServerError)
+		h.logger.Errorf("Password hashing failed: %v", err)
+		h.respondWithError(w, "Registration failed", http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Infof("User regisered with ID: %d", userID)
-	fmt.Fprintf(w, "User ID: %d", userID)
+	// 7. Сохраняем пользователя в БД
+	userID, err := h.repository.CreateUser(request.Email, hashedPassword)
+	if err != nil {
+		h.logger.Errorf("Failed to create user: %v", err)
+		h.respondWithError(w, "Registration failed", http.StatusInternalServerError)
+		return
+	}
 
+	// 8. Формируем ответ (с заглушкой для токена)
+	response := struct {
+		Token  string `json:"token"`
+		UserID string `json:"user_id"`
+	}{
+		Token:  "fake-jwt-token-for-registration",
+		UserID: userID,
+	}
+
+	// 9. Отправляем успешный ответ
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated) // 201 Created — стандартный статус для успешной регистрации
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		h.logger.Errorf("Failed to encode response: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	}
 }
 
 // loginHandler обрабатывает POST /login.

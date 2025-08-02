@@ -3,6 +3,8 @@ package handler
 
 import (
 	"database/sql"
+	"github.com/rendley/auth/internal/repository"
+	"github.com/rendley/auth/pkg/security"
 	"github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -10,15 +12,19 @@ import (
 // Handler — корневая структура для всех обработчиков.
 // Позже добавим сюда зависимости (БД, логгер и т.д.)
 type Handler struct {
-	db     *sql.DB        // Подключение к PostgreSQL
-	logger *logrus.Logger // Логгер
+	db             *sql.DB                    // Подключение к PostgreSQL
+	logger         *logrus.Logger             // Логгер
+	passwordHasher security.PasswordHasher    // Хеширование пассводра
+	repository     *repository.AuthRepository // репозиторий для работы с базой
 }
 
 // New создаёт экземпляр Handler c зависимостями.
-func New(db *sql.DB, logger *logrus.Logger) *Handler {
+func New(db *sql.DB, hasher security.PasswordHasher, logger *logrus.Logger) *Handler {
 	return &Handler{
-		db:     db,
-		logger: logger,
+		db:             db,
+		logger:         logger,
+		passwordHasher: hasher,
+		repository:     repository.NewAuthRepository(db), // Инициализируем репозиторий
 	}
 }
 
