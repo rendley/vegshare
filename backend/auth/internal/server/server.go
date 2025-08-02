@@ -1,7 +1,8 @@
-// Определяем пакет `server` — это коллекция логики, связанной с запуском HTTP-сервера.
+// Пакет `server` — это коллекция логики, связанной с запуском HTTP-сервера.
 package server
 
 import (
+	"github.com/rendley/auth/internal/handler"
 	"github.com/rendley/auth/pkg/config"
 	"log"
 	"net/http"
@@ -37,9 +38,11 @@ func (s *Server) Start() error {
 	// Логгируем адрес для отладки.
 	log.Printf("Starting server on %s", addr)
 
+	router := handler.New()
+
 	// Запускаем сервер:
 	// - `ListenAndServe` блокирует выполнение, пока сервер работает.
 	// - Если произойдёт ошибка, она вернётся из функции.
-	// - Пока передаём `nil` вместо роутера (сервер будет возвращать 404 на все запросы).
-	return http.ListenAndServe(addr, nil)
+	// - Можно передать `nil` вместо роутера (сервер будет возвращать 404 на все запросы).
+	return http.ListenAndServe(addr, router) // Принимает запросы и передаёт их в наш роутер.
 }
