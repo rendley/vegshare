@@ -38,11 +38,13 @@ func (s *Server) Start() error {
 	// Логгируем адрес для отладки.
 	log.Printf("Starting server on %s", addr)
 
-	router := handler.New()
+	mux := http.NewServeMux()
+	h := handler.New()
+	h.SetupRoutes(mux) // Регистрируем роуты
 
 	// Запускаем сервер:
 	// - `ListenAndServe` блокирует выполнение, пока сервер работает.
 	// - Если произойдёт ошибка, она вернётся из функции.
 	// - Можно передать `nil` вместо роутера (сервер будет возвращать 404 на все запросы).
-	return http.ListenAndServe(addr, router) // Принимает запросы и передаёт их в наш роутер.
+	return http.ListenAndServe(addr, mux) // Принимает запросы и передаёт их в наш роутер.
 }
