@@ -23,8 +23,12 @@ type HTTPConfig struct {
 }
 
 type DatabaseConfig struct {
-	URL            string `yaml:"url"`
-	MaxConnections int    `yaml:"max_connections"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	DBName   string `yaml:"dbname"`
+	Password string `yaml:"password"`
+	SSLMode  string `yaml:"sslmode"`
 }
 
 type JWTConfig struct {

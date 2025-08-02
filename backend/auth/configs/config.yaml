@@ -1,10 +1,18 @@
 http:
-  port: "8080"          # Порт сервера
   host: "0.0.0.0"       # Хост
+  port: "8080"          # Порт сервера
+
 
 database:
-  url: "postgres://vegshare:vegshare123@localhost:5432/db?sslmode=disable"
-  max_connections: 10
+  host: "localhost"
+  port: 5432
+  user: "vegshare"
+  dbname: "vegshare"
+  password: "vegshare"
+  sslmode: "disable"
+#  max_connections: 10
+#  timeout: 5s
+#  url: "postgres://vegshare:vegshare123@localhost:5432/db?sslmode=disable"
 
 jwt:
   secret: "my_super_secret_key"

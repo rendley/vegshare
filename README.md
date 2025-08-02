@@ -3,6 +3,8 @@
 
 ```
 docker compose exec postgres psql -U vegshare
+
+docker compose exec postgres bash
 ```
 
 ```
