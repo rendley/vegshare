@@ -1,25 +1,20 @@
 // Пакет `server` — это коллекция логики, связанной с запуском HTTP-сервера.
-package auth
+package api
 
 import (
-	"database/sql"
-	"github.com/rendley/backend/internal/auth/handler"
+	authhandler "github.com/rendley/backend/internal/auth/handler"
 	"github.com/rendley/backend/pkg/config"
-	"github.com/rendley/backend/pkg/security"
-	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
 )
 
 // Определяем структуру `Server`. В Go структуры используются для объединения данных и методов.
 // Здесь она хранит:
-// - cfg: конфигурацию (порт, хост и т.д.),
 // - handler: роутер (пока не используется, добавим позже).
 type Server struct {
-	cfg            *config.Config
-	db             *sql.DB        // Добавляем поле для БД
-	logger         *logrus.Logger // Добавляем поле для логгера
-	passwordHasher security.PasswordHasher
+	cfg         *config.Config
+	AuthHandler *authhandler.Handler
+	//FarmHandler *farmhandler.Handler
 }
 
 // Функция `New` — это конструктор для `Server`.
@@ -30,12 +25,20 @@ type Server struct {
 // Возвращает:
 // - Указатель на новый экземпляр `Server`.
 
-func New(cfg *config.Config, hasher security.PasswordHasher, db *sql.DB, logger *logrus.Logger) *Server {
+//func New(cfg *config.Config, hasher security.PasswordHasher, db *sql.DB, logger *logrus.Logger) *Server {
+//	return &Server{
+//		cfg:            cfg, // Инициализируем поле `cfg` переданным конфигом.
+//		db:             db,
+//		logger:         logger,
+//		passwordHasher: hasher,
+//	}
+//}
+
+func New(cfg *config.Config, auth *authhandler.Handler) *Server {
 	return &Server{
-		cfg:            cfg, // Инициализируем поле `cfg` переданным конфигом.
-		db:             db,
-		logger:         logger,
-		passwordHasher: hasher,
+		cfg:         cfg, // Инициализируем поле `cfg` переданным конфигом.
+		AuthHandler: auth,
+		//FarmHandler: farm,
 	}
 }
 
@@ -50,9 +53,8 @@ func (s *Server) Start() error {
 	log.Printf("Starting server on %s", addr)
 
 	mux := http.NewServeMux()
-	// Передаём зависимости в handler.New()
-	h := handler.New(s.db, s.passwordHasher, s.logger)
-	h.SetupRoutes(mux) // Регистрируем роуты
+	s.AuthHandler.RegisterRouter(mux)
+	// s.FarmHandler.RegisterRoutes(mux)
 
 	// Запускаем сервер:
 	// - `ListenAndServe` блокирует выполнение, пока сервер работает.
