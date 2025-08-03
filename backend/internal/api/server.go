@@ -52,7 +52,7 @@ func (s *Server) Start() error {
 	mux := http.NewServeMux()
 	// Передаём зависимости в handler.New()
 	h := handler.New(s.db, s.passwordHasher, s.logger)
-	h.SetupRoutes(mux) // Регистрируем роуты
+	h.RegisterRouter(mux) // Регистрируем роуты
 
 	// Запускаем сервер:
 	// - `ListenAndServe` блокирует выполнение, пока сервер работает.

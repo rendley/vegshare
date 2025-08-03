@@ -6,7 +6,6 @@ import (
 	"github.com/rendley/backend/internal/auth/repository"
 	"github.com/rendley/backend/pkg/security"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 // Handler — корневая структура для всех обработчиков.
@@ -28,9 +27,9 @@ func New(db *sql.DB, hasher security.PasswordHasher, logger *logrus.Logger) *Han
 	}
 }
 
-// SetupRoutes регистрирует все роуты.
-func (h *Handler) SetupRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /", h.homeHandler)
-	mux.HandleFunc("POST /register", h.registerHandler)
-	mux.HandleFunc("POST /login", h.loginHandler)
-}
+//// SetupRoutes регистрирует все роуты.
+//func (h *Handler) SetupRoutes(mux *http.ServeMux) {
+//	mux.HandleFunc("GET /", h.homeHandler)
+//	mux.HandleFunc("POST /register", h.registerHandler)
+//	mux.HandleFunc("POST /login", h.loginHandler)
+//}
