@@ -12,7 +12,7 @@ database:
   sslmode: "disable"
 #  max_connections: 10
 #  timeout: 5s
-#  url: "postgres://vegshare:vegshare123@localhost:5432/db?sslmode=disable"
+#  url: "postgres://vegshare:vegshare@localhost:5432/db?sslmode=disable"
 
 jwt:
   secret: "my_super_secret_key" # Секретный ключ для подписи токенов

@@ -2,6 +2,8 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/google/uuid"
 	"net/http"
 )
 
@@ -19,14 +21,34 @@ func (h *Handler) respondWithError(w http.ResponseWriter, message string, status
 }
 
 // respondWithJSON - универсальный метод для успешных ответов
-func (h *Handler) respondWithJSON(w http.ResponseWriter, statuCode int, payload interface{}) {
+func (h *Handler) respondWithJSON(w http.ResponseWriter, payload interface{}, statusCode int) {
 	// 1. Устанавливаем заголовки
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statuCode)
+	w.WriteHeader(statusCode)
 
 	// 2. Кодируем и отправляем данные
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
-		h.logger.Errorf("Failed to encode JSON: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		h.logger.Errorf("Failed to encode JSON response: %v", err)
 	}
+}
+
+func (h *Handler) generateTokens(userID uuid.UUID) (*TokenPair, error) {
+	// Генерируем access token
+	accessToken, err := h.jwtGenerator.GenerateAccessToken(userID)
+	if err != nil {
+		h.logger.Errorf("Failed to generate access token: %v", err)
+		return nil, fmt.Errorf("token generation failed")
+	}
+
+	// Генерируем refresh token
+	refreshToken, err := h.jwtGenerator.GenerateRefreshToken()
+	if err != nil {
+		h.logger.Errorf("Failed to generate refresh token: %v", err)
+		return nil, fmt.Errorf("token generation failed")
+	}
+
+	return &TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }
