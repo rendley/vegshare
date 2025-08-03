@@ -1,5 +1,5 @@
 // Пакет `server` — это коллекция логики, связанной с запуском HTTP-сервера.
-package server
+package auth
 
 import (
 	"database/sql"
