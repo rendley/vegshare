@@ -6,6 +6,7 @@ import (
 	authhandler "github.com/rendley/backend/internal/auth/handler"
 	"github.com/rendley/backend/pkg/config"
 	"github.com/rendley/backend/pkg/database"
+	"github.com/rendley/backend/pkg/jwt"
 	"github.com/rendley/backend/pkg/logger"
 	"github.com/rendley/backend/pkg/security"
 )
@@ -23,7 +24,14 @@ func main() {
 	// Создаём password hasher
 	hasher := security.NewBcryptHasher(10)
 
-	// 3. Подключаемся к PostgreSQL
+	// Инициализация JWT
+	jwtGen := jwt.NewGenerator(
+		cfg.JWT.Secret,
+		cfg.JWT.AccessTokenTTL,
+		cfg.JWT.RefreshTokenTTL,
+	)
+
+	// Подключаемся к PostgreSQL
 	db, err := database.New(cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -35,7 +43,7 @@ func main() {
 	// `New()` — это конструктор, который инициализирует `Server`.
 	//srv := api.New(cfg, hasher, db, log)
 
-	authHandler := authhandler.New(db, hasher, log)
+	authHandler := authhandler.New(db, hasher, log, jwtGen)
 	srv := api.New(cfg, authHandler)
 
 	// Запускаем сервер.

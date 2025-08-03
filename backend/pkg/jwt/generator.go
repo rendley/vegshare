@@ -1,25 +1,42 @@
 package jwt
 
-import "time"
+import (
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"time"
+)
 
-// Generator отвечает за создание и проверку токенов
-type Generator struct {
-	secret          []byte
-	accessTokenTTL  time.Duration
-	refreshTokenTTl time.Duration
+type Generator interface {
+	GenerateAccessToken(userID uuid.UUID) (string, error)
+	GenerateRefreshToken() (string, error)
 }
 
-// NewGenerator создает новый экземпляр генератора токенов
-func NewGenerator(secret string, accessTTL, refreshTTL time.Duration) *Generator {
-	return &Generator{
-		secret:          []byte(secret),
-		accessTokenTTL:  accessTTL,
-		refreshTokenTTl: refreshTTL,
+type JWTGenerator struct {
+	secretKey     string
+	accessExpiry  time.Duration
+	refreshExpiry time.Duration
+}
+
+func NewGenerator(secretKey string, accessExpiry, refreshExpiry time.Duration) *JWTGenerator {
+	return &JWTGenerator{
+		secretKey:     secretKey,
+		accessExpiry:  accessExpiry,
+		refreshExpiry: refreshExpiry,
 	}
 }
 
-// TokenPair содержит оба типа токенов
-type TokenPair struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+func (g *JWTGenerator) GenerateAccessToken(userID uuid.UUID) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": userID.String(),
+		"exp": time.Now().Add(g.accessExpiry).Unix(),
+		"iat": time.Now().Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(g.secretKey))
+}
+
+func (g *JWTGenerator) GenerateRefreshToken() (string, error) {
+	token := uuid.New().String() + uuid.New().String() // Пример генерации
+	return token, nil
 }
