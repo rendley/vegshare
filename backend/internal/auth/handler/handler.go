@@ -1,11 +1,36 @@
-// В данном пакете собраны методы обработчиков
+// Пакет handler содержит базовую структуру и конструктор.
+// В данном пакете также собраны методы обработчиков связанные с auth
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/rendley/backend/internal/auth/repository"
+	"github.com/rendley/backend/pkg/security"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
+
+// Handler — корневая структура для всех обработчиков.
+type Handler struct {
+	db             *sql.DB                    // Подключение к PostgreSQL
+	logger         *logrus.Logger             // Логгер
+	passwordHasher security.PasswordHasher    // Хеширование пассводра
+	repository     *repository.AuthRepository // репозиторий для работы с базой
+}
+
+// New создаёт экземпляр Handler c зависимостями.
+func New(db *sql.DB, hasher security.PasswordHasher, logger *logrus.Logger) *Handler {
+	return &Handler{
+		db:             db,
+		logger:         logger,
+		passwordHasher: hasher,
+		repository:     repository.NewAuthRepository(db), // Инициализируем репозиторий
+	}
+}
+
+//#################################################################//
 
 // homeHandler обрабатывает запросы к корневому пути ("/").
 func (h *Handler) homeHandler(w http.ResponseWriter, r *http.Request) {
