@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/rendley/auth/internal/server"
-	"github.com/rendley/auth/pkg/config"
-	"github.com/rendley/auth/pkg/database"
-	"github.com/rendley/auth/pkg/logger"
-	"github.com/rendley/auth/pkg/security"
+	"github.com/rendley/backend/internal/auth/server"
+	"github.com/rendley/backend/pkg/config"
+	"github.com/rendley/backend/pkg/database"
+	"github.com/rendley/backend/pkg/logger"
+	"github.com/rendley/backend/pkg/security"
 )
 
 func main() {

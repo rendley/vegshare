@@ -3,8 +3,8 @@ package handler
 
 import (
 	"database/sql"
-	"github.com/rendley/auth/internal/repository"
-	"github.com/rendley/auth/pkg/security"
+	"github.com/rendley/backend/internal/auth/repository"
+	"github.com/rendley/backend/pkg/security"
 	"github.com/sirupsen/logrus"
 	"net/http"
 )
