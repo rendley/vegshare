@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/rendley/backend/internal/api"
+	authhandler "github.com/rendley/backend/internal/auth/handler"
 	"github.com/rendley/backend/pkg/config"
 	"github.com/rendley/backend/pkg/database"
 	"github.com/rendley/backend/pkg/logger"
@@ -32,7 +33,10 @@ func main() {
 
 	//  Создаём экземпляр сервера, передавая ему конфиг.
 	// `New()` — это конструктор, который инициализирует `Server`.
-	srv := api.New(cfg, hasher, db, log)
+	//srv := api.New(cfg, hasher, db, log)
+
+	authHandler := authhandler.New(db, hasher, log)
+	srv := api.New(cfg, authHandler)
 
 	// Запускаем сервер.
 	// Если `Start()` вернёт ошибку, программа завершится с логом.

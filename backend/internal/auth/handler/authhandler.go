@@ -26,10 +26,3 @@ func New(db *sql.DB, hasher security.PasswordHasher, logger *logrus.Logger) *Han
 		repository:     repository.NewAuthRepository(db), // Инициализируем репозиторий
 	}
 }
-
-//// SetupRoutes регистрирует все роуты.
-//func (h *Handler) SetupRoutes(mux *http.ServeMux) {
-//	mux.HandleFunc("GET /", h.homeHandler)
-//	mux.HandleFunc("POST /register", h.registerHandler)
-//	mux.HandleFunc("POST /login", h.loginHandler)
-//}
