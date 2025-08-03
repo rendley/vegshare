@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/rendley/auth/internal/server"
-	"github.com/rendley/auth/pkg/config"
-	"github.com/rendley/auth/pkg/database"
-	"github.com/rendley/auth/pkg/logger"
-	"github.com/rendley/auth/pkg/security"
+	"github.com/rendley/backend/internal/auth"
+	"github.com/rendley/backend/pkg/config"
+	"github.com/rendley/backend/pkg/database"
+	"github.com/rendley/backend/pkg/logger"
+	"github.com/rendley/backend/pkg/security"
 )
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
 
 	//  Создаём экземпляр сервера, передавая ему конфиг.
 	// `New()` — это конструктор, который инициализирует `Server`.
-	srv := server.New(cfg, hasher, db, log)
+	srv := auth.New(cfg, hasher, db, log)
 
 	// Запускаем сервер.
 	// Если `Start()` вернёт ошибку, программа завершится с логом.

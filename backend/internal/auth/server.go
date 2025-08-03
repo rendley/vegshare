@@ -1,11 +1,11 @@
 // Пакет `server` — это коллекция логики, связанной с запуском HTTP-сервера.
-package server
+package auth
 
 import (
 	"database/sql"
-	"github.com/rendley/auth/internal/handler"
-	"github.com/rendley/auth/pkg/config"
-	"github.com/rendley/auth/pkg/security"
+	"github.com/rendley/backend/internal/auth/handler"
+	"github.com/rendley/backend/pkg/config"
+	"github.com/rendley/backend/pkg/security"
 	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
