@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/google/uuid"
+	"github.com/rendley/backend/internal/user/models"
 	"time"
 )
 
@@ -9,11 +10,12 @@ import (
 // db: - для соответствия с названиями колонок в БД
 // json: - для сериализации в API (пароль исключён через json:"-")
 type User struct {
-	ID           uuid.UUID `db:"id" json:"id"`
-	Email        string    `db:"email" json:"email"`
-	PasswordHash string    `db:"password_hash" json:"-"`
-	CreatedAt    time.Time `db:"created_at" json:"createdAt"`
-	UpdatedAt    time.Time `db:"updated_at" json:"updatedAt"`
+	ID           uuid.UUID           `db:"id" json:"id"`
+	Email        string              `db:"email" json:"email"`
+	PasswordHash string              `db:"password_hash" json:"-"`
+	CreatedAt    time.Time           `db:"created_at" json:"createdAt"`
+	UpdatedAt    time.Time           `db:"updated_at" json:"updatedAt"`
+	Profile      *models.UserProfile `db:"-" json:"profile"`
 }
 
 // RefreshToken - соответствует таблице refresh_tokens в БД.
