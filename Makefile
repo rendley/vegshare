@@ -1,6 +1,7 @@
 # Переменные
+# Пути теперь указываются от корня проекта
 DB_URL=postgres://vegshare:vegshare@localhost:5432/vegshare?sslmode=disable
-MIGRATIONS_DIR=./migrations
+MIGRATIONS_DIR=./backend/migrations
 BIN_NAME=vegshare
 
 .PHONY: all build run migrate-up migrate-down test clean
@@ -9,11 +10,11 @@ all: build
 
 # Сборка
 build:
-	go build -o bin/$(BIN_NAME) ./cmd/main.go
+	go build -o backend/bin/$(BIN_NAME) ./backend/cmd/main.go
 
 # Запуск
 run:
-	go run ./cmd/main.go
+	go run ./backend/cmd/main.go
 
 # Миграции
 migrate-up:
@@ -28,22 +29,22 @@ migrate-new:
 
 # Тесты
 test:
-	go test -v ./...
+	go test -v ./backend/...
 
 # Очистка
 clean:
-	rm -rf bin/
+	rm -rf backend/bin/
 	go clean
 
 # Установка зависимостей
 deps:
-	go mod download
+	cd backend && go mod download
 	go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 # Запуск с hot-reload (для разработки)
 dev:
-	air
+	(cd backend && air)
 
 # Генерация документации
 swag:
-	swag init -g cmd/main.go
+	swag init -g ./backend/cmd/main.go
