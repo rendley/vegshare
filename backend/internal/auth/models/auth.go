@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/google/uuid"
-	"github.com/rendley/backend/internal/user/models"
+	"github.com/rendley/vegshare/backend/internal/user/models"
 	"time"
 )
 

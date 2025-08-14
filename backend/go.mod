@@ -1,4 +1,4 @@
-module github.com/rendley/backend
+module github.com/rendley/vegshare/backend
 
 go 1.23.5
 

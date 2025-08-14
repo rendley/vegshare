@@ -1,3 +1,4 @@
+// package handler объявляет, что код принадлежит пакету 'handler'.
 package handler
 
 type UpdateProfileRequest struct {

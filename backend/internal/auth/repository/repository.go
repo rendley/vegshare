@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/google/uuid"
-	"github.com/rendley/backend/internal/auth/models"
+	"github.com/rendley/vegshare/backend/internal/auth/models"
 	"time"
 )
 

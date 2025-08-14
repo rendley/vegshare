@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq" // Драйвер PostgreSQL
-	"github.com/rendley/backend/pkg/config"
+	"github.com/rendley/vegshare/backend/pkg/config"
 )
 
 // New создает подключение к PostgreSQL
