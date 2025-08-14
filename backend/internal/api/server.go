@@ -2,9 +2,9 @@
 package api
 
 import (
-	authhandler "github.com/rendley/backend/internal/auth/handler"
-	userhandler "github.com/rendley/backend/internal/user/handler"
-	"github.com/rendley/backend/pkg/config"
+	authhandler "github.com/rendley/vegshare/backend/internal/auth/handler"
+	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
+	"github.com/rendley/vegshare/backend/pkg/config"
 	"log"
 	"net/http"
 )

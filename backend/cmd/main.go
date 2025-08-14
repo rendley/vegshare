@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/rendley/backend/internal/api"
-	authhandler "github.com/rendley/backend/internal/auth/handler"
-	userhandler "github.com/rendley/backend/internal/user/handler"
-	"github.com/rendley/backend/pkg/config"
-	"github.com/rendley/backend/pkg/database"
-	"github.com/rendley/backend/pkg/jwt"
-	"github.com/rendley/backend/pkg/logger"
-	"github.com/rendley/backend/pkg/security"
+	"github.com/rendley/vegshare/backend/internal/api"
+	authhandler "github.com/rendley/vegshare/backend/internal/auth/handler"
+	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
+	"github.com/rendley/vegshare/backend/pkg/config"
+	"github.com/rendley/vegshare/backend/pkg/database"
+	"github.com/rendley/vegshare/backend/pkg/jwt"
+	"github.com/rendley/vegshare/backend/pkg/logger"
+	"github.com/rendley/vegshare/backend/pkg/security"
 )
 
 func main() {
