@@ -5,6 +5,8 @@ import (
 	"github.com/rendley/vegshare/backend/internal/api"
 	authhandler "github.com/rendley/vegshare/backend/internal/auth/handler"
 	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
+	"github.com/rendley/vegshare/backend/internal/user/repository"
+	"github.com/rendley/vegshare/backend/internal/user/service"
 	"github.com/rendley/vegshare/backend/pkg/config"
 	"github.com/rendley/vegshare/backend/pkg/database"
 	"github.com/rendley/vegshare/backend/pkg/jwt"
@@ -40,12 +42,19 @@ func main() {
 	defer db.Close()
 	log.Info("Database connected")
 
-	//  Создаём экземпляр сервера, передавая ему конфиг.
-	// `New()` — это конструктор, который инициализирует `Server`.
-	//srv := api.New(cfg, hasher, db, log)
-
+	// --- ИСПРАВЛЕННЫЙ БЛОК ---
+	// Инициализация модуля Auth (как и было)
 	authHandler := authhandler.NewAuthHandler(db, hasher, log, jwtGen)
-	userHandler := userhandler.NewUserHandler(db, log)
+
+	// Правильная инициализация модуля User (снизу вверх)
+	// 1. Создаем репозиторий, передаем ему подключение к БД
+	userRepository := repository.NewUserRepository(db)
+	// 2. Создаем сервис, передаем ему репозиторий
+	userService := service.NewUserService(userRepository)
+	// 3. Создаем хендлер, передаем ему сервис
+	userHandler := userhandler.NewUserHandler(userService, log)
+
+	// Создаем и запускаем сервер
 	srv := api.New(cfg, authHandler, userHandler)
 
 	// Запускаем сервер.

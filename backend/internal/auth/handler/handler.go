@@ -1,13 +1,13 @@
-й// Пакет handler содержит базовую структуру и конструктор.
+// Пакет handler содержит базовую структуру и конструктор.
 // В данном пакете также собраны методы обработчиков связанные с auth
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	"github.com/rendley/vegshare/backend/internal/auth/models"
 	"github.com/rendley/vegshare/backend/internal/auth/repository"
 	"github.com/rendley/vegshare/backend/pkg/api"
@@ -19,7 +19,7 @@ import (
 
 // Handler — корневая структура для всех обработчиков.
 type AuthHandler struct {
-	db             *sql.DB                    // Подключение к PostgreSQL
+	db             *sqlx.DB                   // Подключение к PostgreSQL
 	logger         *logrus.Logger             // Логгер
 	passwordHasher security.PasswordHasher    // Хеширование пассводра
 	repository     *repository.AuthRepository // репозиторий для работы с базой
@@ -28,7 +28,7 @@ type AuthHandler struct {
 }
 
 // New создаёт экземпляр Handler c зависимостями.
-func NewAuthHandler(db *sql.DB, hasher security.PasswordHasher, logger *logrus.Logger, jwtGen jwt.Generator) *AuthHandler {
+func NewAuthHandler(db *sqlx.DB, hasher security.PasswordHasher, logger *logrus.Logger, jwtGen jwt.Generator) *AuthHandler {
 	return &AuthHandler{
 		db:             db,
 		logger:         logger,
@@ -200,7 +200,7 @@ func (h *AuthHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	// Сохранение refresh-токена
 	if err := h.repository.SaveRefreshToken(ctx, user.ID, tokens.RefreshToken); err != nil {
 		h.logger.Errorf("Failed to save refresh token: %v", err)
-		h.respondWithError(w, "Login failed", http.StatusInternalServerError)
+		api.RespondWithError(w, "Login failed", http.StatusInternalServerError)
 		return
 	}
 

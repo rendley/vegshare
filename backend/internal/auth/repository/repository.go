@@ -5,17 +5,18 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	"github.com/rendley/vegshare/backend/internal/auth/models"
 	"time"
 )
 
 // AuthRepository отвечает за взаимодействие с данными аутентификации в PostgreSQL.
 type AuthRepository struct {
-	db *sql.DB // Подключение к базе данных
+	db *sqlx.DB // Подключение к базе данных
 }
 
 // NewAuthRepository создаёт репозиторий экземляр с подключением к БД.
-func NewAuthRepository(db *sql.DB) *AuthRepository {
+func NewAuthRepository(db *sqlx.DB) *AuthRepository {
 	return &AuthRepository{db: db}
 }
 

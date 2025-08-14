@@ -1,57 +1,109 @@
 package handler
 
 import (
-	"database/sql"
-	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
+	"encoding/json"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
+	"github.com/rendley/vegshare/backend/internal/user/service"
+	"github.com/rendley/vegshare/backend/pkg/api"
+	"github.com/sirupsen/logrus"
 )
 
-// Корневая структура для всех обработчиков модуля user
+// --- DTO (Data Transfer Objects) ---
+
+type UpdateProfileRequest struct {
+	FullName  string `json:"full_name" validate:"omitempty,min=2,max=100"`
+	AvatarURL string `json:"avatar_url" validate:"omitempty,url"`
+}
+
+type ProfileResponse struct {
+	ID        string `json:"id"`
+	Email     string `json:"email"`
+	FullName  string `json:"full_name"`
+	AvatarURL string `json:"avatar_url"`
+}
+
+// --- Handler ---
+
+type contextKey string
+
+const userIDKey contextKey = "userID"
+
 type UserHandler struct {
-	db     *sql.DB
-	logger *logrus.Logger
-	//repository repository.UserRepository
+	service  *service.UserService
+	logger   *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewUserHandler(db *sql.DB, logger *logrus.Logger) *UserHandler {
+func NewUserHandler(service *service.UserService, logger *logrus.Logger) *UserHandler {
 	return &UserHandler{
-		db:     db,
-		logger: logger,
-		//repository: repository.NewUserRepository(db),
+		service:  service,
+		logger:   logger,
 		validate: validator.New(),
 	}
 }
 
-// GET /users/me
-func (h *UserHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
-	// Получаем userID из контекста (должен быть установлен в auth middleware)
-	// Возвращаем профиль в формате JSON
+func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(userIDKey).(uuid.UUID)
+	if !ok {
+		h.logger.Error("не удалось получить userID из контекста")
+		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	userProfile, err := h.service.GetUser(r.Context(), userID)
+	if err != nil {
+		h.logger.Errorf("ошибка при получении пользователя: %v", err)
+		api.RespondWithError(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	api.RespondWithJSON(h.logger, w, userProfile, http.StatusOK)
 }
 
-// PATCH /users/me
 func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	// Парсим JSON из тела запроса (только обновляемые поля)
-	// Валидация данных
-	// Частичное обновление (PATCH, а не PUT)
+	userID, ok := r.Context().Value(userIDKey).(uuid.UUID)
+	if !ok {
+		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req UpdateProfileRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		api.RespondWithError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.validate.Struct(req); err != nil {
+		api.RespondWithError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	updatedUser, err := h.service.UpdateUser(r.Context(), userID, req.FullName, req.AvatarURL)
+	if err != nil {
+		h.logger.Errorf("ошибка при обновлении пользователя: %v", err)
+		api.RespondWithError(w, "Could not update user profile", http.StatusInternalServerError)
+		return
+	}
+
+	api.RespondWithJSON(h.logger, w, updatedUser, http.StatusOK)
 }
 
-// DELETE /users/me
 func (h *UserHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
-	// Мягкое удаление (помечаем is_deleted=true)
-	// Или полное удаление из БД
-	// Очистка сессий/токенов
-}
+	userID, ok := r.Context().Value(userIDKey).(uuid.UUID)
+	if !ok {
+		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-// POST /users/me/password
-func (h *UserHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	// Проверка старого пароля
-	// Валидация нового пароля
-	// Хеширование и сохранение
-}
+	err := h.service.DeleteUser(r.Context(), userID)
+	if err != nil {
+		h.logger.Errorf("ошибка при удалении пользователя: %v", err)
+		api.RespondWithError(w, "Could not delete user account", http.StatusInternalServerError)
+		return
+	}
 
-// GET /users/me/avatar
-func (h *UserHandler) GetAvatar(w http.ResponseWriter, r *http.Request) {
-	// Отдача файла или redirect на S3/CDN
+	api.RespondWithJSON(h.logger, w, map[string]string{"message": "User account deleted successfully"}, http.StatusOK)
 }
