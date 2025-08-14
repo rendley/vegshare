@@ -3,9 +3,9 @@ package handler
 import "net/http"
 
 func (h *UserHandler) RegisterRouter(mux *http.ServeMux) {
-	mux.HandleFunc("GET /users/me", h.GetUserHandler)
-	mux.HandleFunc("PATCH /users/me", h.UpdateUserHandler)
-	mux.HandleFunc("DELETE /users/me", h.DeleteUserHandler)
+	mux.HandleFunc("GET /users/me", h.GetProfile)
+	mux.HandleFunc("PATCH /users/me", h.UpdateProfile)
+	mux.HandleFunc("DELETE /users/me", h.DeleteAccount)
 }
 
 //func (h *UserHandler) RegisterRoutes(mux *http.ServeMux) {

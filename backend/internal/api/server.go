@@ -3,6 +3,7 @@ package api
 
 import (
 	authhandler "github.com/rendley/backend/internal/auth/handler"
+	userhandler "github.com/rendley/backend/internal/user/handler"
 	"github.com/rendley/backend/pkg/config"
 	"log"
 	"net/http"
@@ -13,7 +14,8 @@ import (
 // - handler: роутер (пока не используется, добавим позже).
 type Server struct {
 	cfg         *config.Config
-	AuthHandler *authhandler.Handler
+	AuthHandler *authhandler.AuthHandler
+	UserHandler *userhandler.UserHandler
 	//FarmHandler *farmhandler.Handler
 }
 
@@ -34,10 +36,11 @@ type Server struct {
 //	}
 //}
 
-func New(cfg *config.Config, auth *authhandler.Handler) *Server {
+func New(cfg *config.Config, auth *authhandler.AuthHandler, user *userhandler.UserHandler) *Server {
 	return &Server{
 		cfg:         cfg, // Инициализируем поле `cfg` переданным конфигом.
 		AuthHandler: auth,
+		UserHandler: user,
 		//FarmHandler: farm,
 	}
 }
@@ -54,6 +57,7 @@ func (s *Server) Start() error {
 
 	mux := http.NewServeMux()
 	s.AuthHandler.RegisterRouter(mux)
+	s.UserHandler.RegisterRouter(mux)
 	// s.FarmHandler.RegisterRoutes(mux)
 
 	// Запускаем сервер:

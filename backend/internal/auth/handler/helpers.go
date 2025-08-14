@@ -8,7 +8,7 @@ import (
 )
 
 // respondWithError - универсальный метод для отправки ошибок
-func (h *Handler) respondWithError(w http.ResponseWriter, message string, statusCode int) {
+func (h *AuthHandler) respondWithError(w http.ResponseWriter, message string, statusCode int) {
 	// 1. Логируем ошибку
 	h.logger.Warnf("Error %d: %s", statusCode, message)
 
@@ -21,7 +21,7 @@ func (h *Handler) respondWithError(w http.ResponseWriter, message string, status
 }
 
 // respondWithJSON - универсальный метод для успешных ответов
-func (h *Handler) respondWithJSON(w http.ResponseWriter, payload interface{}, statusCode int) {
+func (h *AuthHandler) respondWithJSON(w http.ResponseWriter, payload interface{}, statusCode int) {
 	// 1. Устанавливаем заголовки
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
@@ -32,7 +32,7 @@ func (h *Handler) respondWithJSON(w http.ResponseWriter, payload interface{}, st
 	}
 }
 
-func (h *Handler) generateTokens(userID uuid.UUID) (*TokenPair, error) {
+func (h *AuthHandler) generateTokens(userID uuid.UUID) (*TokenPair, error) {
 	// Генерируем access token
 	accessToken, err := h.jwtGenerator.GenerateAccessToken(userID)
 	if err != nil {
