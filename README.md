@@ -1,3 +1,26 @@
+# Запускаем базу
+docker compose up -d
+
+# Установите migrate и air (для hot-reload)
+go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+go install github.com/cosmtrek/air@latest
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+
+#  Проводим миграции
+
+```
+make migrate-down && make migrate-up
+```
+
+# Запускаем проект
+
+ ```
+make run
+ ```
+
+
+
 А можешь переписать свой предыдущий ответ.Только также как и раньше погружай меня в контекст всего . 
 в коде коментируй каждую строчку подробно чтобы я понимал откуда что берется, 
 и как пекеты взаимодействуют между собой,  так как опыта у меня практически нет.

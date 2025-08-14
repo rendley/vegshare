@@ -1,0 +1,102 @@
+# Версия спецификации OpenAPI, которую мы используем.
+openapi: 3.0.3
+
+# Общая информация о нашем API.
+info:
+  title: "VegShare API" # Название API.
+  description: "API для сервиса онлайн-фермы VegShare." # Краткое описание.
+  version: "1.0.0" # Версия нашего API.
+
+# Список серверов, на которых может быть развернут наш API.
+# Это полезно для разных окружений (разработка, тестирование, продакшен).
+servers:
+  - url: "/api/v1" # Базовый путь для всех эндпоинтов.
+
+# В этом разделе мы описываем все "пути" или эндпоинты нашего API.
+paths:
+  # Эндпоинт для регистрации нового пользователя.
+  /auth/register:
+    # Метод POST, так как мы создаем новую сущность (пользователя).
+    post:
+      summary: "Регистрация нового пользователя" # Краткое описание эндпоинта.
+      tags: # Теги для группировки эндпоинтов в документации.
+        - "Auth"
+      # Описание тела запроса, которое должен прислать клиент.
+      requestBody:
+        description: "Данные для регистрации нового пользователя"
+        required: true
+        content:
+          application/json: # Тип контента - JSON.
+            schema:
+              # Ссылка на переиспользуемую схему в разделе components.
+              $ref: '#/components/schemas/RegisterRequest'
+      # Описание возможных ответов от сервера.
+      responses:
+        # Ответ в случае успешного создания пользователя.
+        '201' :
+          description: "Пользователь успешно создан"
+        # Ответ, если пользователь с таким email уже существует.
+        '409' :
+          description: "Пользователь с таким email уже существует"
+
+  # Эндпоинт для входа пользователя в систему.
+  /auth/login:
+    post:
+      summary: "Вход пользователя (аутентификация)"
+      tags:
+        - "Auth"
+      requestBody:
+        description: "Данные для входа"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        # В случае успеха, возвращаем токены доступа.
+        '200' :
+          description: "Успешный вход"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        # Если неверный логин или пароль.
+        '401' :
+          description: "Неверные учетные данные"
+
+# Раздел для переиспользуемых компонентов, чтобы не дублировать код.
+components:
+  schemas:
+    # Схема для запроса на регистрацию.
+    RegisterRequest:
+      type: object # Тип - объект.
+      properties:
+        email:
+          type: string
+          example: "user@example.com"
+        password:
+          type: string
+          example: "strongpassword123"
+        name:
+          type: string
+          example: "Иван"
+
+    # Схема для запроса на вход.
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: "user@example.com"
+        password:
+          type: string
+          example: "strongpassword123"
+
+    # Схема для ответа с токенами.
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
