@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rendley/backend/internal/api"
 	authhandler "github.com/rendley/backend/internal/auth/handler"
+	userhandler "github.com/rendley/backend/internal/user/handler"
 	"github.com/rendley/backend/pkg/config"
 	"github.com/rendley/backend/pkg/database"
 	"github.com/rendley/backend/pkg/jwt"
@@ -43,8 +44,9 @@ func main() {
 	// `New()` — это конструктор, который инициализирует `Server`.
 	//srv := api.New(cfg, hasher, db, log)
 
-	authHandler := authhandler.New(db, hasher, log, jwtGen)
-	srv := api.New(cfg, authHandler)
+	authHandler := authhandler.NewAuthHandler(db, hasher, log, jwtGen)
+	userHandler := userhandler.NewUserHandler(db, log)
+	srv := api.New(cfg, authHandler, userHandler)
 
 	// Запускаем сервер.
 	// Если `Start()` вернёт ошибку, программа завершится с логом.

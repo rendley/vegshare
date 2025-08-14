@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rendley/backend/internal/auth/models"
 	"github.com/rendley/backend/internal/auth/repository"
+	"github.com/rendley/backend/pkg/api"
 	"github.com/rendley/backend/pkg/jwt"
 	"github.com/rendley/backend/pkg/security"
 	"github.com/sirupsen/logrus"
@@ -17,7 +18,7 @@ import (
 )
 
 // Handler — корневая структура для всех обработчиков.
-type Handler struct {
+type AuthHandler struct {
 	db             *sql.DB                    // Подключение к PostgreSQL
 	logger         *logrus.Logger             // Логгер
 	passwordHasher security.PasswordHasher    // Хеширование пассводра
@@ -27,8 +28,8 @@ type Handler struct {
 }
 
 // New создаёт экземпляр Handler c зависимостями.
-func New(db *sql.DB, hasher security.PasswordHasher, logger *logrus.Logger, jwtGen jwt.Generator) *Handler {
-	return &Handler{
+func NewAuthHandler(db *sql.DB, hasher security.PasswordHasher, logger *logrus.Logger, jwtGen jwt.Generator) *AuthHandler {
+	return &AuthHandler{
 		db:             db,
 		logger:         logger,
 		passwordHasher: hasher,
@@ -41,7 +42,7 @@ func New(db *sql.DB, hasher security.PasswordHasher, logger *logrus.Logger, jwtG
 //############################## Hendlers ###################################//
 
 // homeHandler обрабатывает запросы к корневому пути ("/").
-func (h *Handler) homeHandler(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) homeHandler(w http.ResponseWriter, r *http.Request) {
 	//Проверяем что запрос именно GET
 	if r.Method != http.MethodGet {
 		// Если метод не GET, возвращаем ошибку 405 (Method Not Allowed).
@@ -54,7 +55,7 @@ func (h *Handler) homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // registerHandler обрабатывает POST запросы "/register"
-func (h *Handler) registerHandler(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) registerHandler(w http.ResponseWriter, r *http.Request) {
 	// 1. Логируем начало обработки запроса и добавляем контекст
 	ctx := r.Context()
 	h.logger.Info("Register request received")
@@ -62,7 +63,7 @@ func (h *Handler) registerHandler(w http.ResponseWriter, r *http.Request) {
 	// 2. Проверяем метод запроса (должен быть POST)
 	if r.Method != http.MethodPost {
 		h.logger.Warn("Wrong method used for registration")
-		h.respondWithError(w, "Only POST method allowed", http.StatusMethodNotAllowed)
+		api.RespondWithError(w, "Only POST method allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -73,18 +74,27 @@ func (h *Handler) registerHandler(w http.ResponseWriter, r *http.Request) {
 	// 4. Парсим JSON из тела запроса
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		h.logger.Warn("Failed to parse JSON: %v", err)
-		h.respondWithError(w, "Invalid JSON format", http.StatusBadRequest)
+		api.RespondWithError(w, "Invalid JSON format", http.StatusBadRequest)
 		return
 	}
 
 	// 5. Валидация обязательных полей
 	if err := h.validate.Struct(request); err != nil {
-		h.respondWithError(w, err.Error(), http.StatusBadRequest)
+		h.logger.Warnf("Validation failed: %v", err)
+		api.RespondWithError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	// 6. Проверка существования пользователя
-	if exists, err := h.repository.UserExists(ctx, request.Email); err != nil || exists {
-		h.respondWithError(w, "User already exists", http.StatusConflict)
+	exists, err := h.repository.UserExists(ctx, request.Email)
+	if err != nil {
+		h.logger.Errorf("Failed to ckeck user existence", http.StatusInternalServerError)
+		api.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		h.logger.Warnf("User already exists with email: %s", request.Email)
+		api.RespondWithError(w, "User already exists", http.StatusConflict)
 		return
 	}
 
@@ -92,7 +102,7 @@ func (h *Handler) registerHandler(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := h.passwordHasher.Hash(request.Password)
 	if err != nil {
 		h.logger.Errorf("Password hashing failed: %v", err)
-		h.respondWithError(w, "Registration failed", http.StatusInternalServerError)
+		api.RespondWithError(w, "Registration failed", http.StatusInternalServerError)
 		return
 	}
 
@@ -105,13 +115,13 @@ func (h *Handler) registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	if user.ID == uuid.Nil {
 		h.logger.Error("Generated invalid UUID")
-		h.respondWithError(w, "Registration failed", http.StatusInternalServerError)
+		api.RespondWithError(w, "Registration failed", http.StatusInternalServerError)
 		return
 	}
 
 	if err := h.repository.CreateUser(ctx, &user); err != nil {
 		h.logger.Errorf("Failed to create user: %v", err)
-		h.respondWithError(w, "Registration failed", http.StatusInternalServerError)
+		api.RespondWithError(w, "Registration failed", http.StatusInternalServerError)
 		return
 	}
 
@@ -119,14 +129,14 @@ func (h *Handler) registerHandler(w http.ResponseWriter, r *http.Request) {
 	tokens, err := h.generateTokens(user.ID)
 	if err != nil {
 		h.logger.Errorf("Token generrating failed: %v", err)
-		h.respondWithError(w, "Login failed", http.StatusInternalServerError)
+		api.RespondWithError(w, "Login failed", http.StatusInternalServerError)
 		return
 	}
 
 	// Сохранение refresh-токена
 	if err := h.repository.SaveRefreshToken(ctx, user.ID, tokens.RefreshToken); err != nil {
 		h.logger.Errorf("Failed to save refresh token: %v", err)
-		h.respondWithError(w, "Login failed", http.StatusInternalServerError)
+		api.RespondWithError(w, "Login failed", http.StatusInternalServerError)
 		return
 	}
 
@@ -138,11 +148,11 @@ func (h *Handler) registerHandler(w http.ResponseWriter, r *http.Request) {
 			RefreshToken: tokens.RefreshToken,
 		},
 	}
-	h.respondWithJSON(w, response, http.StatusCreated)
+	api.RespondWithJSON(h.logger, w, response, http.StatusCreated)
 }
 
 // loginHandler обрабатывает POST /login.
-func (h *Handler) loginHandler(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	h.logger.Info("Login request received")
 
