@@ -1,11 +1,16 @@
 # Запускаем базу
+
+```
 docker compose up -d
+```
 
 # Установите migrate и air (для hot-reload)
+
+```
 go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 go install github.com/cosmtrek/air@latest
 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-
+```
 
 #  Проводим миграции
 
@@ -19,11 +24,6 @@ make migrate-down && make migrate-up
 make run
  ```
 
-
-
-А можешь переписать свой предыдущий ответ.Только также как и раньше погружай меня в контекст всего . 
-в коде коментируй каждую строчку подробно чтобы я понимал откуда что берется, 
-и как пекеты взаимодействуют между собой,  так как опыта у меня практически нет.
 
 ## DB
 
@@ -71,17 +71,3 @@ docker compose down -v
 docker compose up -d
 cat dump.sql | docker compose exec -T postgres psql -U vegshare
 ```
-
-
-module github.com/rendley/auth
-
-go 1.23.5
-
-require (
-github.com/lib/pq v1.10.9 // indirect
-github.com/sirupsen/logrus v1.9.3 // indirect
-golang.org/x/crypto v0.40.0 // indirect
-golang.org/x/sys v0.34.0 // indirect
-gopkg.in/yaml.v3 v3.0.1 // indirect
-)
-

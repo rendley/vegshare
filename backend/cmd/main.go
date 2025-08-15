@@ -2,11 +2,15 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/rendley/vegshare/backend/internal/api"
-	authhandler "github.com/rendley/vegshare/backend/internal/auth/handler"
-	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
-	"github.com/rendley/vegshare/backend/internal/user/repository"
-	"github.com/rendley/vegshare/backend/internal/user/service"
+	authHandler "github.com/rendley/vegshare/backend/internal/auth/handler"
+	farmHandler "github.com/rendley/vegshare/backend/internal/farm/handler"
+	farmRepository "github.com/rendley/vegshare/backend/internal/farm/repository"
+	farmService "github.com/rendley/vegshare/backend/internal/farm/service"
+	userHandler "github.com/rendley/vegshare/backend/internal/user/handler"
+	userRepository "github.com/rendley/vegshare/backend/internal/user/repository"
+	userService "github.com/rendley/vegshare/backend/internal/user/service"
 	"github.com/rendley/vegshare/backend/pkg/config"
 	"github.com/rendley/vegshare/backend/pkg/database"
 	"github.com/rendley/vegshare/backend/pkg/jwt"
@@ -16,7 +20,6 @@ import (
 
 func main() {
 	// 1. Загружаем конфиги (порт, секреты) из YAML.
-	// Функция `Load()` читает файл и парсит его в структуру `Config`.
 	cfg := config.Load()
 	fmt.Printf("Config: %+v\n", cfg)
 
@@ -42,25 +45,27 @@ func main() {
 	defer db.Close()
 	log.Info("Database connected")
 
-	// --- ИСПРАВЛЕННЫЙ БЛОК ---
-	// Инициализация модуля Auth (как и было)
-	authHandler := authhandler.NewAuthHandler(db, hasher, log, jwtGen)
+	// --- Инициализация модулей ---
 
-	// Правильная инициализация модуля User (снизу вверх)
-	// 1. Создаем репозиторий, передаем ему подключение к БД
-	userRepository := repository.NewUserRepository(db)
-	// 2. Создаем сервис, передаем ему репозиторий
-	userService := service.NewUserService(userRepository)
-	// 3. Создаем хендлер, передаем ему сервис
-	userHandler := userhandler.NewUserHandler(userService, log)
+	// Модуль Auth
+	authHandler := authHandler.NewAuthHandler(db, hasher, log, jwtGen)
+
+	// Модуль User
+	userRepository := userRepository.NewUserRepository(db)
+	userService := userService.NewUserService(userRepository)
+	userHandler := userHandler.NewUserHandler(userService, log)
+
+	// Модуль Farm
+	farmRepository := farmRepository.NewRepository(db)
+	farmService := farmService.NewFarmService(farmRepository)
+	farmHandler := farmHandler.NewFarmHandler(farmService, log)
 
 	// Создаем и запускаем сервер
-	srv := api.New(cfg, authHandler, userHandler)
+	srv := api.New(cfg, authHandler, userHandler, farmHandler)
 
 	// Запускаем сервер.
-	// Если `Start()` вернёт ошибку, программа завершится с логом.
 	if err := srv.Start(); err != nil {
-		log.Fatalf("Server failed: %v", err) // `Fatalf` выводит сообщение и вызывает `os.Exit(1)`.
+		log.Fatalf("Server failed: %v", err)
 	}
 
 }

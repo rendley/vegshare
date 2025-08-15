@@ -2,13 +2,14 @@ package database
 
 import (
 	"fmt"
-	"github.com/jmoiron/sqlx" // <-- ИЗМЕНЕНО
+
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/rendley/vegshare/backend/pkg/config"
 )
 
 // New создает подключение к PostgreSQL и возвращает *sqlx.DB
-func New(cfg *config.Config) (*sqlx.DB, error) { // <-- ИЗМЕНЕНО
+func New(cfg *config.Config) (*sqlx.DB, error) {
 	connStr := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Database.Host,
@@ -20,7 +21,7 @@ func New(cfg *config.Config) (*sqlx.DB, error) { // <-- ИЗМЕНЕНО
 	)
 
 	// Используем sqlx.Open для подключения
-	db, err := sqlx.Open("postgres", connStr) // <-- ИЗМЕНЕНО
+	db, err := sqlx.Open("postgres", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}

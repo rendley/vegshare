@@ -3,6 +3,7 @@ package api
 
 import (
 	authhandler "github.com/rendley/vegshare/backend/internal/auth/handler"
+	farmhandler "github.com/rendley/vegshare/backend/internal/farm/handler"
 	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	"github.com/rendley/vegshare/backend/pkg/config"
 	"log"
@@ -16,7 +17,7 @@ type Server struct {
 	cfg         *config.Config
 	AuthHandler *authhandler.AuthHandler
 	UserHandler *userhandler.UserHandler
-	//FarmHandler *farmhandler.Handler
+	FarmHandler *farmhandler.FarmHandler
 }
 
 // Функция `New` — это конструктор для `Server`.
@@ -36,12 +37,12 @@ type Server struct {
 //	}
 //}
 
-func New(cfg *config.Config, auth *authhandler.AuthHandler, user *userhandler.UserHandler) *Server {
+func New(cfg *config.Config, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler) *Server {
 	return &Server{
 		cfg:         cfg, // Инициализируем поле `cfg` переданным конфигом.
 		AuthHandler: auth,
 		UserHandler: user,
-		//FarmHandler: farm,
+		FarmHandler: farm,
 	}
 }
 
@@ -58,7 +59,7 @@ func (s *Server) Start() error {
 	mux := http.NewServeMux()
 	s.AuthHandler.RegisterRouter(mux)
 	s.UserHandler.RegisterRouter(mux)
-	// s.FarmHandler.RegisterRoutes(mux)
+	s.FarmHandler.RegisterRouter(mux)
 
 	// Запускаем сервер:
 	// - `ListenAndServe` блокирует выполнение, пока сервер работает.
