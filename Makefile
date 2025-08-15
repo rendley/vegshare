@@ -10,11 +10,11 @@ all: build
 
 # Сборка
 build:
-	go build -o backend/bin/$(BIN_NAME) ./backend/cmd/main.go
+	(cd backend && go build -o bin/$(BIN_NAME) ./cmd/main.go)
 
 # Запуск
 run:
-	go run ./backend/cmd/main.go
+	(cd backend && go run ./cmd/main.go)
 
 # Миграции
 migrate-up:
