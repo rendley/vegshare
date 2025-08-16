@@ -11,6 +11,9 @@ import (
 	leasingHandler "github.com/rendley/vegshare/backend/internal/leasing/handler"
 	leasingRepository "github.com/rendley/vegshare/backend/internal/leasing/repository"
 	leasingService "github.com/rendley/vegshare/backend/internal/leasing/service"
+	operationsHandler "github.com/rendley/vegshare/backend/internal/operations/handler"
+	operationsRepository "github.com/rendley/vegshare/backend/internal/operations/repository"
+	operationsService "github.com/rendley/vegshare/backend/internal/operations/service"
 	userHandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	userRepository "github.com/rendley/vegshare/backend/internal/user/repository"
 	userService "github.com/rendley/vegshare/backend/internal/user/service"
@@ -22,25 +25,15 @@ import (
 )
 
 func main() {
-	// 1. Загружаем конфиги (порт, секреты) из YAML.
 	cfg := config.Load()
 	fmt.Printf("Config: %+v\n", cfg)
 
-	// 2. Инициализируем логгер
 	log := logger.New()
 	log.Info("Starting application...")
 
-	// Создаём password hasher
 	hasher := security.NewBcryptHasher(10)
+	jwtGen := jwt.NewGenerator(cfg.JWT.Secret, cfg.JWT.AccessTokenTTL, cfg.JWT.RefreshTokenTTL)
 
-	// Инициализация JWT
-	jwtGen := jwt.NewGenerator(
-		cfg.JWT.Secret,
-		cfg.JWT.AccessTokenTTL,
-		cfg.JWT.RefreshTokenTTL,
-	)
-
-	// Подключаемся к PostgreSQL
 	db, err := database.New(cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -50,30 +43,29 @@ func main() {
 
 	// --- Инициализация модулей ---
 
-	// Модуль Auth
+	// Repositories
+	userRepo := userRepository.NewUserRepository(db)
+	farmRepo := farmRepository.NewRepository(db)
+	leasingRepo := leasingRepository.NewRepository(db)
+	operationsRepo := operationsRepository.NewRepository(db)
+
+	// Services
+	userSvc := userService.NewUserService(userRepo)
+	farmSvc := farmService.NewFarmService(farmRepo)
+	leasingSvc := leasingService.NewLeasingService(leasingRepo, farmRepo)
+	operationsSvc := operationsService.NewOperationsService(operationsRepo, farmRepo, leasingRepo)
+
+	// Handlers
 	authHandler := authHandler.NewAuthHandler(db, hasher, log, jwtGen)
-
-	// Модуль User
-	userRepository := userRepository.NewUserRepository(db)
-	userService := userService.NewUserService(userRepository)
-	userHandler := userHandler.NewUserHandler(userService, log)
-
-	// Модуль Farm
-	farmRepository := farmRepository.NewRepository(db)
-	farmService := farmService.NewFarmService(farmRepository)
-	farmHandler := farmHandler.NewFarmHandler(farmService, log)
-
-	// Модуль Leasing
-	leasingRepository := leasingRepository.NewRepository(db)
-	leasingService := leasingService.NewLeasingService(leasingRepository, farmRepository)
-	leasingHandler := leasingHandler.NewLeasingHandler(leasingService, log)
+	userHandler := userHandler.NewUserHandler(userSvc, log)
+	farmHandler := farmHandler.NewFarmHandler(farmSvc, log)
+	leasingHandler := leasingHandler.NewLeasingHandler(leasingSvc, log)
+	operationsHandler := operationsHandler.NewOperationsHandler(operationsSvc, log)
 
 	// Создаем и запускаем сервер
-	srv := api.New(cfg, authHandler, userHandler, farmHandler, leasingHandler)
+	srv := api.New(cfg, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler)
 
-	// Запускаем сервер.
 	if err := srv.Start(); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
-
 }

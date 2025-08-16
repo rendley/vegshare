@@ -7,6 +7,7 @@ func (h *FarmHandler) RegisterRouter(r chi.Router) {
 	// --- Маршруты для Культур ---
 	r.Route("/api/v1/crops", func(r chi.Router) {
 		r.Get("/", h.GetAllCrops)
+		r.Post("/", h.CreateCrop)
 	})
 
 	// --- Маршруты для Регионов ---
