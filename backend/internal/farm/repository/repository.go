@@ -15,6 +15,8 @@ import (
 type Repository interface {
 	// CreateFarm определяет метод для создания новой фермы.
 	CreateFarm(ctx context.Context, farm *models.Farm) error
+	// GetAllFarms определяет метод для получения всех ферм.
+	GetAllFarms(ctx context.Context) ([]models.Farm, error)
 }
 
 // repository - это СТРУКТУРА, которая реализует интерфейс Repository.
@@ -46,4 +48,22 @@ func (r *repository) CreateFarm(ctx context.Context, farm *models.Farm) error {
 	}
 
 	return nil
+}
+
+// GetAllFarms - это реализация метода для получения всех ферм из базы данных.
+func (r *repository) GetAllFarms(ctx context.Context) ([]models.Farm, error) {
+	// Создаем срез для хранения результатов.
+	var farms []models.Farm
+
+	// Текст SQL-запроса для выбора всех записей из таблицы 'farms'.
+	query := "SELECT * FROM farms"
+
+	// Выполняем запрос и сканируем результаты в срез структур.
+	err := r.db.SelectContext(ctx, &farms, query)
+	if err != nil {
+		// В случае ошибки, возвращаем ее с дополнительным контекстом.
+		return nil, fmt.Errorf("не удалось получить список ферм: %w", err)
+	}
+
+	return farms, nil
 }

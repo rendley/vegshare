@@ -21,3 +21,24 @@ curl -X POST -H "Content-Type: application/json" -d '{"name": "Тестовая 
     "location": "Интернет"
 }
 ```
+
+---
+
+### Получение списка всех ферм
+
+**Запрос:**
+
+```bash
+curl -i http://localhost:8080/api/v1/farms
+```
+
+**Успешный ответ (если ферм нет):**
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Sat, 16 Aug 2025 16:51:30 GMT
+Content-Length: 4
+
+null
+```

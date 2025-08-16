@@ -2,12 +2,15 @@
 package api
 
 import (
+	"log"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	authhandler "github.com/rendley/vegshare/backend/internal/auth/handler"
 	farmhandler "github.com/rendley/vegshare/backend/internal/farm/handler"
 	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	"github.com/rendley/vegshare/backend/pkg/config"
-	"log"
-	"net/http"
 )
 
 // Определяем структуру `Server`. В Go структуры используются для объединения данных и методов.
@@ -56,14 +59,20 @@ func (s *Server) Start() error {
 	// Логгируем адрес для отладки.
 	log.Printf("Starting server on %s", addr)
 
-	mux := http.NewServeMux()
-	s.AuthHandler.RegisterRouter(mux)
-	s.UserHandler.RegisterRouter(mux)
-	s.FarmHandler.RegisterRouter(mux)
+	// Создаем новый роутер chi
+	r := chi.NewRouter()
+
+	// Добавляем стандартные middleware для логирования и восстановления после паник
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
+	// Регистрируем маршруты наших хендлеров
+	s.AuthHandler.RegisterRouter(r)
+	s.UserHandler.RegisterRouter(r)
+	s.FarmHandler.RegisterRouter(r)
 
 	// Запускаем сервер:
 	// - `ListenAndServe` блокирует выполнение, пока сервер работает.
 	// - Если произойдёт ошибка, она вернётся из функции.
-	// - Можно передать `nil` вместо роутера (сервер будет возвращать 404 на все запросы).
-	return http.ListenAndServe(addr, mux) // Принимает запросы и передаёт их в наш роутер.
+	return http.ListenAndServe(addr, r) // Принимает запросы и передаёт их в наш chi роутер.
 }
