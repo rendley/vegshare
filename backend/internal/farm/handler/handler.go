@@ -17,6 +17,11 @@ type LandParcelRequest struct {
 	Name string `json:"name" validate:"required,min=2,max=100"`
 }
 
+type GreenhouseRequest struct {
+	Name string `json:"name" validate:"required,min=2,max=100"`
+	Type string `json:"type" validate:"omitempty,min=2,max=50"`
+}
+
 // --- Handler ---
 
 // FarmHandler - это структура, которая содержит зависимости для обработчиков фермы.

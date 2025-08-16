@@ -1,4 +1,3 @@
-// Пакет handler
 package handler
 
 import "github.com/go-chi/chi/v5"
@@ -10,29 +9,44 @@ func (h *FarmHandler) RegisterRouter(r chi.Router) {
 		r.Get("/", h.GetAllCrops)
 	})
 
-	// --- Маршруты для Регионов и вложенных Земельных участков ---
+	// --- Маршруты для Регионов ---
 	r.Route("/api/v1/regions", func(r chi.Router) {
 		r.Post("/", h.CreateRegion)
 		r.Get("/", h.GetAllRegions)
 
-		// Маршруты, специфичные для одного региона, включая вложенные
+		// Маршруты для конкретного региона
 		r.Route("/{regionID}", func(r chi.Router) {
 			r.Get("/", h.GetRegionByID)
 			r.Put("/", h.UpdateRegion)
 			r.Delete("/", h.DeleteRegion)
 
 			// Вложенные маршруты для земельных участков
-			// POST /api/v1/regions/{regionID}/land-parcels
-			r.Post("/land-parcels", h.CreateLandParcel)
-			// GET /api/v1/regions/{regionID}/land-parcels
 			r.Get("/land-parcels", h.GetLandParcelsByRegion)
+			r.Post("/land-parcels", h.CreateLandParcelForRegion)
 		})
 	})
 
-	// --- Маршруты для прямого управления Земельными участками по их ID ---
+	// --- Маршруты для Земельных участков ---
 	r.Route("/api/v1/land-parcels", func(r chi.Router) {
-		r.Get("/{id}", h.GetLandParcelByID)
-		r.Put("/{id}", h.UpdateLandParcel)
-		r.Delete("/{id}", h.DeleteLandParcel)
+		// Маршруты для конкретного земельного участка
+		r.Route("/{parcelID}", func(r chi.Router) {
+			r.Get("/", h.GetLandParcelByID)
+			r.Put("/", h.UpdateLandParcel)
+			r.Delete("/", h.DeleteLandParcel)
+
+			// Вложенные маршруты для теплиц
+			r.Get("/greenhouses", h.GetGreenhousesByLandParcel)
+			r.Post("/greenhouses", h.CreateGreenhouseForLandParcel)
+		})
+	})
+
+	// --- Маршруты для Теплиц ---
+	r.Route("/api/v1/greenhouses", func(r chi.Router) {
+		// Маршруты для конкретной теплицы
+		r.Route("/{greenhouseID}", func(r chi.Router) {
+			r.Get("/", h.GetGreenhouseByID)
+			r.Put("/", h.UpdateGreenhouse)
+			r.Delete("/", h.DeleteGreenhouse)
+		})
 	})
 }
