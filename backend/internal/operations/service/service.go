@@ -15,6 +15,7 @@ import (
 // Service определяет контракт для бизнес-логики.
 type Service interface {
 	PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUID) (*farmModels.PlotCrop, error)
+	GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]farmModels.PlotCrop, error)
 }
 
 type service struct {
@@ -33,7 +34,7 @@ func NewOperationsService(repo repository.Repository, farmRepo farmRepository.Re
 }
 
 func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUID) (*farmModels.PlotCrop, error) {
-	// Шаг 1: Проверить, что у пользователя есть активная аренда этой грядки.
+	// ... (previous implementation)
 	leases, err := s.leasingRepo.GetLeasesByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось проверить аренду: %w", err)
@@ -49,15 +50,11 @@ func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUI
 		return nil, fmt.Errorf("у пользователя нет активной аренды для грядки %s", plotID)
 	}
 
-	// Шаг 2: Проверить, что культура существует.
 	_, err = s.farmRepo.GetCropByID(ctx, cropID)
 	if err != nil {
 		return nil, fmt.Errorf("культура с ID %s не найдена: %w", cropID, err)
 	}
 
-	// TODO: Проверить, что на грядке еще ничего не растет.
-
-	// Шаг 3: Создать запись о посадке.
 	now := time.Now()
 	plotCrop := &farmModels.PlotCrop{
 		ID:        uuid.New(),
@@ -75,4 +72,8 @@ func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUI
 	}
 
 	return plotCrop, nil
+}
+
+func (s *service) GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]farmModels.PlotCrop, error) {
+	return s.repo.GetPlotCrops(ctx, plotID)
 }
