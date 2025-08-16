@@ -11,11 +11,11 @@ import (
 
 // --- LandParcel Handlers ---
 
-func (h *FarmHandler) CreateLandParcel(w http.ResponseWriter, r *http.Request) {
+func (h *FarmHandler) CreateLandParcelForRegion(w http.ResponseWriter, r *http.Request) {
 	regionIDStr := chi.URLParam(r, "regionID")
 	regionID, err := uuid.Parse(regionIDStr)
 	if err != nil {
-		api.RespondWithError(w, "invalid region ID", http.StatusBadRequest)
+		api.RespondWithError(w, "invalid region ID in URL", http.StatusBadRequest)
 		return
 	}
 
@@ -44,7 +44,7 @@ func (h *FarmHandler) GetLandParcelsByRegion(w http.ResponseWriter, r *http.Requ
 	regionIDStr := chi.URLParam(r, "regionID")
 	regionID, err := uuid.Parse(regionIDStr)
 	if err != nil {
-		api.RespondWithError(w, "invalid region ID", http.StatusBadRequest)
+		api.RespondWithError(w, "invalid region ID in URL", http.StatusBadRequest)
 		return
 	}
 
@@ -59,10 +59,10 @@ func (h *FarmHandler) GetLandParcelsByRegion(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *FarmHandler) GetLandParcelByID(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
+	idStr := chi.URLParam(r, "parcelID")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		api.RespondWithError(w, "invalid land parcel ID", http.StatusBadRequest)
+		api.RespondWithError(w, "invalid land parcel ID in URL", http.StatusBadRequest)
 		return
 	}
 
@@ -77,10 +77,10 @@ func (h *FarmHandler) GetLandParcelByID(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *FarmHandler) UpdateLandParcel(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
+	idStr := chi.URLParam(r, "parcelID")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		api.RespondWithError(w, "invalid land parcel ID", http.StatusBadRequest)
+		api.RespondWithError(w, "invalid land parcel ID in URL", http.StatusBadRequest)
 		return
 	}
 
@@ -106,10 +106,10 @@ func (h *FarmHandler) UpdateLandParcel(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FarmHandler) DeleteLandParcel(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
+	idStr := chi.URLParam(r, "parcelID")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		api.RespondWithError(w, "invalid land parcel ID", http.StatusBadRequest)
+		api.RespondWithError(w, "invalid land parcel ID in URL", http.StatusBadRequest)
 		return
 	}
 

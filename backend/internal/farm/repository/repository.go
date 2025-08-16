@@ -27,6 +27,13 @@ type Repository interface {
 	GetLandParcelsByRegion(ctx context.Context, regionID uuid.UUID) ([]models.LandParcel, error)
 	UpdateLandParcel(ctx context.Context, parcel *models.LandParcel) error
 	DeleteLandParcel(ctx context.Context, id uuid.UUID) error
+
+	// Greenhouse methods
+	CreateGreenhouse(ctx context.Context, greenhouse *models.Greenhouse) error
+	GetGreenhouseByID(ctx context.Context, id uuid.UUID) (*models.Greenhouse, error)
+	GetGreenhousesByLandParcel(ctx context.Context, landParcelID uuid.UUID) ([]models.Greenhouse, error)
+	UpdateGreenhouse(ctx context.Context, greenhouse *models.Greenhouse) error
+	DeleteGreenhouse(ctx context.Context, id uuid.UUID) error
 }
 
 // repository - это СТРУКТУРА, которая реализует интерфейс Repository.
