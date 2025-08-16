@@ -22,6 +22,19 @@ type GreenhouseRequest struct {
 	Type string `json:"type" validate:"omitempty,min=2,max=50"`
 }
 
+type PlotRequest struct {
+	Name      string `json:"name" validate:"required,min=2,max=100"`
+	Size      string `json:"size" validate:"omitempty,min=1,max=50"`
+	CameraURL string `json:"camera_url" validate:"omitempty,url"`
+}
+
+type UpdatePlotRequest struct {
+	Name      string `json:"name" validate:"required,min=2,max=100"`
+	Size      string `json:"size" validate:"omitempty,min=1,max=50"`
+	Status    string `json:"status" validate:"required,oneof=available rented maintenance"`
+	CameraURL string `json:"camera_url" validate:"omitempty,url"`
+}
+
 // --- Handler ---
 
 // FarmHandler - это структура, которая содержит зависимости для обработчиков фермы.
