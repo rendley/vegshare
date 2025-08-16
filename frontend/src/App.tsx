@@ -3,6 +3,7 @@ import { RegionsPage } from './pages/RegionsPage';
 import { LandParcelsPage } from './pages/LandParcelsPage';
 import { GreenhousesPage } from './pages/GreenhousesPage';
 import { PlotsPage } from './pages/PlotsPage';
+import { MyPlotsPage } from './pages/MyPlotsPage';
 
 function App() {
   return (
@@ -16,6 +17,9 @@ function App() {
             <li>
               <Link to="/regions">Регионы</Link>
             </li>
+            <li>
+              <Link to="/my-plots">Мои грядки</Link>
+            </li>
           </ul>
         </nav>
 
@@ -27,6 +31,7 @@ function App() {
           <Route path="/regions/:regionId/land-parcels" element={<LandParcelsPage />} />
           <Route path="/land-parcels/:parcelId/greenhouses" element={<GreenhousesPage />} />
           <Route path="/greenhouses/:greenhouseId/plots" element={<PlotsPage />} />
+          <Route path="/my-plots" element={<MyPlotsPage />} />
         </Routes>
       </div>
     </Router>
