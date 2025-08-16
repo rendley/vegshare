@@ -12,28 +12,33 @@ interface Region {
 interface LandParcel {
   id: string;
   name: string;
-  region_id: string;
 }
 
 interface Greenhouse {
   id: string;
   name: string;
-  land_parcel_id: string;
 }
 
 export interface Plot {
   id: string;
   name: string;
   status: string;
-  greenhouse_id: string;
 }
 
 export interface PlotLease {
   id: string;
   plot_id: string;
-  user_id: string;
-  start_date: string;
-  end_date: string;
+}
+
+export interface Crop {
+  id: string;
+  name: string;
+}
+
+export interface PlotCrop {
+  id: string;
+  plot_id: string;
+  crop_id: string;
   status: string;
 }
 
@@ -41,42 +46,38 @@ export interface PlotLease {
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({ baseUrl: BASE_URL }),
-  // Теги для автоматической инвалидации кеша
-  tagTypes: ['Plot', 'Lease'],
+  tagTypes: ['Plot', 'Lease', 'PlotCrop'],
   endpoints: (builder) => ({
     // QUERIES
-    getRegions: builder.query<Region[], void>({
-      query: () => 'regions',
-    }),
-    getLandParcelsByRegion: builder.query<LandParcel[], string>({
-      query: (regionId) => `regions/${regionId}/land-parcels`,
-    }),
-    getGreenhousesByLandParcel: builder.query<Greenhouse[], string>({
-      query: (landParcelId) => `land-parcels/${landParcelId}/greenhouses`,
-    }),
+    getRegions: builder.query<Region[], void>({ query: () => 'regions' }),
+    getLandParcelsByRegion: builder.query<LandParcel[], string>({ query: (regionId) => `regions/${regionId}/land-parcels` }),
+    getGreenhousesByLandParcel: builder.query<Greenhouse[], string>({ query: (landParcelId) => `land-parcels/${landParcelId}/greenhouses` }),
     getPlotsByGreenhouse: builder.query<Plot[], string>({
       query: (greenhouseId) => `greenhouses/${greenhouseId}/plots`,
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({ type: 'Plot' as const, id })),
-              { type: 'Plot', id: 'LIST' },
-            ]
-          : [{ type: 'Plot', id: 'LIST' }],
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Plot' as const, id })), { type: 'Plot', id: 'LIST' }] : [{ type: 'Plot', id: 'LIST' }],
     }),
     getMyLeases: builder.query<PlotLease[], void>({
       query: () => 'me/leases',
-      providesTags: ['Lease'],
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Lease' as const, id })), { type: 'Lease', id: 'LIST' }] : [{ type: 'Lease', id: 'LIST' }],
+    }),
+    getAvailableCrops: builder.query<Crop[], void>({ query: () => 'crops' }),
+    getPlotCrops: builder.query<PlotCrop[], string>({ 
+      query: (plotId) => `plots/${plotId}/plantings`, // Предполагаем, что такой эндпоинт будет
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'PlotCrop' as const, id })), { type: 'PlotCrop', id: 'LIST' }] : [{ type: 'PlotCrop', id: 'LIST' }],
     }),
 
     // MUTATIONS
     leasePlot: builder.mutation<PlotLease, string>({
-      query: (plotId) => ({
-        url: `plots/${plotId}/lease`,
+      query: (plotId) => ({ url: `plots/${plotId}/lease`, method: 'POST' }),
+      invalidatesTags: [{ type: 'Plot', id: 'LIST' }, { type: 'Lease', id: 'LIST' }],
+    }),
+    plantCrop: builder.mutation<PlotCrop, { plotId: string; cropId: string }>({ 
+      query: ({ plotId, cropId }) => ({
+        url: `plots/${plotId}/plantings`,
         method: 'POST',
+        body: { crop_id: cropId },
       }),
-      // После успешной мутации, инвалидируем кеш для списков грядок и аренд
-      invalidatesTags: [{ type: 'Plot', id: 'LIST' }, 'Lease'],
+      invalidatesTags: ['PlotCrop'],
     }),
   }),
 });
@@ -88,5 +89,8 @@ export const {
   useGetGreenhousesByLandParcelQuery,
   useGetPlotsByGreenhouseQuery,
   useGetMyLeasesQuery,
+  useGetAvailableCropsQuery,
+  useGetPlotCropsQuery,
   useLeasePlotMutation,
+  usePlantCropMutation,
 } = apiSlice;

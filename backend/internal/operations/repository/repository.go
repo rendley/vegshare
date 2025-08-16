@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/rendley/vegshare/backend/internal/farm/models"
 )
@@ -11,6 +12,7 @@ import (
 // Repository определяет контракт для хранилища.
 type Repository interface {
 	CreatePlotCrop(ctx context.Context, plotCrop *models.PlotCrop) error
+	GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]models.PlotCrop, error)
 }
 
 type repository struct {
@@ -28,4 +30,14 @@ func (r *repository) CreatePlotCrop(ctx context.Context, plotCrop *models.PlotCr
 		return fmt.Errorf("не удалось создать запись о посадке: %w", err)
 	}
 	return nil
+}
+
+func (r *repository) GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]models.PlotCrop, error) {
+	var plotCrops []models.PlotCrop
+	query := `SELECT * FROM plot_crops WHERE plot_id = $1`
+	err := r.db.SelectContext(ctx, &plotCrops, query, plotID)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось получить посадки для грядки: %w", err)
+	}
+	return plotCrops, nil
 }
