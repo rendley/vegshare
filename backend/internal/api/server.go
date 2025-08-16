@@ -41,8 +41,11 @@ func (s *Server) Start() error {
 
 	r := chi.NewRouter()
 
+	// Стандартные middleware
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(middleware.RedirectSlashes)
+	r.Use(middleware.StripSlashes)
 
 	// Регистрируем маршруты всех наших хендлеров
 	s.AuthHandler.RegisterRouter(r)
