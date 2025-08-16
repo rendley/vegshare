@@ -47,6 +47,19 @@ func (h *FarmHandler) RegisterRouter(r chi.Router) {
 			r.Get("/", h.GetGreenhouseByID)
 			r.Put("/", h.UpdateGreenhouse)
 			r.Delete("/", h.DeleteGreenhouse)
+
+			// Вложенные маршруты для грядок
+			r.Get("/plots", h.GetPlotsByGreenhouse)
+			r.Post("/plots", h.CreatePlotForGreenhouse)
+		})
+	})
+
+	// --- Маршруты для Грядок ---
+	r.Route("/api/v1/plots", func(r chi.Router) {
+		r.Route("/{plotID}", func(r chi.Router) {
+			r.Get("/", h.GetPlotByID)
+			r.Put("/", h.UpdatePlot)
+			r.Delete("/", h.DeletePlot)
 		})
 	})
 }
