@@ -1,57 +1,89 @@
-// Пакет models содержит структуры данных, которые отражают таблицы из базы данных.
+// Пакет models содержит структуры данных, которые отражают таблицы в базе данных.
 package models
 
 import (
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
-// Farm представляет тепличный комплекс (ферму) из таблицы 'farms'.
-type Farm struct {
-	// Уникальный идентификатор фермы.
-	ID uuid.UUID `db:"id" json:"id"`
-	// Название фермы.
-	Name string `db:"name" json:"name"`
-	// Местоположение или адрес фермы.
-	Location string `db:"location" json:"location"`
-}
-
-// Plot представляет участок земли на ферме из таблицы 'plots'.
-type Plot struct {
-	// Уникальный идентификатор участка.
-	ID uuid.UUID `db:"id" json:"id"`
-	// Идентификатор фермы, к которой относится участок.
-	FarmID uuid.UUID `db:"farm_id" json:"farm_id"`
-	// Идентификатор пользователя-владельца. Может быть пустым (NULL).
-	OwnerID uuid.NullUUID `db:"owner_id" json:"owner_id"`
-	// Размер участка.
-	Size float32 `db:"size" json:"size"`
-	// Дата и время создания записи.
+// Region представляет географическую единицу верхнего уровня, например, область или край.
+type Region struct {
+	ID        uuid.UUID `db:"id" json:"id"`
+	Name      string    `db:"name" json:"name"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// Crop представляет культуру из справочника 'crops'.
+// LandParcel представляет большой участок земли в определенном регионе, на котором могут располагаться теплицы.
+type LandParcel struct {
+	ID        uuid.UUID `db:"id" json:"id"`
+	RegionID  uuid.UUID `db:"region_id" json:"region_id"`
+	Name      string    `db:"name" json:"name"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+}
+
+// Greenhouse представляет теплицу, расположенную на земельном участке.
+type Greenhouse struct {
+	ID           uuid.UUID `db:"id" json:"id"`
+	LandParcelID uuid.UUID `db:"land_parcel_id" json:"land_parcel_id"`
+	Name         string    `db:"name" json:"name"`
+	// Type может определять тип теплицы, например, "гидропоника" или "грунтовая".
+	Type      string    `db:"type" json:"type"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+}
+
+// Plot представляет конечную, арендуемую пользователем грядку в теплице.
+type Plot struct {
+	ID           uuid.UUID `db:"id" json:"id"`
+	GreenhouseID uuid.UUID `db:"greenhouse_id" json:"greenhouse_id"`
+	Name         string    `db:"name" json:"name"`
+	Size         string    `db:"size" json:"size"`
+	// Status показывает текущее состояние грядки: 'available', 'rented', 'maintenance'.
+	Status    string    `db:"status" json:"status"`
+	CameraURL string    `db:"camera_url" json:"camera_url"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+}
+
+// PlotLease представляет собой факт аренды грядки пользователем на определенный срок.
+// Эта таблица связывает пользователей и грядки.
+type PlotLease struct {
+	ID        uuid.UUID `db:"id" json:"id"`
+	PlotID    uuid.UUID `db:"plot_id" json:"plot_id"`
+	UserID    uuid.UUID `db:"user_id" json:"user_id"`
+	StartDate time.Time `db:"start_date" json:"start_date"`
+	EndDate   time.Time `db:"end_date" json:"end_date"`
+	// Status показывает состояние аренды: 'active', 'expired'.
+	Status    string    `db:"status" json:"status"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+}
+
+// Crop представляет собой запись в каталоге доступных для посадки культур.
 type Crop struct {
-	// Уникальный идентификатор культуры.
-	ID uuid.UUID `db:"id" json:"id"`
-	// Название культуры.
-	Name string `db:"name" json:"name"`
-	// Описание особенностей выращивания.
-	Description string `db:"description" json:"description"`
-	// Среднее время роста в днях.
-	GrowingTimeDays int `db:"growing_time_days" json:"growing_time_days"`
+	ID          uuid.UUID `db:"id" json:"id"`
+	Name        string    `db:"name" json:"name"`
+	Description string    `db:"description" json:"description"`
+	// PlantingTime - примерное время посадки в днях.
+	PlantingTime int `db:"planting_time" json:"planting_time"`
+	// HarvestTime - примерное время сбора урожая в днях после посадки.
+	HarvestTime int       `db:"harvest_time" json:"harvest_time"`
+	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// PlotCrop представляет конкретную посадку на участке из таблицы 'plot_crops'.
+// PlotCrop - это связующая запись, показывающая, какая культура была посажена на какой грядке в рамках какой аренды.
 type PlotCrop struct {
-	// Уникальный идентификатор посадки.
-	ID uuid.UUID `db:"id" json:"id"`
-	// Идентификатор участка.
-	PlotID uuid.UUID `db:"plot_id" json:"plot_id"`
-	// Идентификатор культуры.
-	CropID uuid.UUID `db:"crop_id" json:"crop_id"`
-	// Статус посадки.
-	Status string `db:"status" json:"status"`
-	// Дата посадки.
+	ID        uuid.UUID `db:"id" json:"id"`
+	PlotID    uuid.UUID `db:"plot_id" json:"plot_id"`
+	CropID    uuid.UUID `db:"crop_id" json:"crop_id"`
+	LeaseID   uuid.UUID `db:"lease_id" json:"lease_id"`
 	PlantedAt time.Time `db:"planted_at" json:"planted_at"`
+	// Status показывает состояние посадки: 'growing', 'harvested', 'failed'.
+	Status    string    `db:"status" json:"status"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
