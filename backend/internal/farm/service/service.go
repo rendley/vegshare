@@ -14,6 +14,7 @@ import (
 // Он описывает, какие операции бизнес-логики могут быть выполнены.
 type Service interface {
 	CreateFarm(ctx context.Context, name, location string) (*models.Farm, error)
+	GetAllFarms(ctx context.Context) ([]models.Farm, error)
 }
 
 // service - это приватная структура, реализующая интерфейс Service.
@@ -60,4 +61,17 @@ func (s *service) CreateFarm(ctx context.Context, name, location string) (*model
 	// 4. Возвращаем созданный объект фермы.
 	// Теперь он содержит сгенерированный ID.
 	return farm, nil
+}
+
+// GetAllFarms вызывает репозиторий для получения всех ферм.
+func (s *service) GetAllFarms(ctx context.Context) ([]models.Farm, error) {
+	// Просто вызываем метод репозитория.
+	farms, err := s.repo.GetAllFarms(ctx)
+	if err != nil {
+		// Если репозиторий вернул ошибку, мы ее "пробрасываем" наверх,
+		// добавив свой контекст.
+		return nil, fmt.Errorf("не удалось получить фермы в сервисе: %w", err)
+	}
+
+	return farms, nil
 }

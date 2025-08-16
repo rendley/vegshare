@@ -1,9 +1,8 @@
 package handler
 
-import "net/http"
+import "github.com/go-chi/chi/v5"
 
-func (h *AuthHandler) RegisterRouter(mux *http.ServeMux) {
-	mux.HandleFunc("GET /", h.homeHandler)
-	mux.HandleFunc("POST /register", h.registerHandler)
-	mux.HandleFunc("POST /login", h.loginHandler)
+func (h *AuthHandler) RegisterRouter(r chi.Router) {
+	r.Post("/api/v1/register", h.registerHandler)
+	r.Post("/api/v1/login", h.loginHandler)
 }

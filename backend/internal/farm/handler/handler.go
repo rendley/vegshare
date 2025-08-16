@@ -63,3 +63,15 @@ func (h *FarmHandler) CreateFarm(w http.ResponseWriter, r *http.Request) {
 
 	api.RespondWithJSON(h.logger, w, farm, http.StatusCreated)
 }
+
+// GetAllFarms - это публичный метод-обработчик для эндпоинта получения списка ферм.
+func (h *FarmHandler) GetAllFarms(w http.ResponseWriter, r *http.Request) {
+	farms, err := h.service.GetAllFarms(r.Context())
+	if err != nil {
+		h.logger.Errorf("ошибка при получении списка ферм: %v", err)
+		api.RespondWithError(w, "could not retrieve farms", http.StatusInternalServerError)
+		return
+	}
+
+	api.RespondWithJSON(h.logger, w, farms, http.StatusOK)
+}
