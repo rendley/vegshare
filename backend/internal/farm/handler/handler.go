@@ -28,6 +28,13 @@ type PlotRequest struct {
 	CameraURL string `json:"camera_url" validate:"omitempty,url"`
 }
 
+type CreateCropRequest struct {
+	Name        string `json:"name" validate:"required,min=2,max=100"`
+	Description string `json:"description" validate:"omitempty"`
+	PlantingTime int    `json:"planting_time" validate:"omitempty,gte=0"`
+	HarvestTime  int    `json:"harvest_time" validate:"omitempty,gte=0"`
+}
+
 type UpdatePlotRequest struct {
 	Name      string `json:"name" validate:"required,min=2,max=100"`
 	Size      string `json:"size" validate:"omitempty,min=1,max=50"`

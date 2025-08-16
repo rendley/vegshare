@@ -1,0 +1,31 @@
+package repository
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/rendley/vegshare/backend/internal/farm/models"
+)
+
+// Repository определяет контракт для хранилища.
+type Repository interface {
+	CreatePlotCrop(ctx context.Context, plotCrop *models.PlotCrop) error
+}
+
+type repository struct {
+	db *sqlx.DB
+}
+
+func NewRepository(db *sqlx.DB) Repository {
+	return &repository{db: db}
+}
+
+func (r *repository) CreatePlotCrop(ctx context.Context, plotCrop *models.PlotCrop) error {
+	query := `INSERT INTO plot_crops (id, plot_id, crop_id, lease_id, planted_at, status, created_at, updated_at) VALUES (:id, :plot_id, :crop_id, :lease_id, :planted_at, :status, :created_at, :updated_at)`
+	_, err := r.db.NamedExecContext(ctx, query, plotCrop)
+	if err != nil {
+		return fmt.Errorf("не удалось создать запись о посадке: %w", err)
+	}
+	return nil
+}

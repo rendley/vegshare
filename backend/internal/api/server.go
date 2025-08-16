@@ -10,27 +10,30 @@ import (
 	authhandler "github.com/rendley/vegshare/backend/internal/auth/handler"
 	farmhandler "github.com/rendley/vegshare/backend/internal/farm/handler"
 	leasinghandler "github.com/rendley/vegshare/backend/internal/leasing/handler"
+	operationshandler "github.com/rendley/vegshare/backend/internal/operations/handler"
 	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	"github.com/rendley/vegshare/backend/pkg/config"
 )
 
 // Server - это наша основная структура сервера, которая объединяет все зависимости.
 type Server struct {
-	cfg            *config.Config
-	AuthHandler    *authhandler.AuthHandler
-	UserHandler    *userhandler.UserHandler
-	FarmHandler    *farmhandler.FarmHandler
-	LeasingHandler *leasinghandler.LeasingHandler
+	cfg               *config.Config
+	AuthHandler       *authhandler.AuthHandler
+	UserHandler       *userhandler.UserHandler
+	FarmHandler       *farmhandler.FarmHandler
+	LeasingHandler    *leasinghandler.LeasingHandler
+	OperationsHandler *operationshandler.OperationsHandler
 }
 
 // New - это конструктор для `Server`.
-func New(cfg *config.Config, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler) *Server {
+func New(cfg *config.Config, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler, ops *operationshandler.OperationsHandler) *Server {
 	return &Server{
-		cfg:            cfg,
-		AuthHandler:    auth,
-		UserHandler:    user,
-		FarmHandler:    farm,
-		LeasingHandler: leasing,
+		cfg:               cfg,
+		AuthHandler:       auth,
+		UserHandler:       user,
+		FarmHandler:       farm,
+		LeasingHandler:    leasing,
+		OperationsHandler: ops,
 	}
 }
 
@@ -52,6 +55,7 @@ func (s *Server) Start() error {
 	s.UserHandler.RegisterRouter(r)
 	s.FarmHandler.RegisterRouter(r)
 	s.LeasingHandler.RegisterRouter(r)
+	s.OperationsHandler.RegisterRouter(r)
 
 	return http.ListenAndServe(addr, r)
 }

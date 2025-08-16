@@ -13,6 +13,8 @@ import (
 type Service interface {
 	// Crop methods
 	GetAllCrops(ctx context.Context) ([]models.Crop, error)
+	GetCropByID(ctx context.Context, id uuid.UUID) (*models.Crop, error)
+	CreateCrop(ctx context.Context, name, description string, plantingTime, harvestTime int) (*models.Crop, error)
 
 	// Region methods
 	CreateRegion(ctx context.Context, name string) (*models.Region, error)
