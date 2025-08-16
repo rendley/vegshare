@@ -8,6 +8,9 @@ import (
 	farmHandler "github.com/rendley/vegshare/backend/internal/farm/handler"
 	farmRepository "github.com/rendley/vegshare/backend/internal/farm/repository"
 	farmService "github.com/rendley/vegshare/backend/internal/farm/service"
+	leasingHandler "github.com/rendley/vegshare/backend/internal/leasing/handler"
+	leasingRepository "github.com/rendley/vegshare/backend/internal/leasing/repository"
+	leasingService "github.com/rendley/vegshare/backend/internal/leasing/service"
 	userHandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	userRepository "github.com/rendley/vegshare/backend/internal/user/repository"
 	userService "github.com/rendley/vegshare/backend/internal/user/service"
@@ -60,8 +63,13 @@ func main() {
 	farmService := farmService.NewFarmService(farmRepository)
 	farmHandler := farmHandler.NewFarmHandler(farmService, log)
 
+	// Модуль Leasing
+	leasingRepository := leasingRepository.NewRepository(db)
+	leasingService := leasingService.NewLeasingService(leasingRepository, farmRepository)
+	leasingHandler := leasingHandler.NewLeasingHandler(leasingService, log)
+
 	// Создаем и запускаем сервер
-	srv := api.New(cfg, authHandler, userHandler, farmHandler)
+	srv := api.New(cfg, authHandler, userHandler, farmHandler, leasingHandler)
 
 	// Запускаем сервер.
 	if err := srv.Start(); err != nil {
