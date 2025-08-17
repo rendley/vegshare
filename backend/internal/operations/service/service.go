@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	farmRepository "github.com/rendley/vegshare/backend/internal/farm/repository"
 	leasingRepository "github.com/rendley/vegshare/backend/internal/leasing/repository"
 	"github.com/rendley/vegshare/backend/internal/operations/repository"
+	"github.com/rendley/vegshare/backend/pkg/rabbitmq"
 )
 
 // Service определяет контракт для бизнес-логики.
@@ -24,14 +26,16 @@ type service struct {
 	repo        repository.Repository
 	farmRepo    farmRepository.Repository
 	leasingRepo leasingRepository.Repository
+	rabbitmq    *rabbitmq.Client
 }
 
 // NewOperationsService - конструктор для сервиса.
-func NewOperationsService(repo repository.Repository, farmRepo farmRepository.Repository, leasingRepo leasingRepository.Repository) Service {
+func NewOperationsService(repo repository.Repository, farmRepo farmRepository.Repository, leasingRepo leasingRepository.Repository, rabbitmq *rabbitmq.Client) Service {
 	return &service{
 		repo:        repo,
 		farmRepo:    farmRepo,
 		leasingRepo: leasingRepo,
+		rabbitmq:    rabbitmq,
 	}
 }
 
@@ -84,8 +88,21 @@ func (s *service) RemoveCrop(ctx context.Context, plantingID uuid.UUID) error {
 	return s.repo.DeletePlotCrop(ctx, plantingID)
 }
 
+type ActionMessage struct {
+	PlotID uuid.UUID `json:"plot_id"`
+	Action string    `json:"action"`
+}
+
 func (s *service) PerformAction(ctx context.Context, plotID uuid.UUID, action string) error {
-	// TODO: Implement RabbitMQ logic
-	fmt.Printf("Performing action '%s' on plot %s\n", action, plotID)
-	return nil
+	msg := ActionMessage{
+		PlotID: plotID,
+		Action: action,
+	}
+
+	body, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal action message: %w", err)
+	}
+
+	return s.rabbitmq.Publish("actions", string(body))
 }

@@ -16,6 +16,7 @@ type Config struct {
 	Database DatabaseConfig `yaml:"database"`
 	JWT      JWTConfig      `yaml:"jwt"`
 	Redis    RedisConfig    `yaml:"redis"`
+	RabbitMQ RabbitMQConfig `yaml:"rabbitmq"`
 }
 
 type HTTPConfig struct {
@@ -41,6 +42,10 @@ type JWTConfig struct {
 type RedisConfig struct {
 	URL string `yaml:"url"`
 	TTL int    `yaml:"ttl"`
+}
+
+type RabbitMQConfig struct {
+	URL string `yaml:"url"`
 }
 
 // Load загружает конфиг из YAML-файла.

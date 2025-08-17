@@ -23,6 +23,7 @@ import (
 	"github.com/rendley/vegshare/backend/pkg/database"
 	"github.com/rendley/vegshare/backend/pkg/jwt"
 	"github.com/rendley/vegshare/backend/pkg/logger"
+	"github.com/rendley/vegshare/backend/pkg/rabbitmq"
 	"github.com/rendley/vegshare/backend/pkg/security"
 )
 
@@ -35,6 +36,12 @@ func main() {
 
 	hasher := security.NewBcryptHasher(10)
 	jwtGen := jwt.NewGenerator(cfg.JWT.Secret, cfg.JWT.AccessTokenTTL, cfg.JWT.RefreshTokenTTL)
+
+	rabbitMQClient, err := rabbitmq.New(cfg.RabbitMQ.URL)
+	if err != nil {
+		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+	}
+	defer rabbitMQClient.Close()
 
 	db, err := database.New(cfg)
 	if err != nil {
@@ -56,7 +63,7 @@ func main() {
 	userSvc := userService.NewUserService(userRepo)
 	farmSvc := farmService.NewFarmService(farmRepo)
 	leasingSvc := leasingService.NewLeasingService(leasingRepo, farmRepo)
-	operationsSvc := operationsService.NewOperationsService(operationsRepo, farmRepo, leasingRepo)
+	operationsSvc := operationsService.NewOperationsService(operationsRepo, farmRepo, leasingRepo, rabbitMQClient)
 
 	// Handlers
 	authHandler := authHandler.NewAuthHandler(authSvc, log)

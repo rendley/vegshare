@@ -12,9 +12,15 @@ all: build
 build:
 	(cd backend && go build -o bin/$(BIN_NAME) ./cmd/main.go)
 
+build-worker:
+	(cd backend && go build -o bin/worker ./cmd/worker/main.go)
+
 # Запуск
 run:
 	(cd backend && go run ./cmd/main.go)
+
+run-worker:
+	(cd backend && go run ./cmd/worker/main.go)
 
 # Миграции
 migrate-up:
