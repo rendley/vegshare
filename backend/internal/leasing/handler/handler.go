@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/rendley/vegshare/backend/internal/leasing/service"
+	"github.com/rendley/vegshare/backend/pkg/middleware"
 	"github.com/rendley/vegshare/backend/pkg/api"
 	"github.com/sirupsen/logrus"
 )
@@ -28,11 +29,11 @@ func NewLeasingHandler(s service.Service, l *logrus.Logger) *LeasingHandler {
 }
 
 func (h *LeasingHandler) LeasePlot(w http.ResponseWriter, r *http.Request) {
-	// В будущем userID будет извлекаться из JWT токена.
-	// Пока для теста мы можем использовать захардкоженный ID или передавать его в теле.
-	// Для простоты, пока не будем реализовывать получение userID.
-	// TODO: Получить userID из контекста после реализации middleware аутентификации.
-	userID, _ := uuid.Parse("607526d4-b782-4c8f-95c3-5b4da1ed3312") // Временная заглушка с реальным ID
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+	if !ok {
+		api.RespondWithError(w, "user ID not found in context", http.StatusInternalServerError)
+		return
+	}
 
 	plotIDStr := chi.URLParam(r, "plotID")
 	plotID, err := uuid.Parse(plotIDStr)
@@ -52,8 +53,11 @@ func (h *LeasingHandler) LeasePlot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *LeasingHandler) GetMyLeases(w http.ResponseWriter, r *http.Request) {
-	// TODO: Получить userID из контекста.
-	userID, _ := uuid.Parse("607526d4-b782-4c8f-95c3-5b4da1ed3312") // Временная заглушка с реальным ID
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+	if !ok {
+		api.RespondWithError(w, "user ID not found in context", http.StatusInternalServerError)
+		return
+	}
 
 	leases, err := h.service.GetMyLeases(r.Context(), userID)
 	if err != nil {

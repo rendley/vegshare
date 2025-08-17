@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/rendley/vegshare/backend/pkg/middleware"
 	"github.com/rendley/vegshare/backend/internal/user/service"
 	"github.com/rendley/vegshare/backend/pkg/api"
 	"github.com/sirupsen/logrus"
@@ -27,17 +28,13 @@ type ProfileResponse struct {
 
 // --- Handler ---
 
-type contextKey string
-
-const userIDKey contextKey = "userID"
-
 type UserHandler struct {
-	service  *service.UserService
+	service  service.UserService
 	logger   *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewUserHandler(service *service.UserService, logger *logrus.Logger) *UserHandler {
+func NewUserHandler(service service.UserService, logger *logrus.Logger) *UserHandler {
 	return &UserHandler{
 		service:  service,
 		logger:   logger,
@@ -46,7 +43,7 @@ func NewUserHandler(service *service.UserService, logger *logrus.Logger) *UserHa
 }
 
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(userIDKey).(uuid.UUID)
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
 		h.logger.Error("не удалось получить userID из контекста")
 		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
@@ -64,7 +61,7 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(userIDKey).(uuid.UUID)
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
 		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -92,7 +89,7 @@ func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(userIDKey).(uuid.UUID)
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
 		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
 		return

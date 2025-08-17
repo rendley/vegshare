@@ -1,5 +1,5 @@
 import { useGetMyLeasesQuery } from '../features/api/apiSlice';
-import { PlantingControl } from '../features/plantings/PlantingControl';
+import PlantingControl from '../features/plantings/PlantingControl';
 
 export const MyPlotsPage = () => {
   const { data: leases, error, isLoading } = useGetMyLeasesQuery();
@@ -15,7 +15,6 @@ export const MyPlotsPage = () => {
           {leases.map((lease) => (
             <li key={lease.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
               <p><b>ID Грядки:</b> {lease.plot_id}</p>
-              <p><b>Арендована до:</b> {new Date(lease.end_date).toLocaleDateString()}</p>
               <div>
                 <b>Управление посадкой:</b>
                 <PlantingControl plotId={lease.plot_id} />

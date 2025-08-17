@@ -24,6 +24,10 @@ make migrate-down && make migrate-up
 make run
  ```
 
+```
+cd frontend
+npm run dev
+```
 
 ## DB
 

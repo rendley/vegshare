@@ -5,6 +5,8 @@ import (
 
 	"github.com/rendley/vegshare/backend/internal/api"
 	authHandler "github.com/rendley/vegshare/backend/internal/auth/handler"
+	authRepository "github.com/rendley/vegshare/backend/internal/auth/repository"
+	authService "github.com/rendley/vegshare/backend/internal/auth/service"
 	farmHandler "github.com/rendley/vegshare/backend/internal/farm/handler"
 	farmRepository "github.com/rendley/vegshare/backend/internal/farm/repository"
 	farmService "github.com/rendley/vegshare/backend/internal/farm/service"
@@ -43,20 +45,21 @@ func main() {
 
 	// --- Инициализация модулей ---
 
-	// Repositories
+	authRepo := authRepository.NewAuthRepository(db)
 	userRepo := userRepository.NewUserRepository(db)
 	farmRepo := farmRepository.NewRepository(db)
 	leasingRepo := leasingRepository.NewRepository(db)
 	operationsRepo := operationsRepository.NewRepository(db)
 
 	// Services
+	authSvc := authService.NewAuthService(authRepo, hasher, jwtGen)
 	userSvc := userService.NewUserService(userRepo)
 	farmSvc := farmService.NewFarmService(farmRepo)
 	leasingSvc := leasingService.NewLeasingService(leasingRepo, farmRepo)
 	operationsSvc := operationsService.NewOperationsService(operationsRepo, farmRepo, leasingRepo)
 
 	// Handlers
-	authHandler := authHandler.NewAuthHandler(db, hasher, log, jwtGen)
+	authHandler := authHandler.NewAuthHandler(authSvc, log)
 	userHandler := userHandler.NewUserHandler(userSvc, log)
 	farmHandler := farmHandler.NewFarmHandler(farmSvc, log)
 	leasingHandler := leasingHandler.NewLeasingHandler(leasingSvc, log)
