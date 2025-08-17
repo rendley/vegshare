@@ -86,6 +86,13 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['PlotCrop'],
     }),
+    performAction: builder.mutation<void, { plotId: string; action: string }>({ 
+      query: ({ plotId, action }) => ({
+        url: `plots/${plotId}/actions`,
+        method: 'POST',
+        body: { action },
+      }),
+    }),
   }),
 });
 
@@ -101,4 +108,5 @@ export const {
   useLeasePlotMutation,
   usePlantCropMutation,
   useRemoveCropMutation,
+  usePerformActionMutation,
 } = apiSlice;

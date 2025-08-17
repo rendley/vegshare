@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useGetAvailableCropsQuery, useGetPlotCropsQuery, usePlantCropMutation, useRemoveCropMutation } from '../api/apiSlice';
+import { useGetAvailableCropsQuery, useGetPlotCropsQuery, usePlantCropMutation, useRemoveCropMutation, usePerformActionMutation } from '../api/apiSlice';
 
 interface PlantingControlProps {
   plotId: string;
@@ -11,6 +11,7 @@ const PlantingControl: React.FC<PlantingControlProps> = ({ plotId }) => {
   const { data: plotCrops, isLoading: isLoadingPlotCrops } = useGetPlotCropsQuery(plotId);
   const [plantCrop, { isLoading: isPlanting }] = usePlantCropMutation();
   const [removeCrop, { isLoading: isRemoving }] = useRemoveCropMutation();
+  const [performAction, { isLoading: isPerformingAction }] = usePerformActionMutation();
   const [selectedCrop, setSelectedCrop] = useState<string>('');
 
   const handlePlant = async () => {
@@ -31,6 +32,14 @@ const PlantingControl: React.FC<PlantingControlProps> = ({ plotId }) => {
     }
   };
 
+  const handleWater = async () => {
+    try {
+      await performAction({ plotId, action: 'water' }).unwrap();
+    } catch (error) {
+      console.error('Failed to water crop: ', error);
+    }
+  };
+
   if (isLoadingCrops || isLoadingPlotCrops) {
     return <p>Loading...</p>;
   }
@@ -41,6 +50,9 @@ const PlantingControl: React.FC<PlantingControlProps> = ({ plotId }) => {
         <p>Planted crop: {plotCrops[0].crop_id}</p>
         <button onClick={() => handleRemove(plotCrops[0].id)} disabled={isRemoving}>
           {isRemoving ? 'Removing...' : 'Remove'}
+        </button>
+        <button onClick={handleWater} disabled={isPerformingAction}>
+          {isPerformingAction ? 'Watering...' : 'Water'}
         </button>
       </div>
     );
