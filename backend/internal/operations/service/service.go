@@ -16,6 +16,7 @@ import (
 type Service interface {
 	PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUID) (*farmModels.PlotCrop, error)
 	GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]farmModels.PlotCrop, error)
+	RemoveCrop(ctx context.Context, plantingID uuid.UUID) error
 }
 
 type service struct {
@@ -76,4 +77,8 @@ func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUI
 
 func (s *service) GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]farmModels.PlotCrop, error) {
 	return s.repo.GetPlotCrops(ctx, plotID)
+}
+
+func (s *service) RemoveCrop(ctx context.Context, plantingID uuid.UUID) error {
+	return s.repo.DeletePlotCrop(ctx, plantingID)
 }

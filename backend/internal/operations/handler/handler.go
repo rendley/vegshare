@@ -64,3 +64,20 @@ func (h *OperationsHandler) PlantCrop(w http.ResponseWriter, r *http.Request) {
 
 	api.RespondWithJSON(h.logger, w, plotCrop, http.StatusCreated)
 }
+
+func (h *OperationsHandler) RemoveCrop(w http.ResponseWriter, r *http.Request) {
+	plantingIDStr := chi.URLParam(r, "plantingID")
+	plantingID, err := uuid.Parse(plantingIDStr)
+	if err != nil {
+		api.RespondWithError(w, "invalid planting ID in URL", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.RemoveCrop(r.Context(), plantingID); err != nil {
+		h.logger.Errorf("ошибка при удалении посадки: %v", err)
+		api.RespondWithError(w, "could not remove crop", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

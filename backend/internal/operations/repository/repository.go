@@ -13,6 +13,7 @@ import (
 type Repository interface {
 	CreatePlotCrop(ctx context.Context, plotCrop *models.PlotCrop) error
 	GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]models.PlotCrop, error)
+	DeletePlotCrop(ctx context.Context, plantingID uuid.UUID) error
 }
 
 type repository struct {
@@ -40,4 +41,13 @@ func (r *repository) GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]mode
 		return nil, fmt.Errorf("не удалось получить посадки для грядки: %w", err)
 	}
 	return plotCrops, nil
+}
+
+func (r *repository) DeletePlotCrop(ctx context.Context, plantingID uuid.UUID) error {
+	query := `DELETE FROM plot_crops WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, plantingID)
+	if err != nil {
+		return fmt.Errorf("не удалось удалить запись о посадке: %w", err)
+	}
+	return nil
 }
