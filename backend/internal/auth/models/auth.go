@@ -6,22 +6,31 @@ import (
 	"time"
 )
 
-// User represents a user in the system.
+var (
+	ErrUserExists         = errors.New("user with this email already exists")
+	ErrInvalidCredentials = errors.New("invalid email or password")
+)
+
+// User struct for the auth module, represents the users table.
 type User struct {
 	ID           uuid.UUID `db:"id"`
+	Name         string    `db:"name"`
 	Email        string    `db:"email"`
-	PasswordHash string    `db:"password_hash"`
+	PasswordHash string    `db:"password"` // Struct field uses Hash, but DB column is 'password'
 	CreatedAt    time.Time `db:"created_at"`
 	UpdatedAt    time.Time `db:"updated_at"`
 }
 
-// TokenPair represents a pair of access and refresh tokens.
+// TokenPair represents the access and refresh tokens.
 type TokenPair struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken  string
+	RefreshToken string
 }
 
-var (
-	ErrUserExists         = errors.New("user already exists")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-)
+// Auth is used for storing refresh token data.
+type Auth struct {
+	ID           uuid.UUID `db:"id"`
+	UserID       uuid.UUID `db:"user_id"`
+	RefreshToken string    `db:"refresh_token"`
+	ExpiresAt    time.Time `db:"expires_at"`
+}

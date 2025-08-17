@@ -50,11 +50,11 @@ func (s *Server) Start() error {
 	r.Use(chi_middleware.StripSlashes)
 
 	// Регистрируем маршруты всех наших хендлеров
-	s.AuthHandler.RegisterRouter(r)
-	s.UserHandler.RegisterRouter(r)
-	s.FarmHandler.RegisterRouter(r)
-	s.LeasingHandler.RegisterRouter(r)
-	s.OperationsHandler.RegisterRouter(r)
+	s.AuthHandler.RegisterRoutes(r)
+	s.UserHandler.RegisterRoutes(r)
+	s.FarmHandler.RegisterRoutes(r)
+	s.LeasingHandler.RegisterRoutes(r)
+	s.OperationsHandler.RegisterRoutes(r)
 
 	return http.ListenAndServe(addr, r)
 }

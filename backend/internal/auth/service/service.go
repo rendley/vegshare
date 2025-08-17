@@ -1,4 +1,3 @@
-
 package service
 
 import (
@@ -12,7 +11,7 @@ import (
 
 // AuthService defines the interface for authentication service.
 type AuthService interface {
-	Register(ctx context.Context, email, password string) (*models.User, *models.TokenPair, error)
+	Register(ctx context.Context, name, email, password string) (*models.User, *models.TokenPair, error)
 	Login(ctx context.Context, email, password string) (*models.User, *models.TokenPair, error)
 }
 
@@ -33,7 +32,7 @@ func NewAuthService(repo repository.AuthRepository, hasher security.PasswordHash
 }
 
 // Register handles user registration.
-func (s *authService) Register(ctx context.Context, email, password string) (*models.User, *models.TokenPair, error) {
+func (s *authService) Register(ctx context.Context, name, email, password string) (*models.User, *models.TokenPair, error) {
 	exists, err := s.repo.UserExists(ctx, email)
 	if err != nil {
 		return nil, nil, err
@@ -48,7 +47,7 @@ func (s *authService) Register(ctx context.Context, email, password string) (*mo
 	}
 
 	user := &models.User{
-		ID:           uuid.New(),
+		Name:         name,
 		Email:        email,
 		PasswordHash: hashedPassword,
 	}
