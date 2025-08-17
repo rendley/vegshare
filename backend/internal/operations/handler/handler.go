@@ -17,6 +17,10 @@ type PlantCropRequest struct {
 	CropID uuid.UUID `json:"crop_id" validate:"required"`
 }
 
+type ActionRequest struct {
+	Action string `json:"action" validate:"required"`
+}
+
 // --- Handler ---
 
 type OperationsHandler struct {
@@ -80,4 +84,32 @@ func (h *OperationsHandler) RemoveCrop(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *OperationsHandler) PerformAction(w http.ResponseWriter, r *http.Request) {
+	plotIDStr := chi.URLParam(r, "plotID")
+	plotID, err := uuid.Parse(plotIDStr)
+	if err != nil {
+		api.RespondWithError(w, "invalid plot ID in URL", http.StatusBadRequest)
+		return
+	}
+
+	var req ActionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		api.RespondWithError(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.validate.Struct(req); err != nil {
+		api.RespondWithError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.PerformAction(r.Context(), plotID, req.Action); err != nil {
+		h.logger.Errorf("ошибка при выполнении действия: %v", err)
+		api.RespondWithError(w, "could not perform action", http.StatusInternalServerError)
+		return
+	}
+
+	api.RespondWithJSON(h.logger, w, map[string]string{"message": "Action performed successfully"}, http.StatusOK)
 }

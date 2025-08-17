@@ -8,5 +8,6 @@ func (h *OperationsHandler) RegisterRouter(r chi.Router) {
 		r.Post("/plantings", h.PlantCrop)
 		r.Get("/plantings", h.GetPlotCrops)
 		r.Delete("/plantings/{plantingID}", h.RemoveCrop)
+		r.Post("/actions", h.PerformAction)
 	})
 }

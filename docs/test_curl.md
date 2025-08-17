@@ -24,3 +24,8 @@ curl -X POST -H "Content-Type: application/json" -d '{"crop_id": "416d3d6d-bede-
 ## Информация о посадках на участке
 
 curl http://localhost:8080/api/v1/plots/99b143a0-71c2-4481-8fe1-0048288fb01c/plantings
+
+
+## Сделать действие на грядке 
+
+curl -X POST -H "Content-Type: application/json" -d '{"action": "water"}' http://localhost:8080/api/v1/plots/99b143a0-71c2-4481-8fe1-0048288fb01c/actions

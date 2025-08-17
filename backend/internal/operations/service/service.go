@@ -17,6 +17,7 @@ type Service interface {
 	PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUID) (*farmModels.PlotCrop, error)
 	GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]farmModels.PlotCrop, error)
 	RemoveCrop(ctx context.Context, plantingID uuid.UUID) error
+	PerformAction(ctx context.Context, plotID uuid.UUID, action string) error
 }
 
 type service struct {
@@ -81,4 +82,10 @@ func (s *service) GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]farmMod
 
 func (s *service) RemoveCrop(ctx context.Context, plantingID uuid.UUID) error {
 	return s.repo.DeletePlotCrop(ctx, plantingID)
+}
+
+func (s *service) PerformAction(ctx context.Context, plotID uuid.UUID, action string) error {
+	// TODO: Implement RabbitMQ logic
+	fmt.Printf("Performing action '%s' on plot %s\n", action, plotID)
+	return nil
 }
