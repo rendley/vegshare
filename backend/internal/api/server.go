@@ -12,7 +12,6 @@ import (
 	operationshandler "github.com/rendley/vegshare/backend/internal/operations/handler"
 	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	"github.com/rendley/vegshare/backend/pkg/config"
-	"github.com/rendley/vegshare/backend/pkg/middleware"
 )
 
 // Server - это наша основная структура сервера, которая объединяет все зависимости.
@@ -23,7 +22,6 @@ type Server struct {
 	FarmHandler       *farmhandler.FarmHandler
 	LeasingHandler    *leasinghandler.LeasingHandler
 	OperationsHandler *operationshandler.OperationsHandler
-	Middleware        *middleware.Middleware
 }
 
 // New - это конструктор для `Server`.
@@ -35,7 +33,6 @@ func New(cfg *config.Config, auth *authhandler.AuthHandler, user *userhandler.Us
 		FarmHandler:       farm,
 		LeasingHandler:    leasing,
 		OperationsHandler: ops,
-		Middleware:        middleware.NewMiddleware(cfg),
 	}
 }
 
@@ -52,19 +49,12 @@ func (s *Server) Start() error {
 	r.Use(chi_middleware.RedirectSlashes)
 	r.Use(chi_middleware.StripSlashes)
 
-	// Группируем маршруты, требующие аутентификации
-	r.Group(func(r chi.Router) {
-		r.Use(s.Middleware.AuthMiddleware)
-
-		// Регистрируем маршруты, требующие аутентификации
-		s.UserHandler.RegisterRouter(r)
-		s.LeasingHandler.RegisterRouter(r)
-		s.OperationsHandler.RegisterRouter(r)
-	})
-
-	// Регистрируем публичные маршруты
+	// Регистрируем маршруты всех наших хендлеров
 	s.AuthHandler.RegisterRouter(r)
+	s.UserHandler.RegisterRouter(r)
 	s.FarmHandler.RegisterRouter(r)
+	s.LeasingHandler.RegisterRouter(r)
+	s.OperationsHandler.RegisterRouter(r)
 
 	return http.ListenAndServe(addr, r)
 }

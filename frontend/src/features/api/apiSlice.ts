@@ -79,6 +79,13 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['PlotCrop'],
     }),
+    removeCrop: builder.mutation<void, { plotId: string; plantingId: string }>({ 
+      query: ({ plotId, plantingId }) => ({
+        url: `plots/${plotId}/plantings/${plantingId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['PlotCrop'],
+    }),
   }),
 });
 
@@ -93,4 +100,5 @@ export const {
   useGetPlotCropsQuery,
   useLeasePlotMutation,
   usePlantCropMutation,
+  useRemoveCropMutation,
 } = apiSlice;

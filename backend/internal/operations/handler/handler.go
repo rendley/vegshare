@@ -35,7 +35,7 @@ func NewOperationsHandler(s service.Service, l *logrus.Logger) *OperationsHandle
 
 func (h *OperationsHandler) PlantCrop(w http.ResponseWriter, r *http.Request) {
 	// TODO: Получить userID из JWT токена
-	userID := uuid.MustParse("607526d4-b782-4c8f-95c3-5b4da1ed3312") // Заглушка с ID нашего тестового пользователя
+	userID := uuid.MustParse("aec44274-55b0-497a-a18b-7f8efe7d8a9e")
 
 	plotIDStr := chi.URLParam(r, "plotID")
 	plotID, err := uuid.Parse(plotIDStr)

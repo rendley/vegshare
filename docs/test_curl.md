@@ -11,3 +11,16 @@ curl -X POST -H "Content-Type: application/json" -d '{"name": "A-1", "size": "1x
 
 ## Аренда грядки
 curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTU0MjUxNDAsImlhdCI6MTc1NTQyNDI0MCwic3ViIjoiMWM2Y2IzMDMtMzMyNy00N2QzLThhODgtMjg1OWM4M2FjZTkzIn0.7m-4LW9c4txOW3UqfFpYX57m78E09dp-hIhOwJpDyOU" http://localhost:8080/api/v1/plots/3735ad75-7c19-47d3-9456-8762af6daaa1/lease
+
+
+## Создать культуру
+
+curl -X POST -H "Content-Type: application/json" -d '{"name": "Tomato", "variety": "Cherry", "planting_season": "Spring", "harvesting_season": "Summer"}' http://localhost:8080/api/v1/crops
+
+## Посадить культуру на грядку
+
+curl -X POST -H "Content-Type: application/json" -d '{"crop_id": "416d3d6d-bede-4bb3-89be-6ec7ea3d782a"}' http://localhost:8080/api/v1/plots/99b143a0-71c2-4481-8fe1-0048288fb01c/plantings
+
+## Информация о посадках на участке
+
+curl http://localhost:8080/api/v1/plots/99b143a0-71c2-4481-8fe1-0048288fb01c/plantings
