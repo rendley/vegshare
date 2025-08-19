@@ -10,7 +10,7 @@ import (
 // UserService defines the interface for user service.
 type UserService interface {
 	GetUser(ctx context.Context, id uuid.UUID) (*models.UserProfile, error)
-	UpdateUser(ctx context.Context, id uuid.UUID, fullName, avatarURL string) (*models.UserProfile, error)
+	UpdateUser(ctx context.Context, id uuid.UUID, name, avatarURL string) (*models.UserProfile, error)
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
@@ -30,14 +30,14 @@ func (s *userService) GetUser(ctx context.Context, id uuid.UUID) (*models.UserPr
 }
 
 // UpdateUser updates a user's profile.
-func (s *userService) UpdateUser(ctx context.Context, id uuid.UUID, fullName, avatarURL string) (*models.UserProfile, error) {
+func (s *userService) UpdateUser(ctx context.Context, id uuid.UUID, name, avatarURL string) (*models.UserProfile, error) {
 	user, err := s.repo.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	user.FullName = fullName
-	user.AvatarURL = avatarURL
+	user.Name = name
+	user.AvatarURL = &avatarURL
 
 	err = s.repo.UpdateUser(ctx, user)
 	if err != nil {

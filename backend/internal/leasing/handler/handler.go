@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rendley/vegshare/backend/internal/leasing/service"
 	"github.com/rendley/vegshare/backend/pkg/api"
+	"github.com/rendley/vegshare/backend/pkg/middleware"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,8 +29,11 @@ func NewLeasingHandler(s service.Service, l *logrus.Logger) *LeasingHandler {
 }
 
 func (h *LeasingHandler) LeasePlot(w http.ResponseWriter, r *http.Request) {
-	// TODO: Получить userID из контекста.
-	userID, _ := uuid.Parse("aec44274-55b0-497a-a18b-7f8efe7d8a9e")
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+	if !ok {
+		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	plotIDStr := chi.URLParam(r, "plotID")
 	plotID, err := uuid.Parse(plotIDStr)
@@ -49,8 +53,11 @@ func (h *LeasingHandler) LeasePlot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *LeasingHandler) GetMyLeases(w http.ResponseWriter, r *http.Request) {
-	// TODO: Получить userID из контекста.
-	userID, _ := uuid.Parse("aec44274-55b0-497a-a18b-7f8efe7d8a9e")
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+	if !ok {
+		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	leases, err := h.service.GetMyLeases(r.Context(), userID)
 	if err != nil {

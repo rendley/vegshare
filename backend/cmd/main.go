@@ -23,6 +23,7 @@ import (
 	"github.com/rendley/vegshare/backend/pkg/database"
 	"github.com/rendley/vegshare/backend/pkg/jwt"
 	"github.com/rendley/vegshare/backend/pkg/logger"
+	"github.com/rendley/vegshare/backend/pkg/middleware"
 	"github.com/rendley/vegshare/backend/pkg/rabbitmq"
 	"github.com/rendley/vegshare/backend/pkg/security"
 )
@@ -52,6 +53,7 @@ func main() {
 
 	// --- Инициализация модулей ---
 
+	// Repositories
 	authRepo := authRepository.NewAuthRepository(db)
 	userRepo := userRepository.NewUserRepository(db)
 	farmRepo := farmRepository.NewRepository(db)
@@ -65,6 +67,9 @@ func main() {
 	leasingSvc := leasingService.NewLeasingService(leasingRepo, farmRepo)
 	operationsSvc := operationsService.NewOperationsService(operationsRepo, farmRepo, leasingRepo, rabbitMQClient)
 
+	// Middleware
+	mw := middleware.NewMiddleware(cfg)
+
 	// Handlers
 	authHandler := authHandler.NewAuthHandler(authSvc, log)
 	userHandler := userHandler.NewUserHandler(userSvc, log)
@@ -73,7 +78,7 @@ func main() {
 	operationsHandler := operationsHandler.NewOperationsHandler(operationsSvc, log)
 
 	// Создаем и запускаем сервер
-	srv := api.New(cfg, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler)
+	srv := api.New(cfg, mw, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler)
 
 	if err := srv.Start(); err != nil {
 		log.Fatalf("Server failed: %v", err)

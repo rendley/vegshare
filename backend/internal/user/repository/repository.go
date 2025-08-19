@@ -28,7 +28,7 @@ func NewUserRepository(db *sqlx.DB) UserRepository {
 // GetUserByID retrieves a user by their ID.
 func (r *userRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*models.UserProfile, error) {
 	var user models.UserProfile
-	query := "SELECT id, email, full_name, avatar_url, farm_id, created_at, updated_at FROM users WHERE id = $1"
+	query := "SELECT id, email, name, avatar_url, created_at, updated_at FROM users WHERE id = $1"
 	err := r.db.GetContext(ctx, &user, query, id)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось найти пользователя по id: %w", err)
@@ -39,7 +39,7 @@ func (r *userRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*models
 // UpdateUser updates a user's profile.
 func (r *userRepository) UpdateUser(ctx context.Context, user *models.UserProfile) error {
 	query := `UPDATE users SET 
-				full_name = :full_name, 
+				name = :name, 
 				avatar_url = :avatar_url,
 				updated_at = now()
 			  WHERE id = :id`

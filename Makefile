@@ -27,7 +27,10 @@ migrate-up:
 	migrate -path $(MIGRATIONS_DIR) -database "$(DB_URL)" up
 
 migrate-down:
-	migrate -path $(MIGRATIONS_DIR) -database "$(DB_URL)" down
+	migrate -path $(MIGRATIONS_DIR) -database "$(DB_URL)" down 1
+
+migrate-version:
+	migrate -path $(MIGRATIONS_DIR) -database "$(DB_URL)" version
 
 migrate-new:
 	@read -p "Введите название миграции: " name; \

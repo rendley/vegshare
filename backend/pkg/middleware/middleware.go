@@ -10,10 +10,11 @@ import (
 	"github.com/rendley/vegshare/backend/pkg/config"
 )
 
-// contextKey is a custom type to avoid key collisions in context.
-type contextKey string
+// ContextKey is a custom type to avoid key collisions in context.
+type ContextKey string
 
-const UserIDKey contextKey = "userID"
+// UserIDKey is the key for the user ID in the context.
+const UserIDKey ContextKey = "userID"
 
 type Middleware struct {
 	cfg *config.Config
@@ -69,5 +70,22 @@ func (m *Middleware) AuthMiddleware(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// CorsMiddleware добавляет заголовки CORS к ответам.
+func CorsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Если это pre-flight запрос (OPTIONS), просто возвращаем OK.
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	})
 }

@@ -8,12 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/rendley/vegshare/backend/internal/user/service"
 	"github.com/rendley/vegshare/backend/pkg/api"
+	"github.com/rendley/vegshare/backend/pkg/middleware"
 	"github.com/sirupsen/logrus"
 )
-
-type contextKey string
-
-const userIDKey contextKey = "userID"
 
 // --- DTO (Data Transfer Objects) ---
 
@@ -46,7 +43,11 @@ func NewUserHandler(service service.UserService, logger *logrus.Logger) *UserHan
 }
 
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	userID, _ := uuid.Parse("aec44274-55b0-497a-a18b-7f8efe7d8a9e")
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+	if !ok {
+		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	userProfile, err := h.service.GetUser(r.Context(), userID)
 	if err != nil {
@@ -59,7 +60,7 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(userIDKey).(uuid.UUID)
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
 		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -87,7 +88,7 @@ func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(userIDKey).(uuid.UUID)
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
 		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
 		return

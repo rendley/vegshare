@@ -12,11 +12,13 @@ import (
 	operationshandler "github.com/rendley/vegshare/backend/internal/operations/handler"
 	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	"github.com/rendley/vegshare/backend/pkg/config"
+	"github.com/rendley/vegshare/backend/pkg/middleware"
 )
 
 // Server - это наша основная структура сервера, которая объединяет все зависимости.
 type Server struct {
 	cfg               *config.Config
+	mw                *middleware.Middleware
 	AuthHandler       *authhandler.AuthHandler
 	UserHandler       *userhandler.UserHandler
 	FarmHandler       *farmhandler.FarmHandler
@@ -25,9 +27,10 @@ type Server struct {
 }
 
 // New - это конструктор для `Server`.
-func New(cfg *config.Config, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler, ops *operationshandler.OperationsHandler) *Server {
+func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler, ops *operationshandler.OperationsHandler) *Server {
 	return &Server{
 		cfg:               cfg,
+		mw:                mw,
 		AuthHandler:       auth,
 		UserHandler:       user,
 		FarmHandler:       farm,
@@ -43,18 +46,27 @@ func (s *Server) Start() error {
 
 	r := chi.NewRouter()
 
-	// Стандартные middleware
+	// Стандартные и CORS middleware
 	r.Use(chi_middleware.Logger)
 	r.Use(chi_middleware.Recoverer)
+	r.Use(middleware.CorsMiddleware) // Добавляем наш CORS middleware
 	r.Use(chi_middleware.RedirectSlashes)
 	r.Use(chi_middleware.StripSlashes)
 
-	// Регистрируем маршруты всех наших хендлеров
-	s.AuthHandler.RegisterRoutes(r)
-	s.UserHandler.RegisterRoutes(r)
-	s.FarmHandler.RegisterRoutes(r)
-	s.LeasingHandler.RegisterRoutes(r)
-	s.OperationsHandler.RegisterRoutes(r)
+	// Публичные маршруты (аутентификация)
+	r.Group(func(r chi.Router) {
+		s.AuthHandler.RegisterRoutes(r)
+	})
+
+	// Защищенные маршруты
+	r.Group(func(r chi.Router) {
+		r.Use(s.mw.AuthMiddleware) // Применяем Auth middleware
+
+		s.UserHandler.RegisterRoutes(r)
+		s.FarmHandler.RegisterRoutes(r)
+		s.LeasingHandler.RegisterRoutes(r)
+		s.OperationsHandler.RegisterRoutes(r)
+	})
 
 	return http.ListenAndServe(addr, r)
 }
