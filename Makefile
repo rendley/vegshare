@@ -38,7 +38,7 @@ migrate-new:
 
 # Тесты
 test:
-	go test -v ./backend/...
+	(cd backend && go test -v ./...)
 
 # Очистка
 clean:
