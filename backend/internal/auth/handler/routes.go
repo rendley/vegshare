@@ -1,9 +1,19 @@
+
 package handler
 
-import "github.com/go-chi/chi/v5"
+import (
+	"net/http"
 
-// RegisterRoutes registers the auth routes.
-func (h *AuthHandler) RegisterRoutes(r chi.Router) {
-	r.Post("/api/v1/register", h.Register)
-	r.Post("/api/v1/login", h.Login)
+	"github.com/go-chi/chi/v5"
+)
+
+// Routes returns a new router for the auth handler.
+func (h *AuthHandler) Routes() http.Handler {
+	r := chi.NewRouter()
+
+	r.Post("/register", h.Register)
+	r.Post("/login", h.Login)
+
+	return r
 }
+

@@ -3,6 +3,7 @@ package api
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	chi_middleware "github.com/go-chi/chi/v5/middleware"
@@ -49,27 +50,35 @@ func (s *Server) Start() error {
 
 	r := chi.NewRouter()
 
-	// Стандартные и CORS middleware
-	r.Use(chi_middleware.Logger)
-	r.Use(chi_middleware.Recoverer)
-	r.Use(middleware.CorsMiddleware) // Добавляем наш CORS middleware
-	r.Use(chi_middleware.RedirectSlashes)
-	r.Use(chi_middleware.StripSlashes)
+	// A good base middleware stack
+	r.Use(chi_middleware.RequestID)
+	r.Use(chi_middleware.RealIP)
+	r.Use(chi_middleware.Logger) // Logs the start and end of each request with the path and duration
+	r.Use(chi_middleware.Recoverer) // Recovers from panics without crashing server
+	r.Use(middleware.CorsMiddleware)   // Handles CORS headers
+	r.Use(chi_middleware.RedirectSlashes) // Redirects slashes on paths
+	r.Use(chi_middleware.StripSlashes)   // Strips slashes from paths
 
-	// Публичные маршруты (аутентификация, каталог)
-	r.Group(func(r chi.Router) {
-		s.AuthHandler.RegisterRoutes(r)
-		s.CatalogHandler.RegisterRoutes(r) // Маршруты каталога считаем публичными
-	})
+	// Set a timeout value on the request context (ctx), that will signal
+	// through ctx.Done() that the request has timed out and further
+	// processing should be stopped.
+	r.Use(chi_middleware.Timeout(60 * time.Second))
 
-	// Защищенные маршруты
-	r.Group(func(r chi.Router) {
-		r.Use(s.mw.AuthMiddleware) // Применяем Auth middleware
+	// API v1 routes
+	r.Route("/api/v1", func(r chi.Router) {
+		// Public routes
+		r.Mount("/auth", s.AuthHandler.Routes())
 
-		s.UserHandler.RegisterRoutes(r)
-		s.FarmHandler.RegisterRoutes(r)
-		s.LeasingHandler.RegisterRoutes(r)
-		s.OperationsHandler.RegisterRoutes(r)
+		// Protected routes
+		r.Group(func(r chi.Router) {
+			// r.Use(s.mw.AuthMiddleware) // TODO: Re-enable after refactoring all handlers
+			// r.Mount("/users", s.UserHandler.Routes())
+
+			// s.FarmHandler.RegisterRoutes(r)
+			// s.LeasingHandler.RegisterRoutes(r)
+			// s.OperationsHandler.RegisterRoutes(r)
+			// s.CatalogHandler.RegisterRoutes(r)
+		})
 	})
 
 	return http.ListenAndServe(addr, r)
