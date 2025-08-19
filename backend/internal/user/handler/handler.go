@@ -15,14 +15,14 @@ import (
 // --- DTO (Data Transfer Objects) ---
 
 type UpdateProfileRequest struct {
-	FullName  string `json:"full_name" validate:"omitempty,min=2,max=100"`
+	Name      string `json:"name" validate:"omitempty,min=2,max=100"`
 	AvatarURL string `json:"avatar_url" validate:"omitempty,url"`
 }
 
 type ProfileResponse struct {
 	ID        string `json:"id"`
 	Email     string `json:"email"`
-	FullName  string `json:"full_name"`
+	Name      string `json:"name"`
 	AvatarURL string `json:"avatar_url"`
 }
 
@@ -77,7 +77,7 @@ func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedUser, err := h.service.UpdateUser(r.Context(), userID, req.FullName, req.AvatarURL)
+	updatedUser, err := h.service.UpdateUser(r.Context(), userID, req.Name, req.AvatarURL)
 	if err != nil {
 		h.logger.Errorf("ошибка при обновлении пользователя: %v", err)
 		api.RespondWithError(w, "Could not update user profile", http.StatusInternalServerError)

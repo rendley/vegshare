@@ -71,8 +71,8 @@ func (s *Server) Start() error {
 
 		// Protected routes
 		r.Group(func(r chi.Router) {
-			// r.Use(s.mw.AuthMiddleware) // TODO: Re-enable after refactoring all handlers
-			// r.Mount("/users", s.UserHandler.Routes())
+			r.Use(s.mw.AuthMiddleware)
+			r.Mount("/users", s.UserHandler.Routes())
 
 			// s.FarmHandler.RegisterRoutes(r)
 			// s.LeasingHandler.RegisterRoutes(r)

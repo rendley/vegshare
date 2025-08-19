@@ -1,12 +1,20 @@
+
 package handler
 
-import "github.com/go-chi/chi/v5"
+import (
+	"net/http"
 
-func (h *UserHandler) RegisterRoutes(r chi.Router) {
-	r.Route("/api/v1/users/me", func(r chi.Router) {
-		// Здесь в будущем можно будет добавить middleware для аутентификации
-		r.Get("/", h.GetProfile)
-		r.Patch("/", h.UpdateProfile)
-		r.Delete("/", h.DeleteAccount)
-	})
+	"github.com/go-chi/chi/v5"
+)
+
+// Routes returns a new router for the user handler.
+func (h *UserHandler) Routes() http.Handler {
+	r := chi.NewRouter()
+
+	r.Get("/me", h.GetProfile)
+	r.Patch("/me", h.UpdateProfile)
+	r.Delete("/me", h.DeleteAccount)
+
+	return r
 }
+
