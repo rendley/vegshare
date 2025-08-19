@@ -29,11 +29,11 @@ type service struct {
 	farmRepo       farmRepository.Repository
 	leasingRepo    leasingRepository.Repository
 	catalogService catalogService.Service
-	rabbitmq       *rabbitmq.Client
+	rabbitmq       rabbitmq.ClientInterface
 }
 
 // NewOperationsService - конструктор для сервиса.
-func NewOperationsService(repo repository.Repository, farmRepo farmRepository.Repository, leasingRepo leasingRepository.Repository, catalogService catalogService.Service, rabbitmq *rabbitmq.Client) Service {
+func NewOperationsService(repo repository.Repository, farmRepo farmRepository.Repository, leasingRepo leasingRepository.Repository, catalogService catalogService.Service, rabbitmq rabbitmq.ClientInterface) Service {
 	return &service{
 		repo:           repo,
 		farmRepo:       farmRepo,
