@@ -1,11 +1,19 @@
+
 package handler
 
-import "github.com/go-chi/chi/v5"
+import (
+	"net/http"
 
-// RegisterRoutes registers all endpoints for the catalog handler.
-func (h *CatalogHandler) RegisterRoutes(r chi.Router) {
-	r.Route("/api/v1/crops", func(r chi.Router) {
-		r.Get("/", h.GetAllCrops)
-		r.Post("/", h.CreateCrop)
-	})
+	"github.com/go-chi/chi/v5"
+)
+
+// Routes returns a new router for the catalog handler.
+func (h *CatalogHandler) Routes() http.Handler {
+	r := chi.NewRouter()
+
+	r.Get("/crops", h.GetAllCrops)
+	r.Post("/crops", h.CreateCrop)
+
+	return r
 }
+

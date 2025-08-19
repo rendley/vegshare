@@ -68,6 +68,7 @@ func (s *Server) Start() error {
 	r.Route("/api/v1", func(r chi.Router) {
 		// Public routes
 		r.Mount("/auth", s.AuthHandler.Routes())
+		r.Mount("/catalog", s.CatalogHandler.Routes())
 
 		// Protected routes
 		r.Group(func(r chi.Router) {
