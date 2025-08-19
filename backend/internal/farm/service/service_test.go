@@ -19,23 +19,7 @@ type MockFarmRepository struct {
 
 // Implement all methods of the repository.Repository interface
 
-func (m *MockFarmRepository) GetAllCrops(ctx context.Context) ([]models.Crop, error) {
-	args := m.Called(ctx)
-	return args.Get(0).([]models.Crop), args.Error(1)
-}
 
-func (m *MockFarmRepository) GetCropByID(ctx context.Context, id uuid.UUID) (*models.Crop, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.Crop), args.Error(1)
-}
-
-func (m *MockFarmRepository) CreateCrop(ctx context.Context, crop *models.Crop) error {
-	args := m.Called(ctx, crop)
-	return args.Error(0)
-}
 
 func (m *MockFarmRepository) CreateRegion(ctx context.Context, region *models.Region) error {
 	args := m.Called(ctx, region)

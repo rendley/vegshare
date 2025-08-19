@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/rendley/vegshare/backend/internal/farm/models"
+	"github.com/rendley/vegshare/backend/internal/catalog/models"
 )
 
 // Repository определяет контракт для хранилища.

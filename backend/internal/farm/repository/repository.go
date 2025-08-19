@@ -11,10 +11,7 @@ import (
 
 // Repository - это ИНТЕРФЕЙС, который определяет "контракт" для нашего хранилища.
 type Repository interface {
-	// Crop methods
-	GetAllCrops(ctx context.Context) ([]models.Crop, error)
-	GetCropByID(ctx context.Context, id uuid.UUID) (*models.Crop, error)
-	CreateCrop(ctx context.Context, crop *models.Crop) error
+	
 
 	// Region methods
 	CreateRegion(ctx context.Context, region *models.Region) error

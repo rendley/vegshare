@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	catalogModels "github.com/rendley/vegshare/backend/internal/catalog/models"
+	catalogService "github.com/rendley/vegshare/backend/internal/catalog/service"
 	farmModels "github.com/rendley/vegshare/backend/internal/farm/models"
 	farmRepository "github.com/rendley/vegshare/backend/internal/farm/repository"
 	leasingRepository "github.com/rendley/vegshare/backend/internal/leasing/repository"
@@ -16,30 +18,32 @@ import (
 
 // Service определяет контракт для бизнес-логики.
 type Service interface {
-	PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUID) (*farmModels.PlotCrop, error)
-	GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]farmModels.PlotCrop, error)
+	PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUID) (*catalogModels.PlotCrop, error)
+	GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]catalogModels.PlotCrop, error)
 	RemoveCrop(ctx context.Context, plantingID uuid.UUID) error
 	PerformAction(ctx context.Context, plotID uuid.UUID, action string) error
 }
 
 type service struct {
-	repo        repository.Repository
-	farmRepo    farmRepository.Repository
-	leasingRepo leasingRepository.Repository
-	rabbitmq    *rabbitmq.Client
+	repo           repository.Repository
+	farmRepo       farmRepository.Repository
+	leasingRepo    leasingRepository.Repository
+	catalogService catalogService.Service
+	rabbitmq       *rabbitmq.Client
 }
 
 // NewOperationsService - конструктор для сервиса.
-func NewOperationsService(repo repository.Repository, farmRepo farmRepository.Repository, leasingRepo leasingRepository.Repository, rabbitmq *rabbitmq.Client) Service {
+func NewOperationsService(repo repository.Repository, farmRepo farmRepository.Repository, leasingRepo leasingRepository.Repository, catalogService catalogService.Service, rabbitmq *rabbitmq.Client) Service {
 	return &service{
-		repo:        repo,
-		farmRepo:    farmRepo,
-		leasingRepo: leasingRepo,
-		rabbitmq:    rabbitmq,
+		repo:           repo,
+		farmRepo:       farmRepo,
+		leasingRepo:    leasingRepo,
+		catalogService: catalogService,
+		rabbitmq:       rabbitmq,
 	}
 }
 
-func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUID) (*farmModels.PlotCrop, error) {
+func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUID) (*catalogModels.PlotCrop, error) {
 	// ... (previous implementation)
 	leases, err := s.leasingRepo.GetLeasesByUserID(ctx, userID)
 	if err != nil {
@@ -56,13 +60,13 @@ func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUI
 		return nil, fmt.Errorf("у пользователя нет активной аренды для грядки %s", plotID)
 	}
 
-	_, err = s.farmRepo.GetCropByID(ctx, cropID)
+	_, err = s.catalogService.GetCropByID(ctx, cropID)
 	if err != nil {
 		return nil, fmt.Errorf("культура с ID %s не найдена: %w", cropID, err)
 	}
 
 	now := time.Now()
-	plotCrop := &farmModels.PlotCrop{
+	plotCrop := &catalogModels.PlotCrop{
 		ID:        uuid.New(),
 		PlotID:    plotID,
 		CropID:    cropID,
@@ -80,7 +84,7 @@ func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUI
 	return plotCrop, nil
 }
 
-func (s *service) GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]farmModels.PlotCrop, error) {
+func (s *service) GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]catalogModels.PlotCrop, error) {
 	return s.repo.GetPlotCrops(ctx, plotID)
 }
 

@@ -4,11 +4,7 @@ import "github.com/go-chi/chi/v5"
 
 // RegisterRoutes регистрирует все эндпоинты для обработчика фермы.
 func (h *FarmHandler) RegisterRoutes(r chi.Router) {
-	// --- Маршруты для Культур ---
-	r.Route("/api/v1/crops", func(r chi.Router) {
-		r.Get("/", h.GetAllCrops)
-		r.Post("/", h.CreateCrop)
-	})
+	
 
 	// --- Маршруты для Регионов ---
 	r.Route("/api/v1/regions", func(r chi.Router) {

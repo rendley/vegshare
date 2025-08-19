@@ -7,6 +7,9 @@ import (
 	authHandler "github.com/rendley/vegshare/backend/internal/auth/handler"
 	authRepository "github.com/rendley/vegshare/backend/internal/auth/repository"
 	authService "github.com/rendley/vegshare/backend/internal/auth/service"
+	catalogHandler "github.com/rendley/vegshare/backend/internal/catalog/handler"
+	catalogRepository "github.com/rendley/vegshare/backend/internal/catalog/repository"
+	catalogService "github.com/rendley/vegshare/backend/internal/catalog/service"
 	farmHandler "github.com/rendley/vegshare/backend/internal/farm/handler"
 	farmRepository "github.com/rendley/vegshare/backend/internal/farm/repository"
 	farmService "github.com/rendley/vegshare/backend/internal/farm/service"
@@ -59,13 +62,15 @@ func main() {
 	farmRepo := farmRepository.NewRepository(db)
 	leasingRepo := leasingRepository.NewRepository(db)
 	operationsRepo := operationsRepository.NewRepository(db)
+	catalogRepo := catalogRepository.NewRepository(db)
 
 	// Services
 	authSvc := authService.NewAuthService(authRepo, hasher, jwtGen)
 	userSvc := userService.NewUserService(userRepo)
 	farmSvc := farmService.NewFarmService(farmRepo)
 	leasingSvc := leasingService.NewLeasingService(leasingRepo, farmRepo)
-	operationsSvc := operationsService.NewOperationsService(operationsRepo, farmRepo, leasingRepo, rabbitMQClient)
+	catalogSvc := catalogService.NewService(catalogRepo)
+	operationsSvc := operationsService.NewOperationsService(operationsRepo, farmRepo, leasingRepo, catalogSvc, rabbitMQClient)
 
 	// Middleware
 	mw := middleware.NewMiddleware(cfg)
@@ -76,9 +81,10 @@ func main() {
 	farmHandler := farmHandler.NewFarmHandler(farmSvc, log)
 	leasingHandler := leasingHandler.NewLeasingHandler(leasingSvc, log)
 	operationsHandler := operationsHandler.NewOperationsHandler(operationsSvc, log)
+	catalogHandler := catalogHandler.NewCatalogHandler(catalogSvc, log)
 
 	// Создаем и запускаем сервер
-	srv := api.New(cfg, mw, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler)
+	srv := api.New(cfg, mw, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler, catalogHandler)
 
 	if err := srv.Start(); err != nil {
 		log.Fatalf("Server failed: %v", err)
