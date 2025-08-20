@@ -74,11 +74,10 @@ func (s *Server) Start() error {
 		r.Group(func(r chi.Router) {
 			r.Use(s.mw.AuthMiddleware)
 			r.Mount("/users", s.UserHandler.Routes())
+			r.Mount("/farm", s.FarmHandler.Routes())
 
-			// s.FarmHandler.RegisterRoutes(r)
 			// s.LeasingHandler.RegisterRoutes(r)
 			// s.OperationsHandler.RegisterRoutes(r)
-			// s.CatalogHandler.RegisterRoutes(r)
 		})
 	})
 

@@ -1,13 +1,17 @@
 package handler
 
-import "github.com/go-chi/chi/v5"
+import (
+	"net/http"
 
-// RegisterRoutes регистрирует все эндпоинты для обработчика фермы.
-func (h *FarmHandler) RegisterRoutes(r chi.Router) {
-	
+	"github.com/go-chi/chi/v5"
+)
+
+// Routes returns a new router for the farm handler, defining all sub-routes.
+func (h *FarmHandler) Routes() http.Handler {
+	r := chi.NewRouter()
 
 	// --- Маршруты для Регионов ---
-	r.Route("/api/v1/regions", func(r chi.Router) {
+	r.Route("/regions", func(r chi.Router) {
 		r.Post("/", h.CreateRegion)
 		r.Get("/", h.GetAllRegions)
 
@@ -24,7 +28,7 @@ func (h *FarmHandler) RegisterRoutes(r chi.Router) {
 	})
 
 	// --- Маршруты для Земельных участков ---
-	r.Route("/api/v1/land-parcels", func(r chi.Router) {
+	r.Route("/land-parcels", func(r chi.Router) {
 		// Маршруты для конкретного земельного участка
 		r.Route("/{parcelID}", func(r chi.Router) {
 			r.Get("/", h.GetLandParcelByID)
@@ -38,7 +42,7 @@ func (h *FarmHandler) RegisterRoutes(r chi.Router) {
 	})
 
 	// --- Маршруты для Теплиц ---
-	r.Route("/api/v1/greenhouses", func(r chi.Router) {
+	r.Route("/greenhouses", func(r chi.Router) {
 		// Маршруты для конкретной теплицы
 		r.Route("/{greenhouseID}", func(r chi.Router) {
 			r.Get("/", h.GetGreenhouseByID)
@@ -52,11 +56,13 @@ func (h *FarmHandler) RegisterRoutes(r chi.Router) {
 	})
 
 	// --- Маршруты для Грядок ---
-	r.Route("/api/v1/plots", func(r chi.Router) {
+	r.Route("/plots", func(r chi.Router) {
 		r.Route("/{plotID}", func(r chi.Router) {
 			r.Get("/", h.GetPlotByID)
 			r.Put("/", h.UpdatePlot)
 			r.Delete("/", h.DeletePlot)
 		})
 	})
+
+	return r
 }
