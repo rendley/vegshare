@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/rendley/vegshare/backend/pkg/config"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +30,8 @@ func TestAuthMiddleware(t *testing.T) {
 			Secret: "test-secret",
 		},
 	}
-	mw := NewMiddleware(cfg)
+	logger := logrus.New()
+	mw := NewMiddleware(cfg, logger)
 
 	t.Run("should pass with valid token", func(t *testing.T) {
 		// Arrange

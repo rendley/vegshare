@@ -8,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/rendley/vegshare/backend/pkg/config"
+	"github.com/sirupsen/logrus"
 )
 
 // ContextKey is a custom type to avoid key collisions in context.
@@ -17,11 +18,12 @@ type ContextKey string
 const UserIDKey ContextKey = "userID"
 
 type Middleware struct {
-	cfg *config.Config
+	cfg    *config.Config
+	logger *logrus.Logger
 }
 
-func NewMiddleware(cfg *config.Config) *Middleware {
-	return &Middleware{cfg: cfg}
+func NewMiddleware(cfg *config.Config, logger *logrus.Logger) *Middleware {
+	return &Middleware{cfg: cfg, logger: logger}
 }
 
 // AuthMiddleware is a middleware to authenticate users using JWT.
@@ -29,12 +31,14 @@ func (m *Middleware) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
+			m.logger.Info("Auth header not found")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		headerParts := strings.Split(authHeader, " ")
 		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+			m.logger.Info("Invalid auth header format")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -46,27 +50,33 @@ func (m *Middleware) AuthMiddleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil || !token.Valid {
+			m.logger.Info("Invalid token")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
+			m.logger.Info("Invalid token claims")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		userIDStr, ok := claims["sub"].(string)
 		if !ok {
+			m.logger.Info("Invalid userID in token")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		userID, err := uuid.Parse(userIDStr)
 		if err != nil {
+			m.logger.Info("Failed to parse userID")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+
+		m.logger.Infof("userID from token: %s", userID)
 
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))

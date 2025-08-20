@@ -73,7 +73,7 @@ func main() {
 	operationsSvc := operationsService.NewOperationsService(operationsRepo, farmRepo, leasingRepo, catalogSvc, rabbitMQClient)
 
 	// Middleware
-	mw := middleware.NewMiddleware(cfg)
+	mw := middleware.NewMiddleware(cfg, log)
 
 	// Handlers
 	authHandler := authHandler.NewAuthHandler(authSvc, log)

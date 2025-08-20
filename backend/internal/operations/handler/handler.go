@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rendley/vegshare/backend/internal/operations/service"
 	"github.com/rendley/vegshare/backend/pkg/api"
+	"github.com/rendley/vegshare/backend/pkg/middleware"
 	"github.com/sirupsen/logrus"
 )
 
@@ -38,8 +39,11 @@ func NewOperationsHandler(s service.Service, l *logrus.Logger) *OperationsHandle
 }
 
 func (h *OperationsHandler) PlantCrop(w http.ResponseWriter, r *http.Request) {
-	// TODO: Получить userID из JWT токена
-	userID := uuid.MustParse("aec44274-55b0-497a-a18b-7f8efe7d8a9e")
+	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+	if !ok {
+		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	plotIDStr := chi.URLParam(r, "plotID")
 	plotID, err := uuid.Parse(plotIDStr)
