@@ -16,7 +16,7 @@ database:
 
 jwt:
   secret: "my_super_secret_key" # Секретный ключ для подписи токенов
-  access_token_ttl: "15m"  # 15 минут
+  access_token_ttl: "8h"  # 8 часов
   refresh_token_ttl: "168h" # 7 дней
 
 redis:
