@@ -75,9 +75,8 @@ func (s *Server) Start() error {
 			r.Use(s.mw.AuthMiddleware)
 			r.Mount("/users", s.UserHandler.Routes())
 			r.Mount("/farm", s.FarmHandler.Routes())
-
-			// s.LeasingHandler.RegisterRoutes(r)
-			// s.OperationsHandler.RegisterRoutes(r)
+			r.Mount("/leasing", s.LeasingHandler.Routes())
+			r.Mount("/operations", s.OperationsHandler.Routes())
 		})
 	})
 
