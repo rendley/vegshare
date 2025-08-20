@@ -1,71 +1,88 @@
-# Версия синтаксиса docker-compose.
-version: '3.8'
-
-# В этом разделе мы определяем все сервисы (контейнеры),
-# которые необходимы для работы нашего приложения.
 services:
-  # Сервис базы данных PostgreSQL.
-  # Здесь будут храниться данные о пользователях, фермах, участках.
   postgres:
-    image: postgres:16 # Используем официальный образ PostgreSQL 16-й версии.
-    environment: # Переменные окружения для настройки контейнера.
-      POSTGRES_USER: vegshare # Имя пользователя для подключения к БД.
-      POSTGRES_PASSWORD: vegshare # Пароль для подключения к БД.
-      POSTGRES_HOST_AUTH_METHOD: scram-sha-256 # Метод аутентификации.
+    image: postgres:16
+    environment:
+      POSTGRES_USER: vegshare
+      POSTGRES_PASSWORD: vegshare
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
     ports:
-      # "Пробрасываем" порт 5432 из контейнера на порт 5432 нашего компьютера,
-      # чтобы мы могли подключаться к БД инструментами вроде DBeaver.
       - "5432:5432"
     volumes:
-      # Связываем данные PostgreSQL с именованным томом 'pg_data',
-      # чтобы при перезапуске контейнера наши данные не терялись.
       - pg_data:/var/lib/postgresql/data
-    restart: unless-stopped # Автоматически перезапускать контейнер, если он остановился.
+    restart: unless-stopped
+    networks:
+      - vegshare-net
 
-  # Сервис Redis. Это быстрая база данных в памяти.
-  # Может использоваться для кэширования, хранения сессий и т.д.
   redis:
     image: redis:7.2
     ports:
-      - "6379:6379" # Стандартный порт Redis.
+      - "6379:6379"
     restart: unless-stopped
+    networks:
+      - vegshare-net
 
-  # НАШ НОВЫЙ СЕРВИС
-  # Сервис RabbitMQ - брокер сообщений.
-  # Он будет действовать как почтовое отделение для асинхронных задач.
   rabbitmq:
-    image: rabbitmq:3-management # Используем образ с плагином для веб-интерфейса.
-    hostname: rabbitmq # Устанавливаем сетевое имя, чтобы другие контейнеры могли к нему обращаться.
+    image: rabbitmq:3-management
+    hostname: rabbitmq
     environment:
-      # Устанавливаем логин и пароль по умолчанию для доступа.
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     ports:
-      # Порт 5672 используется для подключения приложений к RabbitMQ (протокол AMQP).
       - "5672:5672"
-      # Порт 15672 - это веб-интерфейс для управления и мониторинга.
-      # Вы сможете открыть в браузере http://localhost:15672
       - "15672:15672"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - vegshare-net
 
-  # НАШ НОВЫЙ СЕРВИС
-  # Сервис MediaMTX - медиа-сервер.
-  # Его задача - принимать видеопотоки с камер (по RTSP) и раздавать их
-  # пользователям в браузер (по WebRTC).
   mediamtx:
-    image: bluenviron/mediamtx:latest # Используем официальный образ mediamtx.
+    image: bluenviron/mediamtx:latest
     ports:
-      # 8554 - стандартный порт для приема RTSP потоков.
       - "8554:8554"
-      # 8888 - порт для сигналинга WebRTC через HTTP.
       - "8888:8888"
-      # 8889 - порт для данных WebRTC через UDP (сам видеопоток).
       - "8889:8889/udp"
-      # 1935 - стандартный порт для протокола RTMP (еще один протокол стриминга).
       - "1935:1935"
     restart: unless-stopped
+    networks:
+      - vegshare-net
 
-# Здесь мы определяем тома (volumes) для хранения данных.
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - vegshare-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - vegshare-net
+
 volumes:
-  pg_data: # Именованный том для данных PostgreSQL.
+  pg_data:
 
+networks:
+  vegshare-net:

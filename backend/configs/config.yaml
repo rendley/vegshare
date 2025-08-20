@@ -4,7 +4,7 @@ http:
 
 
 database:
-  host: "localhost"
+  host: "postgres"
   port: 5432
   user: "vegshare"
   dbname: "vegshare"
@@ -12,7 +12,7 @@ database:
   sslmode: "disable"
 #  max_connections: 10
 #  timeout: 5s
-#  url: "postgres://vegshare:vegshare@localhost:5432/db?sslmode=disable"
+#  url: "postgres://vegshare:vegshare@postgres:5432/db?sslmode=disable"
 
 jwt:
   secret: "my_super_secret_key" # Секретный ключ для подписи токенов
@@ -20,8 +20,8 @@ jwt:
   refresh_token_ttl: "168h" # 7 дней
 
 redis:
-  url: "redis://localhost:6379"
+  url: "redis://redis:6379"
   ttl: 3600             # TTL кеша в секундах
 
 rabbitmq:
-  url: "amqp://guest:guest@localhost:5672/"
+  url: "amqp://guest:guest@rabbitmq:5672/"

@@ -48,6 +48,11 @@ export interface PlotCrop {
   status: string;
 }
 
+interface AuthRequest {
+  email: string;
+  password: string;
+}
+
 // --- Слайс API ---
 export const apiSlice = createApi({
   reducerPath: 'api',
@@ -82,14 +87,14 @@ export const apiSlice = createApi({
     }),
 
     // MUTATIONS
-    login: builder.mutation<AuthResponse, { email, password }>({ 
+    login: builder.mutation<AuthResponse, AuthRequest>({ 
       query: (credentials) => ({
         url: 'auth/login',
         method: 'POST',
         body: credentials,
       }),
     }),
-    register: builder.mutation<AuthResponse, { email, password }>({ 
+    register: builder.mutation<AuthResponse, AuthRequest>({ 
       query: (credentials) => ({
         url: 'auth/register',
         method: 'POST',
