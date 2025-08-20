@@ -69,14 +69,14 @@ func (s *Server) Start() error {
 		// Public routes
 		r.Mount("/auth", s.AuthHandler.Routes())
 		r.Mount("/catalog", s.CatalogHandler.Routes())
+		r.Mount("/users", s.UserHandler.Routes())
+		r.Mount("/farm", s.FarmHandler.Routes())
+		r.Mount("/leasing", s.LeasingHandler.Routes())
+		r.Mount("/operations", s.OperationsHandler.Routes())
 
 		// Protected routes
 		r.Group(func(r chi.Router) {
 			r.Use(s.mw.AuthMiddleware)
-			r.Mount("/users", s.UserHandler.Routes())
-			r.Mount("/farm", s.FarmHandler.Routes())
-			r.Mount("/leasing", s.LeasingHandler.Routes())
-			r.Mount("/operations", s.OperationsHandler.Routes())
 		})
 	})
 
