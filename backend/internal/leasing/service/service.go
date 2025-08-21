@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	farmRepository "github.com/rendley/vegshare/backend/internal/farm/repository"
+	"github.com/rendley/vegshare/backend/internal/leasing/models"
 	"github.com/rendley/vegshare/backend/internal/leasing/repository"
-	"github.com/rendley/vegshare/backend/internal/farm/models"
+	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
 )
 
 // Service определяет контракт для бизнес-логики аренды.
@@ -18,22 +18,21 @@ type Service interface {
 }
 
 type service struct {
-	repo     repository.Repository
-	farmRepo farmRepository.Repository // Зависимость от репозитория другого модуля
+	repo    repository.Repository
+	plotSvc plotService.Service
 }
 
 // NewLeasingService - конструктор для сервиса аренды.
-func NewLeasingService(repo repository.Repository, farmRepo farmRepository.Repository) Service {
+func NewLeasingService(repo repository.Repository, plotSvc plotService.Service) Service {
 	return &service{
-		repo:     repo,
-		farmRepo: farmRepo,
+		repo:    repo,
+		plotSvc: plotSvc,
 	}
 }
 
 func (s *service) LeasePlot(ctx context.Context, userID, plotID uuid.UUID) (*models.PlotLease, error) {
-	// Шаг 1: Получаем грядку из репозитория farm, чтобы проверить ее статус.
-	// Это критически важный шаг, который использует зависимость от другого модуля.
-	plot, err := s.farmRepo.GetPlotByID(ctx, plotID)
+	// Шаг 1: Получаем грядку из сервиса plot, чтобы проверить ее статус.
+	plot, err := s.plotSvc.GetPlotByID(ctx, plotID)
 	if err != nil {
 		return nil, fmt.Errorf("грядка с ID %s не найдена: %w", plotID, err)
 	}
@@ -61,10 +60,9 @@ func (s *service) LeasePlot(ctx context.Context, userID, plotID uuid.UUID) (*mod
 		return nil, fmt.Errorf("не удалось создать запись аренды: %w", err)
 	}
 
-	// Шаг 5: Обновляем статус грядки в таблице plots.
-	plot.Status = "rented"
-	plot.UpdatedAt = time.Now()
-	if err := s.farmRepo.UpdatePlot(ctx, plot); err != nil {
+	// Шаг 5: Обновляем статус грядки через сервис plot.
+	_, err = s.plotSvc.UpdatePlot(ctx, plot.ID, plot.Name, plot.Size, "rented")
+	if err != nil {
 		// Здесь в реальном приложении нужно было бы откатить создание аренды,
 		// но без транзакции мы этого сделать не можем. Пока оставляем так.
 		// TODO: Обернуть всю операцию в транзакцию БД.

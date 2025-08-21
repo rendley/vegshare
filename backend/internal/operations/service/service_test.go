@@ -8,7 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/streadway/amqp"
 	"github.com/rendley/vegshare/backend/internal/catalog/models"
-	farmModels "github.com/rendley/vegshare/backend/internal/farm/models"
+	leasingModels "github.com/rendley/vegshare/backend/internal/leasing/models"
+	plotModels "github.com/rendley/vegshare/backend/internal/plot/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,91 +37,47 @@ func (m *MockOperationsRepository) DeletePlotCrop(ctx context.Context, plantingI
 	return args.Error(0)
 }
 
-// MockFarmRepository mocks the farm repository
-type MockFarmRepository struct {
+// MockPlotService mocks the plot service
+type MockPlotService struct {
 	mock.Mock
 }
 
-// Implement the full farm.Repository interface
-func (m *MockFarmRepository) CreateRegion(ctx context.Context, region *farmModels.Region) error {
-	return m.Called(ctx, region).Error(0)
-}
-func (m *MockFarmRepository) GetRegionByID(ctx context.Context, id uuid.UUID) (*farmModels.Region, error) {
-	return nil, m.Called(ctx, id).Error(1)
-}
-func (m *MockFarmRepository) GetAllRegions(ctx context.Context) ([]farmModels.Region, error) {
-	return nil, m.Called(ctx).Error(1)
-}
-func (m *MockFarmRepository) UpdateRegion(ctx context.Context, region *farmModels.Region) error {
-	return m.Called(ctx, region).Error(0)
-}
-func (m *MockFarmRepository) DeleteRegion(ctx context.Context, id uuid.UUID) error {
-	return m.Called(ctx, id).Error(0)
-}
-func (m *MockFarmRepository) CreateLandParcel(ctx context.Context, parcel *farmModels.LandParcel) error {
-	return m.Called(ctx, parcel).Error(0)
-}
-func (m *MockFarmRepository) GetLandParcelByID(ctx context.Context, id uuid.UUID) (*farmModels.LandParcel, error) {
-	return nil, m.Called(ctx, id).Error(1)
-}
-func (m *MockFarmRepository) GetLandParcelsByRegion(ctx context.Context, regionID uuid.UUID) ([]farmModels.LandParcel, error) {
-	return nil, m.Called(ctx, regionID).Error(1)
-}
-func (m *MockFarmRepository) UpdateLandParcel(ctx context.Context, parcel *farmModels.LandParcel) error {
-	return m.Called(ctx, parcel).Error(0)
-}
-func (m *MockFarmRepository) DeleteLandParcel(ctx context.Context, id uuid.UUID) error {
-	return m.Called(ctx, id).Error(0)
-}
-func (m *MockFarmRepository) CreateGreenhouse(ctx context.Context, greenhouse *farmModels.Greenhouse) error {
-	return m.Called(ctx, greenhouse).Error(0)
-}
-func (m *MockFarmRepository) GetGreenhouseByID(ctx context.Context, id uuid.UUID) (*farmModels.Greenhouse, error) {
-	return nil, m.Called(ctx, id).Error(1)
-}
-func (m *MockFarmRepository) GetGreenhousesByLandParcel(ctx context.Context, landParcelID uuid.UUID) ([]farmModels.Greenhouse, error) {
-	return nil, m.Called(ctx, landParcelID).Error(1)
-}
-func (m *MockFarmRepository) UpdateGreenhouse(ctx context.Context, greenhouse *farmModels.Greenhouse) error {
-	return m.Called(ctx, greenhouse).Error(0)
-}
-func (m *MockFarmRepository) DeleteGreenhouse(ctx context.Context, id uuid.UUID) error {
-	return m.Called(ctx, id).Error(0)
-}
-func (m *MockFarmRepository) CreatePlot(ctx context.Context, plot *farmModels.Plot) error {
-	return m.Called(ctx, plot).Error(0)
-}
-func (m *MockFarmRepository) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]farmModels.Plot, error) {
-	return nil, m.Called(ctx, greenhouseID).Error(1)
-}
-func (m *MockFarmRepository) DeletePlot(ctx context.Context, id uuid.UUID) error {
-	return m.Called(ctx, id).Error(0)
-}
-func (m *MockFarmRepository) GetPlotByID(ctx context.Context, id uuid.UUID) (*farmModels.Plot, error) {
+func (m *MockPlotService) GetPlotByID(ctx context.Context, id uuid.UUID) (*plotModels.Plot, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*farmModels.Plot), args.Error(1)
+	return args.Get(0).(*plotModels.Plot), args.Error(1)
 }
-func (m *MockFarmRepository) UpdatePlot(ctx context.Context, plot *farmModels.Plot) error {
-	return m.Called(ctx, plot).Error(0)
+
+func (m *MockPlotService) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*plotModels.Plot, error) {
+	args := m.Called(ctx, id, name, size, status)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*plotModels.Plot), args.Error(1)
 }
+
+// Dummy implementations for other plot service methods
+func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*plotModels.Plot, error) { return nil, nil }
+func (m *MockPlotService) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]plotModels.Plot, error) { return nil, nil }
+func (m *MockPlotService) DeletePlot(ctx context.Context, id uuid.UUID) error { return nil }
+
 
 // MockLeasingRepository mocks the leasing repository
 type MockLeasingRepository struct {
 	mock.Mock
 }
 
-func (m *MockLeasingRepository) CreateLease(ctx context.Context, lease *farmModels.PlotLease) error {
+func (m *MockLeasingRepository) CreateLease(ctx context.Context, lease *leasingModels.PlotLease) error {
 	return m.Called(ctx, lease).Error(0)
 }
-func (m *MockLeasingRepository) GetLeasesByUserID(ctx context.Context, userID uuid.UUID) ([]farmModels.PlotLease, error) {
+func (m *MockLeasingRepository) GetLeasesByUserID(ctx context.Context, userID uuid.UUID) ([]leasingModels.PlotLease, error) {
 	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]farmModels.PlotLease), args.Error(1)
+	return args.Get(0).([]leasingModels.PlotLease), args.Error(1)
 }
 
 // MockCatalogService mocks the catalog service
@@ -166,12 +123,12 @@ func (m *MockRabbitMQClient) Close() {
 func TestOperationsService(t *testing.T) {
 	ctx := context.Background()
 	mockOpsRepo := new(MockOperationsRepository)
-	mockFarmRepo := new(MockFarmRepository)
+	mockPlotSvc := new(MockPlotService)
 	mockLeasingRepo := new(MockLeasingRepository)
 	mockCatalogSvc := new(MockCatalogService)
 	mockRabbitMQ := new(MockRabbitMQClient)
 
-	opsSvc := NewOperationsService(mockOpsRepo, mockFarmRepo, mockLeasingRepo, mockCatalogSvc, mockRabbitMQ)
+	opsSvc := NewOperationsService(mockOpsRepo, mockPlotSvc, mockLeasingRepo, mockCatalogSvc, mockRabbitMQ)
 
 	t.Run("PlantCrop", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
@@ -180,7 +137,7 @@ func TestOperationsService(t *testing.T) {
 			plotID := uuid.New()
 			cropID := uuid.New()
 			leaseID := uuid.New()
-			activeLease := []farmModels.PlotLease{{ID: leaseID, PlotID: plotID, UserID: userID, Status: "active"}}
+			activeLease := []leasingModels.PlotLease{{ID: leaseID, PlotID: plotID, UserID: userID, Status: "active"}}
 			crop := &models.Crop{ID: cropID}
 
 			mockLeasingRepo.On("GetLeasesByUserID", ctx, userID).Return(activeLease, nil).Once()
@@ -204,7 +161,7 @@ func TestOperationsService(t *testing.T) {
 			userID := uuid.New()
 			plotID := uuid.New()
 			cropID := uuid.New()
-			activeLease := []farmModels.PlotLease{}
+			activeLease := []leasingModels.PlotLease{}
 
 			mockLeasingRepo.On("GetLeasesByUserID", ctx, userID).Return(activeLease, nil).Once()
 

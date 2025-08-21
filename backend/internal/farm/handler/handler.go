@@ -3,7 +3,6 @@ package handler
 
 import (
 	"github.com/go-playground/validator/v10"
-	camerahandler "github.com/rendley/vegshare/backend/internal/camera/handler"
 	"github.com/rendley/vegshare/backend/internal/farm/service"
 	"github.com/sirupsen/logrus"
 )
@@ -48,15 +47,13 @@ type FarmHandler struct {
 	service       service.Service
 	logger        *logrus.Logger
 	validate      *validator.Validate
-	CameraHandler *camerahandler.CameraHandler
 }
 
 // NewFarmHandler - конструктор для FarmHandler.
-func NewFarmHandler(s service.Service, l *logrus.Logger, cameraHandler *camerahandler.CameraHandler) *FarmHandler {
+func NewFarmHandler(s service.Service, l *logrus.Logger) *FarmHandler {
 	return &FarmHandler{
 		service:       s,
 		logger:        l,
 		validate:      validator.New(),
-		CameraHandler: cameraHandler,
 	}
 }

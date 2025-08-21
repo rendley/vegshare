@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/rendley/vegshare/backend/internal/farm/models"
+	"github.com/rendley/vegshare/backend/internal/leasing/models"
 )
 
 // Repository определяет контракт для хранилища данных аренды.

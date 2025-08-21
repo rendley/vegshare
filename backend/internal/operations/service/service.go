@@ -9,10 +9,10 @@ import (
 	"github.com/google/uuid"
 	catalogModels "github.com/rendley/vegshare/backend/internal/catalog/models"
 	catalogService "github.com/rendley/vegshare/backend/internal/catalog/service"
-	farmModels "github.com/rendley/vegshare/backend/internal/farm/models"
-	farmRepository "github.com/rendley/vegshare/backend/internal/farm/repository"
+	leasingModels "github.com/rendley/vegshare/backend/internal/leasing/models"
 	leasingRepository "github.com/rendley/vegshare/backend/internal/leasing/repository"
 	"github.com/rendley/vegshare/backend/internal/operations/repository"
+	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
 	"github.com/rendley/vegshare/backend/pkg/rabbitmq"
 )
 
@@ -26,17 +26,17 @@ type Service interface {
 
 type service struct {
 	repo           repository.Repository
-	farmRepo       farmRepository.Repository
+	plotSvc        plotService.Service
 	leasingRepo    leasingRepository.Repository
 	catalogService catalogService.Service
 	rabbitmq       rabbitmq.ClientInterface
 }
 
 // NewOperationsService - конструктор для сервиса.
-func NewOperationsService(repo repository.Repository, farmRepo farmRepository.Repository, leasingRepo leasingRepository.Repository, catalogService catalogService.Service, rabbitmq rabbitmq.ClientInterface) Service {
+func NewOperationsService(repo repository.Repository, plotSvc plotService.Service, leasingRepo leasingRepository.Repository, catalogService catalogService.Service, rabbitmq rabbitmq.ClientInterface) Service {
 	return &service{
 		repo:           repo,
-		farmRepo:       farmRepo,
+		plotSvc:        plotSvc,
 		leasingRepo:    leasingRepo,
 		catalogService: catalogService,
 		rabbitmq:       rabbitmq,
@@ -49,7 +49,7 @@ func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUI
 	if err != nil {
 		return nil, fmt.Errorf("не удалось проверить аренду: %w", err)
 	}
-	var activeLease *farmModels.PlotLease
+	var activeLease *leasingModels.PlotLease
 	for _, lease := range leases {
 		if lease.PlotID == plotID && lease.Status == "active" {
 			activeLease = &lease

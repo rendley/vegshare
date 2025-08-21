@@ -13,6 +13,7 @@ import (
 	leasinghandler "github.com/rendley/vegshare/backend/internal/leasing/handler"
 	operationshandler "github.com/rendley/vegshare/backend/internal/operations/handler"
 	camerahandler "github.com/rendley/vegshare/backend/internal/camera/handler"
+	plothandler "github.com/rendley/vegshare/backend/internal/plot/handler"
 	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	"github.com/rendley/vegshare/backend/pkg/config"
 	"github.com/rendley/vegshare/backend/pkg/middleware"
@@ -29,10 +30,11 @@ type Server struct {
 	OperationsHandler *operationshandler.OperationsHandler
 	CatalogHandler    *cataloghandler.CatalogHandler
 	CameraHandler     *camerahandler.CameraHandler
+	PlotHandler       *plothandler.PlotHandler
 }
 
 // New - это конструктор для `Server`.
-func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler, ops *operationshandler.OperationsHandler, catalog *cataloghandler.CatalogHandler, camera *camerahandler.CameraHandler) *Server {
+func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler, ops *operationshandler.OperationsHandler, catalog *cataloghandler.CatalogHandler, camera *camerahandler.CameraHandler, plot *plothandler.PlotHandler) *Server {
 	return &Server{
 		cfg:               cfg,
 		mw:                mw,
@@ -43,6 +45,7 @@ func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHa
 		OperationsHandler: ops,
 		CatalogHandler:    catalog,
 		CameraHandler:     camera,
+		PlotHandler:       plot,
 	}
 }
 
@@ -79,13 +82,65 @@ func (s *Server) Start() error {
 		// Protected routes
 		r.Group(func(r chi.Router) {
 			r.Use(s.mw.AuthMiddleware)
+
+			// User routes
 			r.Mount("/users", s.UserHandler.Routes())
-			r.Mount("/farm", s.FarmHandler.Routes())
+
+			// Leasing routes
 			r.Mount("/leasing", s.LeasingHandler.Routes())
+
+			// Operations routes
 			r.Mount("/operations", s.OperationsHandler.Routes())
 
-			// Отдельный маршрут для удаления камеры по ее ID
-			r.Delete("/cameras/{cameraID}", s.CameraHandler.DeleteCamera)
+			// Farm routes (Regions, LandParcels, Greenhouses)
+			r.Route("/farm", func(r chi.Router) {
+				r.Route("/regions", func(r chi.Router) {
+					r.Post("/", s.FarmHandler.CreateRegion)
+					r.Get("/", s.FarmHandler.GetAllRegions)
+					r.Route("/{regionID}", func(r chi.Router) {
+						r.Get("/", s.FarmHandler.GetRegionByID)
+						r.Put("/", s.FarmHandler.UpdateRegion)
+						r.Delete("/", s.FarmHandler.DeleteRegion)
+						r.Get("/land-parcels", s.FarmHandler.GetLandParcelsByRegion)
+						r.Post("/land-parcels", s.FarmHandler.CreateLandParcelForRegion)
+					})
+				})
+				r.Route("/land-parcels", func(r chi.Router) {
+					r.Route("/{parcelID}", func(r chi.Router) {
+						r.Get("/", s.FarmHandler.GetLandParcelByID)
+						r.Put("/", s.FarmHandler.UpdateLandParcel)
+						r.Delete("/", s.FarmHandler.DeleteLandParcel)
+						r.Get("/greenhouses", s.FarmHandler.GetGreenhousesByLandParcel)
+						r.Post("/greenhouses", s.FarmHandler.CreateGreenhouseForLandParcel)
+					})
+				})
+				r.Route("/greenhouses", func(r chi.Router) {
+					r.Route("/{greenhouseID}", func(r chi.Router) {
+						r.Get("/", s.FarmHandler.GetGreenhouseByID)
+						r.Put("/", s.FarmHandler.UpdateGreenhouse)
+						r.Delete("/", s.FarmHandler.DeleteGreenhouse)
+					})
+				})
+			})
+
+			// Plot routes (now a top-level resource)
+			r.Route("/plots", func(r chi.Router) {
+				r.Post("/", s.PlotHandler.CreatePlot)
+				r.Get("/", s.PlotHandler.GetPlots) // Handles ?greenhouse_id=...
+				r.Route("/{plotID}", func(r chi.Router) {
+					r.Get("/", s.PlotHandler.GetPlotByID)
+					r.Put("/", s.PlotHandler.UpdatePlot)
+					r.Delete("/", s.PlotHandler.DeletePlot)
+					// Nested camera routes
+					r.Get("/cameras", s.CameraHandler.GetCamerasByPlotID)
+					r.Post("/cameras", s.CameraHandler.CreateCamera)
+				})
+			})
+
+			// Camera routes (for top-level access like delete)
+			r.Route("/cameras", func(r chi.Router) {
+				r.Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
+			})
 		})
 	})
 

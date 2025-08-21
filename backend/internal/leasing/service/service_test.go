@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/rendley/vegshare/backend/internal/farm/models"
+	"github.com/rendley/vegshare/backend/internal/leasing/models"
+	plotModels "github.com/rendley/vegshare/backend/internal/plot/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -31,117 +32,52 @@ func (m *MockLeasingRepository) GetLeasesByUserID(ctx context.Context, userID uu
 	return args.Get(0).([]models.PlotLease), args.Error(1)
 }
 
-// MockFarmRepository is a mock for the farm repository
-type MockFarmRepository struct {
+// MockPlotService is a mock for the plot service
+type MockPlotService struct {
 	mock.Mock
 }
 
-// Implement the full farm.Repository interface
-func (m *MockFarmRepository) CreateRegion(ctx context.Context, region *models.Region) error {
-	args := m.Called(ctx, region)
-	return args.Error(0)
-}
-func (m *MockFarmRepository) GetRegionByID(ctx context.Context, id uuid.UUID) (*models.Region, error) {
-	args := m.Called(ctx, id)
-	return nil, args.Error(1)
-}
-func (m *MockFarmRepository) GetAllRegions(ctx context.Context) ([]models.Region, error) {
-	args := m.Called(ctx)
-	return nil, args.Error(1)
-}
-func (m *MockFarmRepository) UpdateRegion(ctx context.Context, region *models.Region) error {
-	args := m.Called(ctx, region)
-	return args.Error(0)
-}
-func (m *MockFarmRepository) DeleteRegion(ctx context.Context, id uuid.UUID) error {
-	args := m.Called(ctx, id)
-	return args.Error(0)
-}
-func (m *MockFarmRepository) CreateLandParcel(ctx context.Context, parcel *models.LandParcel) error {
-	args := m.Called(ctx, parcel)
-	return args.Error(0)
-}
-func (m *MockFarmRepository) GetLandParcelByID(ctx context.Context, id uuid.UUID) (*models.LandParcel, error) {
-	args := m.Called(ctx, id)
-	return nil, args.Error(1)
-}
-func (m *MockFarmRepository) GetLandParcelsByRegion(ctx context.Context, regionID uuid.UUID) ([]models.LandParcel, error) {
-	args := m.Called(ctx, regionID)
-	return nil, args.Error(1)
-}
-func (m *MockFarmRepository) UpdateLandParcel(ctx context.Context, parcel *models.LandParcel) error {
-	args := m.Called(ctx, parcel)
-	return args.Error(0)
-}
-func (m *MockFarmRepository) DeleteLandParcel(ctx context.Context, id uuid.UUID) error {
-	args := m.Called(ctx, id)
-	return args.Error(0)
-}
-func (m *MockFarmRepository) CreateGreenhouse(ctx context.Context, greenhouse *models.Greenhouse) error {
-	args := m.Called(ctx, greenhouse)
-	return args.Error(0)
-}
-func (m *MockFarmRepository) GetGreenhouseByID(ctx context.Context, id uuid.UUID) (*models.Greenhouse, error) {
-	args := m.Called(ctx, id)
-	return nil, args.Error(1)
-}
-func (m *MockFarmRepository) GetGreenhousesByLandParcel(ctx context.Context, landParcelID uuid.UUID) ([]models.Greenhouse, error) {
-	args := m.Called(ctx, landParcelID)
-	return nil, args.Error(1)
-}
-func (m *MockFarmRepository) UpdateGreenhouse(ctx context.Context, greenhouse *models.Greenhouse) error {
-	args := m.Called(ctx, greenhouse)
-	return args.Error(0)
-}
-func (m *MockFarmRepository) DeleteGreenhouse(ctx context.Context, id uuid.UUID) error {
-	args := m.Called(ctx, id)
-	return args.Error(0)
-}
-func (m *MockFarmRepository) CreatePlot(ctx context.Context, plot *models.Plot) error {
-	args := m.Called(ctx, plot)
-	return args.Error(0)
-}
-func (m *MockFarmRepository) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]models.Plot, error) {
-	args := m.Called(ctx, greenhouseID)
-	return nil, args.Error(1)
-}
-func (m *MockFarmRepository) DeletePlot(ctx context.Context, id uuid.UUID) error {
-	args := m.Called(ctx, id)
-	return args.Error(0)
-}
-
-func (m *MockFarmRepository) GetPlotByID(ctx context.Context, id uuid.UUID) (*models.Plot, error) {
+func (m *MockPlotService) GetPlotByID(ctx context.Context, id uuid.UUID) (*plotModels.Plot, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.Plot), args.Error(1)
+	return args.Get(0).(*plotModels.Plot), args.Error(1)
 }
 
-func (m *MockFarmRepository) UpdatePlot(ctx context.Context, plot *models.Plot) error {
-	args := m.Called(ctx, plot)
-	return args.Error(0)
+func (m *MockPlotService) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*plotModels.Plot, error) {
+	args := m.Called(ctx, id, name, size, status)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*plotModels.Plot), args.Error(1)
 }
+
+// Dummy implementations for other plot service methods
+func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*plotModels.Plot, error) { return nil, nil }
+func (m *MockPlotService) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]plotModels.Plot, error) { return nil, nil }
+func (m *MockPlotService) DeletePlot(ctx context.Context, id uuid.UUID) error { return nil }
+
 
 // --- Tests ---
 
 func TestLeasingService(t *testing.T) {
 	ctx := context.Background()
 	mockLeasingRepo := new(MockLeasingRepository)
-	mockFarmRepo := new(MockFarmRepository)
+	mockPlotSvc := new(MockPlotService)
 
-	leasingSvc := NewLeasingService(mockLeasingRepo, mockFarmRepo)
+	leasingSvc := NewLeasingService(mockLeasingRepo, mockPlotSvc)
 
 	t.Run("LeasePlot", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			// Arrange
 			userID := uuid.New()
 			plotID := uuid.New()
-			availablePlot := &models.Plot{ID: plotID, Status: "available"}
+			availablePlot := &plotModels.Plot{ID: plotID, Name: "Test Plot", Size: "2x2", Status: "available"}
 
-			mockFarmRepo.On("GetPlotByID", ctx, plotID).Return(availablePlot, nil).Once()
+			mockPlotSvc.On("GetPlotByID", ctx, plotID).Return(availablePlot, nil).Once()
 			mockLeasingRepo.On("CreateLease", ctx, mock.AnythingOfType("*models.PlotLease")).Return(nil).Once()
-			mockFarmRepo.On("UpdatePlot", ctx, mock.AnythingOfType("*models.Plot")).Return(nil).Once()
+			mockPlotSvc.On("UpdatePlot", ctx, plotID, availablePlot.Name, availablePlot.Size, "rented").Return(&plotModels.Plot{}, nil).Once()
 
 			// Act
 			lease, err := leasingSvc.LeasePlot(ctx, userID, plotID)
@@ -153,14 +89,14 @@ func TestLeasingService(t *testing.T) {
 			assert.Equal(t, plotID, lease.PlotID)
 			assert.Equal(t, userID, lease.UserID)
 			mockLeasingRepo.AssertExpectations(t)
-			mockFarmRepo.AssertExpectations(t)
+			mockPlotSvc.AssertExpectations(t)
 		})
 
 		t.Run("Plot not found", func(t *testing.T) {
 			// Arrange
 			userID := uuid.New()
 			plotID := uuid.New()
-			mockFarmRepo.On("GetPlotByID", ctx, plotID).Return(nil, errors.New("not found")).Once()
+			mockPlotSvc.On("GetPlotByID", ctx, plotID).Return(nil, errors.New("not found")).Once()
 
 			// Act
 			lease, err := leasingSvc.LeasePlot(ctx, userID, plotID)
@@ -168,16 +104,16 @@ func TestLeasingService(t *testing.T) {
 			// Assert
 			assert.Error(t, err)
 			assert.Nil(t, lease)
-			mockFarmRepo.AssertExpectations(t)
+			mockPlotSvc.AssertExpectations(t)
 		})
 
 		t.Run("Plot not available", func(t *testing.T) {
 			// Arrange
 			userID := uuid.New()
 			plotID := uuid.New()
-			rentedPlot := &models.Plot{ID: plotID, Status: "rented"}
+			rentedPlot := &plotModels.Plot{ID: plotID, Status: "rented"}
 
-			mockFarmRepo.On("GetPlotByID", ctx, plotID).Return(rentedPlot, nil).Once()
+			mockPlotSvc.On("GetPlotByID", ctx, plotID).Return(rentedPlot, nil).Once()
 
 			// Act
 			lease, err := leasingSvc.LeasePlot(ctx, userID, plotID)
@@ -185,7 +121,7 @@ func TestLeasingService(t *testing.T) {
 			// Assert
 			assert.Error(t, err)
 			assert.Nil(t, lease)
-			mockFarmRepo.AssertExpectations(t)
+			mockPlotSvc.AssertExpectations(t)
 		})
 	})
 

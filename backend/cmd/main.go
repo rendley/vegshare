@@ -7,6 +7,9 @@ import (
 	authHandler "github.com/rendley/vegshare/backend/internal/auth/handler"
 	authRepository "github.com/rendley/vegshare/backend/internal/auth/repository"
 	authService "github.com/rendley/vegshare/backend/internal/auth/service"
+	cameraHandler "github.com/rendley/vegshare/backend/internal/camera/handler"
+	cameraRepository "github.com/rendley/vegshare/backend/internal/camera/repository"
+	cameraService "github.com/rendley/vegshare/backend/internal/camera/service"
 	catalogHandler "github.com/rendley/vegshare/backend/internal/catalog/handler"
 	catalogRepository "github.com/rendley/vegshare/backend/internal/catalog/repository"
 	catalogService "github.com/rendley/vegshare/backend/internal/catalog/service"
@@ -19,9 +22,9 @@ import (
 	operationsHandler "github.com/rendley/vegshare/backend/internal/operations/handler"
 	operationsRepository "github.com/rendley/vegshare/backend/internal/operations/repository"
 	operationsService "github.com/rendley/vegshare/backend/internal/operations/service"
-	cameraHandler "github.com/rendley/vegshare/backend/internal/camera/handler"
-	cameraRepository "github.com/rendley/vegshare/backend/internal/camera/repository"
-	cameraService "github.com/rendley/vegshare/backend/internal/camera/service"
+	plotHandler "github.com/rendley/vegshare/backend/internal/plot/handler"
+	plotRepository "github.com/rendley/vegshare/backend/internal/plot/repository"
+	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
 	userHandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	userRepository "github.com/rendley/vegshare/backend/internal/user/repository"
 	userService "github.com/rendley/vegshare/backend/internal/user/service"
@@ -67,15 +70,17 @@ func main() {
 	operationsRepo := operationsRepository.NewRepository(db)
 	catalogRepo := catalogRepository.NewRepository(db)
 	cameraRepo := cameraRepository.NewRepository(db)
+	plotRepo := plotRepository.NewRepository(db)
 
 	// Services
 	authSvc := authService.NewAuthService(authRepo, hasher, jwtGen)
 	userSvc := userService.NewUserService(userRepo)
 	farmSvc := farmService.NewFarmService(farmRepo)
-	leasingSvc := leasingService.NewLeasingService(leasingRepo, farmRepo)
+	plotSvc := plotService.NewService(plotRepo, farmSvc)
+	leasingSvc := leasingService.NewLeasingService(leasingRepo, plotSvc)
 	catalogSvc := catalogService.NewService(catalogRepo)
-	operationsSvc := operationsService.NewOperationsService(operationsRepo, farmRepo, leasingRepo, catalogSvc, rabbitMQClient)
-	cameraSvc := cameraService.NewService(cameraRepo, farmRepo)
+	operationsSvc := operationsService.NewOperationsService(operationsRepo, plotSvc, leasingRepo, catalogSvc, rabbitMQClient)
+	cameraSvc := cameraService.NewService(cameraRepo, plotSvc)
 
 	// Middleware
 	mw := middleware.NewMiddleware(cfg, log)
@@ -84,13 +89,14 @@ func main() {
 	authHandler := authHandler.NewAuthHandler(authSvc, log)
 	userHandler := userHandler.NewUserHandler(userSvc, log)
 	cameraHandler := cameraHandler.NewCameraHandler(cameraSvc, log)
-	farmHandler := farmHandler.NewFarmHandler(farmSvc, log, cameraHandler)
+	plotHandler := plotHandler.NewPlotHandler(plotSvc, log)
+	farmHandler := farmHandler.NewFarmHandler(farmSvc, log)
 	leasingHandler := leasingHandler.NewLeasingHandler(leasingSvc, log)
 	operationsHandler := operationsHandler.NewOperationsHandler(operationsSvc, log)
 	catalogHandler := catalogHandler.NewCatalogHandler(catalogSvc, log)
 
 	// Создаем и запускаем сервер
-	srv := api.New(cfg, mw, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler, catalogHandler, cameraHandler)
+	srv := api.New(cfg, mw, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler, catalogHandler, cameraHandler, plotHandler)
 
 	if err := srv.Start(); err != nil {
 		log.Fatalf("Server failed: %v", err)

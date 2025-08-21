@@ -1,23 +1,27 @@
 ### Управление Грядками (Plots)
 
-**1. Создание грядки в теплице**
+**1. Создание грядки**
+
+Создает новую грядку в указанной теплице.
 
 ```bash
 ACCESS_TOKEN="your_access_token"
-GREENHOUSE_ID="9bd1f3fa-1e9e-4548-8fc6-df1c96be6723" # ID реальной теплицы
-curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" -d '{"name": "Test Plot 1", "size": "2x2"}' http://localhost:8080/api/v1/farm/greenhouses/$GREENHOUSE_ID/plots
+GREENHOUSE_ID="c8ddd5d7-234f-4481-9cc1-a2bdb6db36e7" # ID существующей теплицы
+curl -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" \
+-d '{"name": "Refactor Test Plot", "size": "3x3", "greenhouse_id": "'"$GREENHOUSE_ID"'"}' \
+http://localhost:8080/api/v1/plots
 ```
 
 *Успешный ответ (201 Created):*
 ```json
 {
-    "id": "f6a11800-86d6-4b73-afa4-69d6e0553fab",
-    "greenhouse_id": "9bd1f3fa-1e9e-4548-8fc6-df1c96be6723",
-    "name": "Test Plot 1",
-    "size": "2x2",
+    "id": "83cd4784-4724-4756-a21c-33f2b0c74293",
+    "greenhouse_id": "c8ddd5d7-234f-4481-9cc1-a2bdb6db36e7",
+    "name": "Refactor Test Plot",
+    "size": "3x3",
     "status": "available",
-    "created_at": "2025-08-21T20:39:38.247821Z",
-    "updated_at": "2025-08-21T20:39:38.247821Z"
+    "created_at": "2025-08-21T23:22:54.233982Z",
+    "updated_at": "2025-08-21T23:22:54.233982Z"
 }
 ```
 
@@ -25,21 +29,21 @@ curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $ACCE
 
 ```bash
 ACCESS_TOKEN="your_access_token"
-GREENHOUSE_ID="9bd1f3fa-1e9e-4548-8fc6-df1c96be6723" # ID реальной теплицы
-curl -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/api/v1/farm/greenhouses/$GREENHOUSE_ID/plots
+GREENHOUSE_ID="c8ddd5d7-234f-4481-9cc1-a2bdb6db36e7"
+curl -s -X GET -H "Authorization: Bearer $ACCESS_TOKEN" "http://localhost:8080/api/v1/plots?greenhouse_id=$GREENHOUSE_ID"
 ```
 
 *Успешный ответ (200 OK):*
 ```json
 [
     {
-        "id": "f6a11800-86d6-4b73-afa4-69d6e0553fab",
-        "greenhouse_id": "9bd1f3fa-1e9e-4548-8fc6-df1c96be6723",
-        "name": "Updated Test Plot",
-        "size": "2x3",
-        "status": "maintenance",
-        "created_at": "2025-08-21T20:39:38.247821Z",
-        "updated_at": "2025-08-21T20:40:46.525396Z"
+        "id": "83cd4784-4724-4756-a21c-33f2b0c74293",
+        "greenhouse_id": "c8ddd5d7-234f-4481-9cc1-a2bdb6db36e7",
+        "name": "Refactor Test Plot",
+        "size": "3x3",
+        "status": "available",
+        "created_at": "2025-08-21T23:22:54.233982Z",
+        "updated_at": "2025-08-21T23:22:54.233982Z"
     }
 ]
 ```
@@ -48,20 +52,22 @@ curl -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/api/v1/farm/
 
 ```bash
 ACCESS_TOKEN="your_access_token"
-PLOT_ID="f6a11800-86d6-4b73-afa4-69d6e0553fab" # ID самой грядки
-curl -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" -d '{"name": "Updated Test Plot", "size": "2x3", "status": "maintenance"}' http://localhost:8080/api/v1/farm/plots/$PLOT_ID
+PLOT_ID="83cd4784-4724-4756-a21c-33f2b0c74293"
+curl -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" \
+-d '{"name": "Updated Refactor Plot", "size": "4x4", "status": "maintenance"}' \
+http://localhost:8080/api/v1/plots/$PLOT_ID
 ```
 
 *Успешный ответ (200 OK):*
 ```json
 {
-    "id": "f6a11800-86d6-4b73-afa4-69d6e0553fab",
-    "greenhouse_id": "9bd1f3fa-1e9e-4548-8fc6-df1c96be6723",
-    "name": "Updated Test Plot",
-    "size": "2x3",
+    "id": "83cd4784-4724-4756-a21c-33f2b0c74293",
+    "greenhouse_id": "c8ddd5d7-234f-4481-9cc1-a2bdb6db36e7",
+    "name": "Updated Refactor Plot",
+    "size": "4x4",
     "status": "maintenance",
-    "created_at": "2025-08-21T20:39:38.247821Z",
-    "updated_at": "2025-08-21T20:40:46.525396127Z"
+    "created_at": "2025-08-21T23:22:54.233982Z",
+    "updated_at": "2025-08-21T23:24:32.938061749Z"
 }
 ```
 
@@ -69,8 +75,8 @@ curl -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer $ACCES
 
 ```bash
 ACCESS_TOKEN="your_access_token"
-PLOT_ID="f6a11800-86d6-4b73-afa4-69d6e0553fab" # ID самой грядки
-curl -i -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/api/v1/farm/plots/$PLOT_ID
+PLOT_ID="83cd4784-4724-4756-a21c-33f2b0c74293"
+curl -s -i -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/api/v1/plots/$PLOT_ID
 ```
 
 *Успешный ответ (204 No Content):*
