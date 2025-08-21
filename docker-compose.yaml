@@ -48,21 +48,22 @@ services:
       - "15672:15672"
     restart: unless-stopped
 
-  # НАШ НОВЫЙ СЕРВИС
   # Сервис MediaMTX - медиа-сервер.
   # Его задача - принимать видеопотоки с камер (по RTSP) и раздавать их
   # пользователям в браузер (по WebRTC).
   mediamtx:
-    image: bluenviron/mediamtx:latest # Используем официальный образ mediamtx.
+    image: bluenviron/mediamtx:latest
+    container_name: mediamtx
     ports:
-      # 8554 - стандартный порт для приема RTSP потоков.
-      - "8554:8554"
-      # 8888 - порт для сигналинга WebRTC через HTTP.
-      - "8888:8888"
-      # 8889 - порт для данных WebRTC через UDP (сам видеопоток).
-      - "8889:8889/udp"
-      # 1935 - стандартный порт для протокола RTMP (еще один протокол стриминга).
-      - "1935:1935"
+      - "8554:8554"      # RTSP
+      - "8888:8888"      # WebRTC (HTTP)
+      - "1935:1935"      # RTMP
+      - "8189:8189/udp"  # WebRTC (UDP)
+      - "9997:9997"      # API
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml
+    environment:
+      - MTX_CONF_PATH=/mediamtx.yml
     restart: unless-stopped
 
 # Здесь мы определяем тома (volumes) для хранения данных.
