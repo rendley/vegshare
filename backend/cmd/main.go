@@ -19,6 +19,9 @@ import (
 	operationsHandler "github.com/rendley/vegshare/backend/internal/operations/handler"
 	operationsRepository "github.com/rendley/vegshare/backend/internal/operations/repository"
 	operationsService "github.com/rendley/vegshare/backend/internal/operations/service"
+	cameraHandler "github.com/rendley/vegshare/backend/internal/camera/handler"
+	cameraRepository "github.com/rendley/vegshare/backend/internal/camera/repository"
+	cameraService "github.com/rendley/vegshare/backend/internal/camera/service"
 	userHandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	userRepository "github.com/rendley/vegshare/backend/internal/user/repository"
 	userService "github.com/rendley/vegshare/backend/internal/user/service"
@@ -63,6 +66,7 @@ func main() {
 	leasingRepo := leasingRepository.NewRepository(db)
 	operationsRepo := operationsRepository.NewRepository(db)
 	catalogRepo := catalogRepository.NewRepository(db)
+	cameraRepo := cameraRepository.NewRepository(db)
 
 	// Services
 	authSvc := authService.NewAuthService(authRepo, hasher, jwtGen)
@@ -71,6 +75,7 @@ func main() {
 	leasingSvc := leasingService.NewLeasingService(leasingRepo, farmRepo)
 	catalogSvc := catalogService.NewService(catalogRepo)
 	operationsSvc := operationsService.NewOperationsService(operationsRepo, farmRepo, leasingRepo, catalogSvc, rabbitMQClient)
+	cameraSvc := cameraService.NewService(cameraRepo, farmRepo)
 
 	// Middleware
 	mw := middleware.NewMiddleware(cfg, log)
@@ -78,13 +83,14 @@ func main() {
 	// Handlers
 	authHandler := authHandler.NewAuthHandler(authSvc, log)
 	userHandler := userHandler.NewUserHandler(userSvc, log)
-	farmHandler := farmHandler.NewFarmHandler(farmSvc, log)
+	cameraHandler := cameraHandler.NewCameraHandler(cameraSvc, log)
+	farmHandler := farmHandler.NewFarmHandler(farmSvc, log, cameraHandler)
 	leasingHandler := leasingHandler.NewLeasingHandler(leasingSvc, log)
 	operationsHandler := operationsHandler.NewOperationsHandler(operationsSvc, log)
 	catalogHandler := catalogHandler.NewCatalogHandler(catalogSvc, log)
 
 	// Создаем и запускаем сервер
-	srv := api.New(cfg, mw, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler, catalogHandler)
+	srv := api.New(cfg, mw, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler, catalogHandler, cameraHandler)
 
 	if err := srv.Start(); err != nil {
 		log.Fatalf("Server failed: %v", err)

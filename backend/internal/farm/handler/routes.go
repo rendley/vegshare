@@ -61,6 +61,9 @@ func (h *FarmHandler) Routes() http.Handler {
 			r.Get("/", h.GetPlotByID)
 			r.Put("/", h.UpdatePlot)
 			r.Delete("/", h.DeletePlot)
+
+				// Вложенные маршруты для камер
+				r.Mount("/cameras", h.CameraHandler.Routes())
 		})
 	})
 

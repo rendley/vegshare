@@ -12,6 +12,7 @@ import (
 	farmhandler "github.com/rendley/vegshare/backend/internal/farm/handler"
 	leasinghandler "github.com/rendley/vegshare/backend/internal/leasing/handler"
 	operationshandler "github.com/rendley/vegshare/backend/internal/operations/handler"
+	camerahandler "github.com/rendley/vegshare/backend/internal/camera/handler"
 	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	"github.com/rendley/vegshare/backend/pkg/config"
 	"github.com/rendley/vegshare/backend/pkg/middleware"
@@ -27,10 +28,11 @@ type Server struct {
 	LeasingHandler    *leasinghandler.LeasingHandler
 	OperationsHandler *operationshandler.OperationsHandler
 	CatalogHandler    *cataloghandler.CatalogHandler
+	CameraHandler     *camerahandler.CameraHandler
 }
 
 // New - это конструктор для `Server`.
-func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler, ops *operationshandler.OperationsHandler, catalog *cataloghandler.CatalogHandler) *Server {
+func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler, ops *operationshandler.OperationsHandler, catalog *cataloghandler.CatalogHandler, camera *camerahandler.CameraHandler) *Server {
 	return &Server{
 		cfg:               cfg,
 		mw:                mw,
@@ -40,6 +42,7 @@ func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHa
 		LeasingHandler:    leasing,
 		OperationsHandler: ops,
 		CatalogHandler:    catalog,
+		CameraHandler:     camera,
 	}
 }
 
@@ -80,6 +83,9 @@ func (s *Server) Start() error {
 			r.Mount("/farm", s.FarmHandler.Routes())
 			r.Mount("/leasing", s.LeasingHandler.Routes())
 			r.Mount("/operations", s.OperationsHandler.Routes())
+
+			// Отдельный маршрут для удаления камеры по ее ID
+			r.Delete("/cameras/{cameraID}", s.CameraHandler.DeleteCamera)
 		})
 	})
 
