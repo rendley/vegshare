@@ -1,0 +1,23 @@
+http:
+  host: "0.0.0.0"
+  port: "8080"
+
+database:
+  host: "postgres"
+  port: 5432
+  user: "vegshare"
+  dbname: "vegshare"
+  password: "vegshare"
+  sslmode: "disable"
+
+jwt:
+  secret: "my_super_secret_key"
+  access_token_ttl: "8h"
+  refresh_token_ttl: "168h"
+
+redis:
+  url: "redis://redis:6379"
+  ttl: 3600
+
+rabbitmq:
+  url: "amqp://guest:guest@rabbitmq:5672/"
