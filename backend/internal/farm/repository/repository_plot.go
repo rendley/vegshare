@@ -11,7 +11,7 @@ import (
 // --- Plot Methods ---
 
 func (r *repository) CreatePlot(ctx context.Context, plot *models.Plot) error {
-	query := `INSERT INTO plots (id, greenhouse_id, name, size, status, camera_url, created_at, updated_at) VALUES (:id, :greenhouse_id, :name, :size, :status, :camera_url, :created_at, :updated_at)`
+	query := `INSERT INTO plots (id, greenhouse_id, name, size, status, created_at, updated_at) VALUES (:id, :greenhouse_id, :name, :size, :status, :created_at, :updated_at)`
 	_, err := r.db.NamedExecContext(ctx, query, plot)
 	if err != nil {
 		return fmt.Errorf("не удалось создать грядку: %w", err)
@@ -40,7 +40,7 @@ func (r *repository) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid
 }
 
 func (r *repository) UpdatePlot(ctx context.Context, plot *models.Plot) error {
-	query := `UPDATE plots SET name = :name, size = :size, status = :status, camera_url = :camera_url, updated_at = :updated_at WHERE id = :id`
+	query := `UPDATE plots SET name = :name, size = :size, status = :status, updated_at = :updated_at WHERE id = :id`
 	_, err := r.db.NamedExecContext(ctx, query, plot)
 	if err != nil {
 		return fmt.Errorf("не удалось обновить грядку: %w", err)

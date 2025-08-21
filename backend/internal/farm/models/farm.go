@@ -43,7 +43,6 @@ type Plot struct {
 	Size         string    `db:"size" json:"size"`
 	// Status показывает текущее состояние грядки: 'available', 'rented', 'maintenance'.
 	Status    string    `db:"status" json:"status"`
-	CameraURL string    `db:"camera_url" json:"camera_url"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }

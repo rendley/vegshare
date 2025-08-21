@@ -30,7 +30,7 @@ func (h *FarmHandler) CreatePlotForGreenhouse(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	plot, err := h.service.CreatePlot(r.Context(), req.Name, req.Size, req.CameraURL, greenhouseID)
+	plot, err := h.service.CreatePlot(r.Context(), req.Name, req.Size, greenhouseID)
 	if err != nil {
 		h.logger.Errorf("ошибка при создании грядки: %v", err)
 		api.RespondWithError(w, "could not create plot", http.StatusInternalServerError)
@@ -95,7 +95,7 @@ func (h *FarmHandler) UpdatePlot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	plot, err := h.service.UpdatePlot(r.Context(), id, req.Name, req.Size, req.Status, req.CameraURL)
+	plot, err := h.service.UpdatePlot(r.Context(), id, req.Name, req.Size, req.Status)
 	if err != nil {
 		h.logger.Errorf("ошибка при обновлении грядки: %v", err)
 		api.RespondWithError(w, "could not update plot", http.StatusInternalServerError)

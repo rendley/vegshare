@@ -11,7 +11,7 @@ import (
 
 // --- Plot Methods ---
 
-func (s *service) CreatePlot(ctx context.Context, name, size, cameraURL string, greenhouseID uuid.UUID) (*models.Plot, error) {
+func (s *service) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*models.Plot, error) {
 	// Проверяем, существует ли теплица
 	_, err := s.repo.GetGreenhouseByID(ctx, greenhouseID)
 	if err != nil {
@@ -23,7 +23,6 @@ func (s *service) CreatePlot(ctx context.Context, name, size, cameraURL string, 
 		ID:           uuid.New(),
 		Name:         name,
 		Size:         size,
-		CameraURL:    cameraURL,
 		GreenhouseID: greenhouseID,
 		Status:       "available", // Новая грядка всегда доступна
 		CreatedAt:    now,
@@ -46,7 +45,7 @@ func (s *service) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UU
 	return s.repo.GetPlotsByGreenhouse(ctx, greenhouseID)
 }
 
-func (s *service) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status, cameraURL string) (*models.Plot, error) {
+func (s *service) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*models.Plot, error) {
 	plot, err := s.repo.GetPlotByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("грядка для обновления не найдена: %w", err)
@@ -55,7 +54,6 @@ func (s *service) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, stat
 	plot.Name = name
 	plot.Size = size
 	plot.Status = status
-	plot.CameraURL = cameraURL
 	plot.UpdatedAt = time.Now()
 
 	err = s.repo.UpdatePlot(ctx, plot)
