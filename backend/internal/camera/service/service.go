@@ -15,6 +15,7 @@ import (
 type Service interface {
 	CreateCamera(ctx context.Context, name, rtspPathName string, plotID uuid.UUID) (*models.Camera, error)
 	GetCamerasByPlotID(ctx context.Context, plotID uuid.UUID) ([]models.Camera, error)
+	GetCameraByID(ctx context.Context, cameraID uuid.UUID) (*models.Camera, error)
 	DeleteCamera(ctx context.Context, cameraID uuid.UUID) error
 }
 
@@ -64,4 +65,8 @@ func (s *service) GetCamerasByPlotID(ctx context.Context, plotID uuid.UUID) ([]m
 
 func (s *service) DeleteCamera(ctx context.Context, cameraID uuid.UUID) error {
 	return s.repo.DeleteCamera(ctx, cameraID)
+}
+
+func (s *service) GetCameraByID(ctx context.Context, cameraID uuid.UUID) (*models.Camera, error) {
+	return s.repo.GetCameraByID(ctx, cameraID)
 }

@@ -25,6 +25,8 @@ import (
 	plotHandler "github.com/rendley/vegshare/backend/internal/plot/handler"
 	plotRepository "github.com/rendley/vegshare/backend/internal/plot/repository"
 	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
+	streamingHandler "github.com/rendley/vegshare/backend/internal/streaming/handler"
+	streamingService "github.com/rendley/vegshare/backend/internal/streaming/service"
 	userHandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	userRepository "github.com/rendley/vegshare/backend/internal/user/repository"
 	userService "github.com/rendley/vegshare/backend/internal/user/service"
@@ -81,6 +83,7 @@ func main() {
 	catalogSvc := catalogService.NewService(catalogRepo)
 	operationsSvc := operationsService.NewOperationsService(operationsRepo, plotSvc, leasingRepo, catalogSvc, rabbitMQClient)
 	cameraSvc := cameraService.NewService(cameraRepo, plotSvc)
+	streamingSvc := streamingService.NewService(cameraSvc)
 
 	// Middleware
 	mw := middleware.NewMiddleware(cfg, log)
@@ -94,9 +97,10 @@ func main() {
 	leasingHandler := leasingHandler.NewLeasingHandler(leasingSvc, log)
 	operationsHandler := operationsHandler.NewOperationsHandler(operationsSvc, log)
 	catalogHandler := catalogHandler.NewCatalogHandler(catalogSvc, log)
+	streamingHandler := streamingHandler.NewStreamingHandler(streamingSvc, log)
 
 	// Создаем и запускаем сервер
-	srv := api.New(cfg, mw, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler, catalogHandler, cameraHandler, plotHandler)
+	srv := api.New(cfg, mw, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler, catalogHandler, cameraHandler, plotHandler, streamingHandler)
 
 	if err := srv.Start(); err != nil {
 		log.Fatalf("Server failed: %v", err)

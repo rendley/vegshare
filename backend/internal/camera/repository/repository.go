@@ -13,6 +13,7 @@ import (
 type Repository interface {
 	CreateCamera(ctx context.Context, camera *models.Camera) error
 	GetCamerasByPlotID(ctx context.Context, plotID uuid.UUID) ([]models.Camera, error)
+	GetCameraByID(ctx context.Context, cameraID uuid.UUID) (*models.Camera, error)
 	DeleteCamera(ctx context.Context, cameraID uuid.UUID) error
 }
 
@@ -52,4 +53,14 @@ func (r *repository) DeleteCamera(ctx context.Context, cameraID uuid.UUID) error
 		return fmt.Errorf("не удалось удалить камеру: %w", err)
 	}
 	return nil
+}
+
+func (r *repository) GetCameraByID(ctx context.Context, cameraID uuid.UUID) (*models.Camera, error) {
+	var camera models.Camera
+	query := `SELECT * FROM cameras WHERE id = $1`
+	err := r.db.GetContext(ctx, &camera, query, cameraID)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось получить камеру по ID: %w", err)
+	}
+	return &camera, nil
 }

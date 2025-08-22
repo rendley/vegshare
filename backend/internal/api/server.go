@@ -14,6 +14,7 @@ import (
 	operationshandler "github.com/rendley/vegshare/backend/internal/operations/handler"
 	camerahandler "github.com/rendley/vegshare/backend/internal/camera/handler"
 	plothandler "github.com/rendley/vegshare/backend/internal/plot/handler"
+	streaminghandler "github.com/rendley/vegshare/backend/internal/streaming/handler"
 	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	"github.com/rendley/vegshare/backend/pkg/config"
 	"github.com/rendley/vegshare/backend/pkg/middleware"
@@ -31,10 +32,11 @@ type Server struct {
 	CatalogHandler    *cataloghandler.CatalogHandler
 	CameraHandler     *camerahandler.CameraHandler
 	PlotHandler       *plothandler.PlotHandler
+	StreamingHandler  *streaminghandler.StreamingHandler
 }
 
 // New - это конструктор для `Server`.
-func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler, ops *operationshandler.OperationsHandler, catalog *cataloghandler.CatalogHandler, camera *camerahandler.CameraHandler, plot *plothandler.PlotHandler) *Server {
+func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler, ops *operationshandler.OperationsHandler, catalog *cataloghandler.CatalogHandler, camera *camerahandler.CameraHandler, plot *plothandler.PlotHandler, stream *streaminghandler.StreamingHandler) *Server {
 	return &Server{
 		cfg:               cfg,
 		mw:                mw,
@@ -46,6 +48,7 @@ func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHa
 		CatalogHandler:    catalog,
 		CameraHandler:     camera,
 		PlotHandler:       plot,
+		StreamingHandler:  stream,
 	}
 }
 
@@ -141,6 +144,9 @@ func (s *Server) Start() error {
 			r.Route("/cameras", func(r chi.Router) {
 				r.Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
 			})
+
+			// WebSocket route for streaming
+			r.Mount("/stream", s.StreamingHandler.Routes())
 		})
 	})
 

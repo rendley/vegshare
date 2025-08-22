@@ -36,6 +36,14 @@ func (m *MockCameraRepository) DeleteCamera(ctx context.Context, cameraID uuid.U
 	return args.Error(0)
 }
 
+func (m *MockCameraRepository) GetCameraByID(ctx context.Context, cameraID uuid.UUID) (*models.Camera, error) {
+	args := m.Called(ctx, cameraID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Camera), args.Error(1)
+}
+
 // MockPlotService is a mock for the plot service
 type MockPlotService struct {
 	mock.Mock
