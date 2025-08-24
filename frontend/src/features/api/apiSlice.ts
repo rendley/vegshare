@@ -31,6 +31,13 @@ export interface Plot {
   status: string;
 }
 
+export interface Camera {
+  id: string;
+  name: string;
+  plot_id: string;
+  rtsp_url: string;
+}
+
 export interface PlotLease {
   id: string;
   plot_id: string;
@@ -66,15 +73,19 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Plot', 'Lease', 'PlotCrop'],
+  tagTypes: ['Plot', 'Lease', 'PlotCrop', 'Camera'],
   endpoints: (builder) => ({
     // QUERIES
     getRegions: builder.query<Region[], void>({ query: () => 'farm/regions' }),
     getLandParcelsByRegion: builder.query<LandParcel[], string>({ query: (regionId) => `farm/regions/${regionId}/land-parcels` }),
     getGreenhousesByLandParcel: builder.query<Greenhouse[], string>({ query: (landParcelId) => `farm/land-parcels/${landParcelId}/greenhouses` }),
     getPlotsByGreenhouse: builder.query<Plot[], string>({
-      query: (greenhouseId) => `farm/greenhouses/${greenhouseId}/plots`,
+      query: (greenhouseId) => `plots?greenhouse_id=${greenhouseId}`,
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Plot' as const, id })), { type: 'Plot', id: 'LIST' }] : [{ type: 'Plot', id: 'LIST' }],
+    }),
+    getCamerasByPlot: builder.query<Camera[], string>({
+      query: (plotId) => `plots/${plotId}/cameras`,
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Camera' as const, id })), { type: 'Camera', id: 'LIST' }] : [{ type: 'Camera', id: 'LIST' }],
     }),
     getMyLeases: builder.query<PlotLease[], void>({
       query: () => 'leasing/me/leases',
@@ -136,6 +147,7 @@ export const {
   useGetLandParcelsByRegionQuery,
   useGetGreenhousesByLandParcelQuery,
   useGetPlotsByGreenhouseQuery,
+  useGetCamerasByPlotQuery,
   useGetMyLeasesQuery,
   useGetAvailableCropsQuery,
   useGetPlotCropsQuery,

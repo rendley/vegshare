@@ -18,6 +18,9 @@ rtspAddress: :8554
 rtmp: yes
 rtmpAddress: :1935
 
+# HLS configuration
+hls: no
+
 # Path configuration
 paths:
   all:

@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS cameras (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     plot_id UUID NOT NULL,
     name VARCHAR(255) NOT NULL,
-    rtsp_path_name VARCHAR(255) NOT NULL UNIQUE,
+    rtsp_url VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_plot

@@ -14,8 +14,8 @@ import (
 
 // --- DTOs ---
 type CreateCameraRequest struct {
-	Name         string `json:"name" validate:"required,min=2,max=100"`
-	RTSPPathName string `json:"rtsp_path_name" validate:"required,min=2,max=100"`
+	Name    string `json:"name" validate:"required,min=2,max=100"`
+	RTSPURL string `json:"rtsp_url" validate:"required,url"`
 }
 
 // --- Handler ---
@@ -53,7 +53,7 @@ func (h *CameraHandler) CreateCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	camera, err := h.service.CreateCamera(r.Context(), req.Name, req.RTSPPathName, plotID)
+	camera, err := h.service.CreateCamera(r.Context(), req.Name, req.RTSPURL, plotID)
 	if err != nil {
 		h.logger.Errorf("ошибка при создании камеры: %v", err)
 		api.RespondWithError(w, "could not create camera", http.StatusInternalServerError)

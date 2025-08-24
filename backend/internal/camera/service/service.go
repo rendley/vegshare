@@ -13,7 +13,7 @@ import (
 
 // Service defines the contract for the camera service.
 type Service interface {
-	CreateCamera(ctx context.Context, name, rtspPathName string, plotID uuid.UUID) (*models.Camera, error)
+	CreateCamera(ctx context.Context, name, rtspURL string, plotID uuid.UUID) (*models.Camera, error)
 	GetCamerasByPlotID(ctx context.Context, plotID uuid.UUID) ([]models.Camera, error)
 	GetCameraByID(ctx context.Context, cameraID uuid.UUID) (*models.Camera, error)
 	DeleteCamera(ctx context.Context, cameraID uuid.UUID) error
@@ -30,7 +30,7 @@ func NewService(repo repository.Repository, plotSvc plotService.Service) Service
 	return &service{repo: repo, plotSvc: plotSvc}
 }
 
-func (s *service) CreateCamera(ctx context.Context, name, rtspPathName string, plotID uuid.UUID) (*models.Camera, error) {
+func (s *service) CreateCamera(ctx context.Context, name, rtspURL string, plotID uuid.UUID) (*models.Camera, error) {
 	// Check if the plot exists
 	_, err := s.plotSvc.GetPlotByID(ctx, plotID)
 	if err != nil {
@@ -39,12 +39,12 @@ func (s *service) CreateCamera(ctx context.Context, name, rtspPathName string, p
 
 	now := time.Now()
 	camera := &models.Camera{
-		ID:           uuid.New(),
-		PlotID:       plotID,
-		Name:         name,
-		RTSPPathName: rtspPathName,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		ID:        uuid.New(),
+		PlotID:    plotID,
+		Name:      name,
+		RTSPURL:   rtspURL,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
 	if err := s.repo.CreateCamera(ctx, camera); err != nil {

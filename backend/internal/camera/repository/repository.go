@@ -28,7 +28,7 @@ func NewRepository(db *sqlx.DB) Repository {
 }
 
 func (r *repository) CreateCamera(ctx context.Context, camera *models.Camera) error {
-	query := `INSERT INTO cameras (id, plot_id, name, rtsp_path_name, created_at, updated_at) VALUES (:id, :plot_id, :name, :rtsp_path_name, :created_at, :updated_at)`
+	query := `INSERT INTO cameras (id, plot_id, name, rtsp_url, created_at, updated_at) VALUES (:id, :plot_id, :name, :rtsp_url, :created_at, :updated_at)`
 	_, err := r.db.NamedExecContext(ctx, query, camera)
 	if err != nil {
 		return fmt.Errorf("не удалось создать камеру: %w", err)
