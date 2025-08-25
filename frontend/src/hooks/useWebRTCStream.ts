@@ -21,7 +21,7 @@ export const useWebRTCStream = ({ camera }: UseWebRTCStreamProps) => {
       return;
     }
 
-    const streamUrl = `ws://localhost:8080/api/v1/stream/${camera.id}?token=${token}`;
+    const streamUrl = `ws://localhost:8080/api/v1/stream/ws/${camera.rtsp_path_name}?token=${token}`;
 
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
