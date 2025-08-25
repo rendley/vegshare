@@ -99,3 +99,53 @@ func CorsMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// WebSocketAuthMiddleware is a middleware to authenticate users for WebSocket connections.
+// It checks for a token in the "token" query parameter.
+func (m *Middleware) WebSocketAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tokenString := r.URL.Query().Get("token")
+
+		if tokenString == "" {
+			m.logger.Info("Auth token not found in query param")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			return []byte(m.cfg.JWT.Secret), nil
+		})
+
+		if err != nil || !token.Valid {
+			m.logger.Info("Invalid token")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			m.logger.Info("Invalid token claims")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		userIDStr, ok := claims["sub"].(string)
+		if !ok {
+			m.logger.Info("Invalid userID in token")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		userID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			m.logger.Info("Failed to parse userID")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		m.logger.Infof("userID from token: %s", userID)
+
+		ctx := context.WithValue(r.Context(), UserIDKey, userID)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}

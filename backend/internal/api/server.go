@@ -145,8 +145,8 @@ func (s *Server) Start() error {
 				r.Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
 			})
 
-			// WebSocket route for streaming
-			r.Mount("/stream", s.StreamingHandler.Routes())
+			// WebSocket route for streaming - uses special auth middleware
+			r.With(s.mw.WebSocketAuthMiddleware).Mount("/stream", s.StreamingHandler.Routes())
 		})
 	})
 

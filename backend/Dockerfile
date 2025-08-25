@@ -1,17 +1,39 @@
-FROM golang:1.23-alpine
+# --- Этап 1: Сборщик ---
+FROM golang:1.23-alpine AS builder
 
-WORKDIR /app
+WORKDIR /src
 
+# Копируем УЖЕ СКАЧАННУЮ утилиту migrate и делаем ее исполняемой
+COPY migrate /usr/local/bin/migrate
+RUN chmod +x /usr/local/bin/migrate
+
+# Копируем файлы зависимостей и скачиваем их
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Установка утилиты migrate
-RUN apk --no-cache add curl &&     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.1/migrate.linux-amd64.tar.gz | tar xvz &&     mv migrate /usr/local/bin/migrate &&     chmod +x /usr/local/bin/migrate
-
+# Копируем остальной исходный код
 COPY . .
 
+# Собираем приложение
 RUN go build -o /vegshare ./cmd/main.go
 
+
+# --- Этап 2: Финальный образ ---
+FROM alpine:latest
+
+WORKDIR /app
+
+# Копируем миграции из сборщика
+COPY --from=builder /src/migrations ./migrations
+
+# Копируем утилиту migrate из сборщика
+COPY --from=builder /usr/local/bin/migrate /usr/local/bin/migrate
+
+# Копируем скомпилированное приложение из сборщика
+COPY --from=builder /vegshare /vegshare
+
+# Открываем порт
 EXPOSE 8080
 
+# Команда для запуска
 CMD [ "/vegshare" ]
