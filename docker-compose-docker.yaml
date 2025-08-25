@@ -86,6 +86,8 @@ services:
     depends_on:
       backend:
         condition: service_started
+    environment:
+      - VITE_WEBSOCKET_URL=ws://mediamtx:8889
     networks:
       - vegshare-net
 

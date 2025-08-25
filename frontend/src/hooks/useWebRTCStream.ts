@@ -15,7 +15,8 @@ export const useWebRTCStream = ({ camera }: UseWebRTCStreamProps) => {
   useEffect(() => {
     if (!camera) return;
 
-    const streamUrl = `ws://localhost:8889/local_cam`;
+    const baseUrl = import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:8889';
+    const streamUrl = `${baseUrl}/local_cam`;
 
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
