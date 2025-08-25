@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/go-chi/chi/v5"
@@ -54,8 +55,25 @@ func (s *serviceImpl) HandleStream(w http.ResponseWriter, r *http.Request) {
 
 	// Prepare headers for the connection to the media server.
 	requestHeader := http.Header{}
-	// Let's only forward the User-Agent and see if that helps.
-	requestHeader.Add("User-Agent", r.Header.Get("User-Agent"))
+	// Copy essential headers from the original request
+	if origin := r.Header.Get("Origin"); origin != "" {
+		requestHeader.Set("Origin", origin)
+	}
+	if userAgent := r.Header.Get("User-Agent"); userAgent != "" {
+		requestHeader.Set("User-Agent", userAgent)
+	}
+	// Set X-Forwarded-For header
+	if clientIP := r.RemoteAddr; clientIP != "" {
+		// If there are multiple proxies, they may append IPs. We take the first one.
+		if fwd, ok := r.Header["X-Forwarded-For"]; ok {
+			clientIP = fwd[0]
+		}
+		// Remove port if present
+		if strings.Contains(clientIP, ":") {
+			clientIP = strings.Split(clientIP, ":")[0]
+		}
+		requestHeader.Set("X-Forwarded-For", clientIP)
+	}
 
 	clientConn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
