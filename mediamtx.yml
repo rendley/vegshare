@@ -11,6 +11,7 @@ hlsAddress: :8888
 webrtc: yes
 webrtcAddress: :8889
 webrtcLocalUDPAddress: :8189
+webrtcAllowOrigin: '*'
 
 # RTMP для приема потока
 rtmp: yes
