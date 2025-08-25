@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"sync"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
 	"github.com/rendley/vegshare/backend/internal/camera/service"
 	"github.com/rendley/vegshare/backend/pkg/config"
@@ -43,8 +44,8 @@ func NewService(cfg *config.Config, log *logrus.Logger, cameraSvc service.Servic
 
 // HandleStream upgrades the client connection to WebSocket and proxies it to mediamtx.
 func (s *serviceImpl) HandleStream(w http.ResponseWriter, r *http.Request) {
-	// Extract camera path from the URL, e.g., /stream/ws/{camera_path}
-	cameraPath := r.URL.Path[len("/stream/ws/"):]
+	// Extract camera path from the URL using chi
+	cameraPath := chi.URLParam(r, "cameraPath")
 	if cameraPath == "" {
 		s.log.Error("Camera path is empty")
 		http.Error(w, "Camera path is required", http.StatusBadRequest)
