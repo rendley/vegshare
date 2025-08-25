@@ -80,6 +80,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_WEBSOCKET_URL=ws://mediamtx:8889
     ports:
       - "5173:80"
     restart: unless-stopped

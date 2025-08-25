@@ -7,6 +7,12 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+# Declare build-time argument
+ARG VITE_WEBSOCKET_URL
+# Set environment variable for the build process
+ENV VITE_WEBSOCKET_URL=${VITE_WEBSOCKET_URL}
+
 RUN npm run build
 
 # Stage 2: Serve the app with Nginx
