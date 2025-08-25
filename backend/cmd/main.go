@@ -83,7 +83,7 @@ func main() {
 	catalogSvc := catalogService.NewService(catalogRepo)
 	operationsSvc := operationsService.NewOperationsService(operationsRepo, plotSvc, leasingRepo, catalogSvc, rabbitMQClient)
 	cameraSvc := cameraService.NewService(cameraRepo, plotSvc)
-	streamingSvc := streamingService.NewService(cameraSvc)
+	streamingSvc := streamingService.NewService(cfg, log, cameraSvc)
 
 	// Middleware
 	mw := middleware.NewMiddleware(cfg, log)
