@@ -1,28 +1,25 @@
-# Log level
 logLevel: info
 
-# API configuration
 api: yes
 apiAddress: :9997
 
-# WebRTC configuration
-webrtc: yes
-webrtcAddress: :8888
-webrtcLocalUDPAddress: :8189
+protocols:
+  - tcp
+  - udp
 
-# RTSP configuration
-rtsp: yes
-rtspAddress: :8554
+server:
+  hls:
+    enable: yes
+    listenPort: 8888
 
-# RTMP configuration
-rtmp: yes
-rtmpAddress: :1935
+  webrtc:
+    enable: yes
+    listenPort: 8889
 
-# HLS configuration
-hls: no
+  rtmp:
+    enable: yes
+    listenPort: 1935
 
-# Path configuration
-paths:
-  all:
-    # This is a template that will be used for all paths
-    # It can be overridden by specific path configurations
+  rtsp:
+    enable: yes
+    listenPort: 8554

@@ -24,4 +24,4 @@ rabbitmq:
 
 mediamtx:
   host: "mediamtx"
-  port: "8888"
+  port: "8889"
