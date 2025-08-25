@@ -1,83 +1,46 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import Hls from 'hls.js';
 import type { Camera } from '../features/api/apiSlice';
 
-// Определим интерфейс для пропсов хука
-interface UseWebRTCStreamProps {
+interface UseHLSStreamProps {
   camera: Camera | null;
 }
 
-export const useWebRTCStream = ({ camera }: UseWebRTCStreamProps) => {
+export const useWebRTCStream = ({ camera }: UseHLSStreamProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!camera) return;
+    if (!camera || !videoRef.current) return;
 
-    const streamUrl = `ws://localhost:8889/local_cam`;
+    // HLS URL, который предоставляет mediamtx
+    const hlsUrl = `http://localhost:8888/${camera.rtsp_path_name}/index.m3u8`;
 
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-    });
-    peerConnectionRef.current = pc;
+    const videoElement = videoRef.current;
+    let hls: Hls | null = null;
 
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        // Отправляем ICE candidate на сервер
-        ws.send(JSON.stringify({ type: 'ice', candidate: event.candidate }));
-      }
-    };
-
-    pc.ontrack = (event) => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = event.streams[0];
-        setIsConnected(true);
-        setError(null);
-      }
-    };
-
-    const ws = new WebSocket(streamUrl);
-
-    ws.onopen = async () => {
-      console.log('WebSocket connection opened');
-      pc.addTransceiver('video', { direction: 'recvonly' });
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      ws.send(JSON.stringify({ type: 'offer', sdp: pc.localDescription }));
-    };
-
-    ws.onmessage = async (event) => {
-      try {
-        const message = JSON.parse(event.data);
-
-        if (message.type === 'answer') {
-          const remoteDesc = new RTCSessionDescription(message.sdp);
-          await pc.setRemoteDescription(remoteDesc);
-        } else if (message.type === 'ice') {
-          await pc.addIceCandidate(new RTCIceCandidate(message.candidate));
-        }
-      } catch (e) {
-        console.error('Failed to parse message or set description:', e);
-        setError('Failed to establish WebRTC connection.');
-      }
-    };
-
-    ws.onerror = (err) => {
-      console.error('WebSocket error:', err);
-      setError('WebSocket connection failed.');
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket connection closed');
-      setIsConnected(false);
-    };
+    if (Hls.isSupported()) {
+      console.log("Using hls.js for playback");
+      hls = new Hls();
+      hls.loadSource(hlsUrl);
+      hls.attachMedia(videoElement);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        videoElement.play().catch(e => console.error("Autoplay failed", e));
+      });
+    } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+      console.log("Using native HLS support");
+      // Для Safari, который поддерживает HLS нативно
+      videoElement.src = hlsUrl;
+      videoElement.addEventListener('loadedmetadata', () => {
+        videoElement.play().catch(e => console.error("Autoplay failed", e));
+      });
+    }
 
     return () => {
-      ws.close();
-      pc.close();
+      if (hls) {
+        hls.destroy();
+      }
     };
   }, [camera]);
 
-  return { videoRef, isConnected, error };
+  return { videoRef, isConnected: true, error: null }; // Упрощаем, считаем что всегда подключено
 };
