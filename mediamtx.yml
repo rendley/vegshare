@@ -1,30 +1,28 @@
+# Log level
 logLevel: info
 
+# API configuration
 api: yes
 apiAddress: :9997
 
-# Указываем, какие протоколы включены
-protocols:
-  - tcp
-  - udp
+# WebRTC configuration
+webrtc: yes
+webrtcAddress: :8888
+webrtcLocalUDPAddress: :8189
 
-server:
-  # HLS (для совместимости, нам не особо нужен, но пусть будет)
-  hls:
-    enable: yes
-    listenPort: 8888
+# RTSP configuration
+rtsp: yes
+rtspAddress: :8554
 
-  # WebRTC (самое важное, для стриминга в реальном времени)
-  webrtc:
-    enable: yes
-    listenPort: 8889 # <--- ИСПОЛЬЗУЕМ ДРУГОЙ ПОРТ!
+# RTMP configuration
+rtmp: yes
+rtmpAddress: :1935
 
-  # RTMP (для приема потока от ffmpeg)
-  rtmp:
-    enable: yes
-    listenPort: 1935
+# HLS configuration
+hls: no
 
-  # RTSP (для приема потока от ffmpeg, если мы вернемся к нему)
-  rtsp:
-    enable: yes
-    listenPort: 8554
+# Path configuration
+paths:
+  all:
+    # This is a template that will be used for all paths
+    # It can be overridden by specific path configurations
