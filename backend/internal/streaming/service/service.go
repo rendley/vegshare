@@ -53,14 +53,9 @@ func (s *serviceImpl) HandleStream(w http.ResponseWriter, r *http.Request) {
 	s.log.Infof("Attempting to stream camera with path: %s", cameraPath)
 
 	// Prepare headers for the connection to the media server.
-	// It's important to forward specific headers from the client.
 	requestHeader := http.Header{}
-	requestHeader.Add("Origin", r.Header.Get("Origin"))
+	// Let's only forward the User-Agent and see if that helps.
 	requestHeader.Add("User-Agent", r.Header.Get("User-Agent"))
-	// Forward Sec-WebSocket-Protocol if present
-	if swp := r.Header.Get("Sec-WebSocket-Protocol"); swp != "" {
-		requestHeader.Set("Sec-WebSocket-Protocol", swp)
-	}
 
 	clientConn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
