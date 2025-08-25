@@ -144,9 +144,12 @@ func (s *Server) Start() error {
 			r.Route("/cameras", func(r chi.Router) {
 				r.Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
 			})
+		})
 
-			// WebSocket route for streaming - uses special auth middleware
-			r.With(s.mw.WebSocketAuthMiddleware).Mount("/stream", s.StreamingHandler.Routes())
+		// WebSocket route for streaming with its own auth middleware
+		r.Group(func(r chi.Router) {
+			r.Use(s.mw.WebSocketAuthMiddleware)
+			r.Mount("/stream", s.StreamingHandler.Routes())
 		})
 	})
 
