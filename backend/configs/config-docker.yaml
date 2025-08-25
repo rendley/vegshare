@@ -21,3 +21,7 @@ redis:
 
 rabbitmq:
   url: "amqp://guest:guest@rabbitmq:5672/"
+
+mediamtx:
+  host: "mediamtx"
+  port: "8888"

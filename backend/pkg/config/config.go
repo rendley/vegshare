@@ -17,6 +17,7 @@ type Config struct {
 	JWT      JWTConfig      `yaml:"jwt"`
 	Redis    RedisConfig    `yaml:"redis"`
 	RabbitMQ RabbitMQConfig `yaml:"rabbitmq"`
+	MediaMTX MediaMTXConfig `yaml:"mediamtx"`
 }
 
 type HTTPConfig struct {
@@ -46,6 +47,11 @@ type RedisConfig struct {
 
 type RabbitMQConfig struct {
 	URL string `yaml:"url"`
+}
+
+type MediaMTXConfig struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
 }
 
 // Load загружает конфиг из YAML-файла.

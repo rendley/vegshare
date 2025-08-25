@@ -149,3 +149,9 @@ func (m *Middleware) WebSocketAuthMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+// GetUserIDFromContext извлекает ID пользователя из контекста запроса.
+func GetUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
+	userID, ok := ctx.Value(UserIDKey).(uuid.UUID)
+	return userID, ok
+}
