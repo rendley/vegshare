@@ -35,7 +35,7 @@ export interface Camera {
   id: string;
   name: string;
   plot_id: string;
-  rtsp_url: string;
+  rtsp_path_name: string;
 }
 
 export interface PlotLease {
