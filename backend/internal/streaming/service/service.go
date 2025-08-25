@@ -44,7 +44,6 @@ func NewService(cfg *config.Config, log *logrus.Logger, cameraSvc service.Servic
 
 // HandleStream upgrades the client connection to WebSocket and proxies it to mediamtx.
 func (s *serviceImpl) HandleStream(w http.ResponseWriter, r *http.Request) {
-	// Extract camera path from the URL using chi
 	cameraPath := chi.URLParam(r, "cameraPath")
 	if cameraPath == "" {
 		s.log.Error("Camera path is empty")
@@ -53,7 +52,16 @@ func (s *serviceImpl) HandleStream(w http.ResponseWriter, r *http.Request) {
 	}
 	s.log.Infof("Attempting to stream camera with path: %s", cameraPath)
 
-	// Upgrade the client's connection
+	// Prepare headers for the connection to the media server.
+	// It's important to forward specific headers from the client.
+	requestHeader := http.Header{}
+	requestHeader.Add("Origin", r.Header.Get("Origin"))
+	requestHeader.Add("User-Agent", r.Header.Get("User-Agent"))
+	// Forward Sec-WebSocket-Protocol if present
+	if swp := r.Header.Get("Sec-WebSocket-Protocol"); swp != "" {
+		requestHeader.Set("Sec-WebSocket-Protocol", swp)
+	}
+
 	clientConn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		s.log.Errorf("Failed to upgrade client connection: %v", err)
@@ -62,13 +70,12 @@ func (s *serviceImpl) HandleStream(w http.ResponseWriter, r *http.Request) {
 	defer clientConn.Close()
 	s.log.Info("Client connection upgraded to WebSocket")
 
-	// Construct the target URL for mediamtx from config
 	mediaServerHost := fmt.Sprintf("%s:%s", s.cfg.MediaMTX.Host, s.cfg.MediaMTX.Port)
 	targetURL := url.URL{Scheme: "ws", Host: mediaServerHost, Path: "/" + cameraPath}
-	s.log.Infof("Connecting to media server at: %s", targetURL.String())
+	s.log.Infof("Connecting to media server at: %s with headers: %v", targetURL.String(), requestHeader)
 
-	// Connect to the media server
-	mediaServerConn, _, err := websocket.DefaultDialer.Dial(targetURL.String(), nil)
+	// Connect to the media server with the prepared headers
+	mediaServerConn, _, err := websocket.DefaultDialer.Dial(targetURL.String(), requestHeader)
 	if err != nil {
 		s.log.Errorf("Failed to connect to media server: %v", err)
 		clientConn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseInternalServerErr, "could not connect to media server"))
@@ -77,7 +84,6 @@ func (s *serviceImpl) HandleStream(w http.ResponseWriter, r *http.Request) {
 	defer mediaServerConn.Close()
 	s.log.Info("Successfully connected to media server")
 
-	// Start proxying messages
 	var wg sync.WaitGroup
 	wg.Add(2)
 
@@ -99,7 +105,6 @@ func (s *serviceImpl) proxyMessages(source, dest *websocket.Conn, wg *sync.WaitG
 			} else {
 				s.log.Infof("Connection closed (%s): %v", direction, err)
 			}
-			// Close the other connection gracefully
 			dest.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			break
 		}
