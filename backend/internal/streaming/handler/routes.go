@@ -1,17 +1,11 @@
 package handler
 
-import (
-	"net/http"
+import "github.com/go-chi/chi/v5"
 
-	"github.com/go-chi/chi/v5"
-)
-
-// Routes returns a new router for the streaming handler.
-func (h *StreamingHandler) Routes() http.Handler {
+// Routes returns the routing tree for the streaming service.
+func (h *StreamingHandler) Routes() chi.Router {
 	r := chi.NewRouter()
-
-	// This will be mounted under /stream, so the final path will be /stream/{cameraID}
-	r.Get("/{cameraID}", h.HandleStream)
-
+	// The path now includes a wildcard to capture the camera path.
+	r.Get("/ws/{cameraPath:*}", h.handleWebSocket)
 	return r
 }
