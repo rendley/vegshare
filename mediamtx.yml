@@ -3,23 +3,23 @@ logLevel: info
 api: yes
 apiAddress: :9997
 
-protocols:
-  - tcp
-  - udp
+# HLS (HTTP) будет на порту 8888
+hls: yes
+hlsAddress: :8888
 
-server:
-  hls:
-    enable: yes
-    listenPort: 8888
+# WebRTC (WebSocket) будет на порту 8889
+webrtc: yes
+webrtcAddress: :8889
+webrtcLocalUDPAddress: :8189
 
-  webrtc:
-    enable: yes
-    listenPort: 8889
+# RTMP для приема потока
+rtmp: yes
+rtmpAddress: :1935
 
-  rtmp:
-    enable: yes
-    listenPort: 1935
+# RTSP для приема потока
+rtsp: yes
+rtspAddress: :8554
 
-  rtsp:
-    enable: yes
-    listenPort: 8554
+paths:
+  all:
+    # Конфигурация для всех путей (пока пустая)
