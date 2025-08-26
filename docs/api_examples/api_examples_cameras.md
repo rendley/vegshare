@@ -1,11 +1,11 @@
 ### Управление Камерами (Cameras)
 
-**1. Создание камеры для грядки**
+**1. Создание камеры для грядки (Требуются права администратора)**
 
 Предполагается, что у вас уже есть ID грядки (`PLOT_ID`). 
 
 ```bash
-ACCESS_TOKEN="your_access_token"
+ACCESS_TOKEN="your_admin_access_token"
 PLOT_ID="83cd4784-4724-4756-a21c-33f2b0c74293"
 curl -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" \
 -d '{"name": "Refactor Front View", "rtsp_path_name": "refactor_front_cam"}' \
@@ -46,10 +46,10 @@ curl -s -X GET -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/ap
 ]
 ```
 
-**3. Удаление камеры**
+**3. Удаление камеры (Требуются права администратора)**
 
 ```bash
-ACCESS_TOKEN="your_access_token"
+ACCESS_TOKEN="your_admin_access_token"
 CAMERA_ID="2febab9e-e149-40fd-ab71-6bb4c3640a7b"
 curl -s -i -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/api/v1/cameras/$CAMERA_ID
 ```

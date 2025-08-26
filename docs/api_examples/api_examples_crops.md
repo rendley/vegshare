@@ -1,9 +1,9 @@
 ### Управление Культурами (Crops)
 
-**1. Создание культуры**
+**1. Создание культуры (Требуются права администратора)**
 
 ```bash
-ACCESS_TOKEN="your_access_token"
+ACCESS_TOKEN="your_admin_access_token"
 curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" -d '{"name": "Tomato", "description": "Red and juicy", "planting_time": 30, "harvest_time": 90}' http://localhost:8080/api/v1/catalog/crops
 ```
 
