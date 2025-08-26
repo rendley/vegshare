@@ -84,65 +84,73 @@ func (s *Server) Start() error {
 		r.Mount("/catalog", s.CatalogHandler.Routes())
 
 		// --- УРОВЕНЬ 2: РОУТЫ ДЛЯ ЛЮБОГО ЗАЛОГИНЕННОГО ПОЛЬЗОВАТЕЛЯ ---
-		// К этой группе применяется AuthMiddleware. Все, что внутри, требует наличия валидного токена.
+		// r.Group() создает группу роутов, к которой можно применить общий middleware.
+		// Все роуты внутри этой группы будут сначала проходить через s.mw.AuthMiddleware.
 		r.Group(func(r chi.Router) {
 			r.Use(s.mw.AuthMiddleware) // ПРОВЕРКА №1: Пользователь залогинен?
 
-			// --- Роуты, доступные всем аутентифицированным пользователям ---
-
-			// Пользовательские операции (аренда, действия на грядке и т.д.)
+			// Обычные пользовательские роуты (просмотр профиля, аренда и т.д.)
 			r.Mount("/users", s.UserHandler.Routes())
 			r.Mount("/leasing", s.LeasingHandler.Routes())
 			r.Mount("/operations", s.OperationsHandler.Routes())
 
-			// Роуты на ЧТЕНИЕ данных о ферме (просмотр иерархии)
-			r.Get("/farm/regions", s.FarmHandler.GetAllRegions)
-			r.Get("/farm/regions/{regionID}", s.FarmHandler.GetRegionByID)
-			r.Get("/farm/regions/{regionID}/land-parcels", s.FarmHandler.GetLandParcelsByRegion)
-			r.Get("/farm/land-parcels/{parcelID}", s.FarmHandler.GetLandParcelByID)
-			r.Get("/farm/land-parcels/{parcelID}/greenhouses", s.FarmHandler.GetGreenhousesByLandParcel)
-			r.Get("/farm/greenhouses/{greenhouseID}", s.FarmHandler.GetGreenhouseByID)
-			r.Get("/plots", s.PlotHandler.GetPlots) // Handles ?greenhouse_id=...
-			r.Get("/plots/{plotID}", s.PlotHandler.GetPlotByID)
-			r.Get("/plots/{plotID}/cameras", s.CameraHandler.GetCamerasByPlotID)
+			// --- Иерархия фермы: РЕГИОНЫ ---
+			// r.Route() группирует роуты по общему префиксу, делая код чище.
+			r.Route("/farm/regions", func(r chi.Router) {
+				// GET /farm/regions - получить все регионы (доступно всем залогиненным)
+				r.Get("/", s.FarmHandler.GetAllRegions)
+				// r.With() применяет middleware только к ОДНОМУ следующему обработчику.
+				// POST /farm/regions - создать регион (ПРОВЕРКА №2: только админ)
+				r.With(s.mw.AdminMiddleware).Post("/", s.FarmHandler.CreateRegion)
 
-			// --- УРОВЕНЬ 3: РОУТЫ ТОЛЬКО ДЛЯ АДМИНИСТРАТОРА ---
-			// Вложенная группа, к которой дополнительно применяется AdminMiddleware.
-			// Запрос должен пройти обе проверки: AuthMiddleware и AdminMiddleware.
-			r.Group(func(r chi.Router) {
-				r.Use(s.mw.AdminMiddleware) // ПРОВЕРКА №2: Является ли пользователь админом?
+				// Группа для роутов с параметром {regionID}
+				r.Route("/{regionID}", func(r chi.Router) {
+					r.Get("/", s.FarmHandler.GetRegionByID)
+					r.Get("/land-parcels", s.FarmHandler.GetLandParcelsByRegion)
+					// Действия над конкретным регионом доступны только админу
+					r.With(s.mw.AdminMiddleware).Put("/", s.FarmHandler.UpdateRegion)
+					r.With(s.mw.AdminMiddleware).Delete("/", s.FarmHandler.DeleteRegion)
+					// Создание дочерней сущности - тоже только админу
+					r.With(s.mw.AdminMiddleware).Post("/land-parcels", s.FarmHandler.CreateLandParcelForRegion)
+				})
+			})
 
-				// Роуты на СОЗДАНИЕ, ИЗМЕНЕНИЕ и УДАЛЕНИЕ иерархии фермы
-				r.Route("/farm", func(r chi.Router) {
-					r.Post("/regions", s.FarmHandler.CreateRegion)
-					r.Route("/regions/{regionID}", func(r chi.Router) {
-						r.Put("/", s.FarmHandler.UpdateRegion)
-						r.Delete("/", s.FarmHandler.DeleteRegion)
-						r.Post("/land-parcels", s.FarmHandler.CreateLandParcelForRegion)
-					})
-					r.Route("/land-parcels/{parcelID}", func(r chi.Router) {
-						r.Put("/", s.FarmHandler.UpdateLandParcel)
-						r.Delete("/", s.FarmHandler.DeleteLandParcel)
-						r.Post("/greenhouses", s.FarmHandler.CreateGreenhouseForLandParcel)
-					})
-					r.Route("/greenhouses/{greenhouseID}", func(r chi.Router) {
-						r.Put("/", s.FarmHandler.UpdateGreenhouse)
-						r.Delete("/", s.FarmHandler.DeleteGreenhouse)
-					})
-				})
+			// --- Иерархия фермы: УЧАСТКИ ---
+			r.Route("/farm/land-parcels/{parcelID}", func(r chi.Router) {
+				r.Get("/", s.FarmHandler.GetLandParcelByID)
+				r.Get("/greenhouses", s.FarmHandler.GetGreenhousesByLandParcel)
+				r.With(s.mw.AdminMiddleware).Put("/", s.FarmHandler.UpdateLandParcel)
+				r.With(s.mw.AdminMiddleware).Delete("/", s.FarmHandler.DeleteLandParcel)
+				r.With(s.mw.AdminMiddleware).Post("/greenhouses", s.FarmHandler.CreateGreenhouseForLandParcel)
+			})
 
-				// Роуты на СОЗДАНИЕ, ИЗМЕНЕНИЕ и УДАЛЕНИЕ грядок и камер
-				r.Route("/plots", func(r chi.Router) {
-					r.Post("/", s.PlotHandler.CreatePlot)
-					r.Route("/{plotID}", func(r chi.Router) {
-						r.Put("/", s.PlotHandler.UpdatePlot)
-						r.Delete("/", s.PlotHandler.DeletePlot)
-						r.Post("/cameras", s.CameraHandler.CreateCamera)
-					})
+			// --- Иерархия фермы: ТЕПЛИЦЫ ---
+			r.Route("/farm/greenhouses/{greenhouseID}", func(r chi.Router) {
+				r.Get("/", s.FarmHandler.GetGreenhouseByID)
+				r.With(s.mw.AdminMiddleware).Put("/", s.FarmHandler.UpdateGreenhouse)
+				r.With(s.mw.AdminMiddleware).Delete("/", s.FarmHandler.DeleteGreenhouse)
+			})
+
+			// --- ГРЯДКИ (Plots) ---
+			r.Route("/plots", func(r chi.Router) {
+				// GET /plots?greenhouse_id=... - получить грядки в теплице (для всех)
+				r.Get("/", s.PlotHandler.GetPlots)
+				// POST /plots - создать грядку (только админ)
+				r.With(s.mw.AdminMiddleware).Post("/", s.PlotHandler.CreatePlot)
+
+				// Группа для конкретной грядки: /plots/{plotID}
+				r.Route("/{plotID}", func(r chi.Router) {
+					r.Get("/", s.PlotHandler.GetPlotByID)
+					r.Get("/cameras", s.CameraHandler.GetCamerasByPlotID)
+					r.With(s.mw.AdminMiddleware).Put("/", s.PlotHandler.UpdatePlot)
+					r.With(s.mw.AdminMiddleware).Delete("/", s.PlotHandler.DeletePlot)
+					r.With(s.mw.AdminMiddleware).Post("/cameras", s.CameraHandler.CreateCamera)
 				})
-				r.Route("/cameras", func(r chi.Router) {
-					r.Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
-				})
+			})
+
+			// --- КАМЕРЫ (только удаление по ID) ---
+			r.Route("/cameras", func(r chi.Router) {
+				r.With(s.mw.AdminMiddleware).Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
 			})
 		})
 
