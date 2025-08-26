@@ -1,7 +1,9 @@
 package service
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -11,12 +13,14 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rendley/vegshare/backend/internal/camera/service"
 	"github.com/rendley/vegshare/backend/pkg/config"
+	"github.com/rendley/vegshare/backend/pkg/middleware"
 	"github.com/sirupsen/logrus"
 )
 
 // Service handles the proxying of WebSocket connections to the media server.
 type Service interface {
 	HandleStream(w http.ResponseWriter, r *http.Request)
+	ProxyHLS(ctx context.Context, w http.ResponseWriter, r *http.Request, cameraPath, fileName string)
 }
 
 type serviceImpl struct {
@@ -41,6 +45,61 @@ func NewService(cfg *config.Config, log *logrus.Logger, cameraSvc service.Servic
 			WriteBufferSize: 1024,
 		},
 	}
+}
+
+// ProxyHLS fetches HLS files from mediamtx and streams them to the client.
+func (s *serviceImpl) ProxyHLS(ctx context.Context, w http.ResponseWriter, r *http.Request, cameraPath, fileName string) {
+	userID, ok := middleware.GetUserIDFromContext(ctx)
+	if !ok {
+		s.log.Error("Failed to get user ID from context for HLS proxy")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// TODO: Implement authorization logic here.
+	// 1. Get camera by path `cameraPath`.
+	// 2. Get plot from camera.plot_id.
+	// 3. Check if `userID` has an active lease for that plot.
+	// 4. If not, return http.StatusForbidden.
+	s.log.Infof("User %s authorized to access HLS stream for %s", userID, cameraPath)
+
+	// Construct the target URL to mediamtx's HLS server
+	// Note: mediamtx HLS is on port 8888 by default in our config
+	hlsURL := fmt.Sprintf("http://%s:8888/%s/%s", s.cfg.MediaMTX.Host, cameraPath, fileName)
+	s.log.Infof("Proxying HLS request to: %s", hlsURL)
+
+	// Create a new request to the target URL
+	req, err := http.NewRequestWithContext(ctx, "GET", hlsURL, nil)
+	if err != nil {
+		s.log.Errorf("Failed to create HLS proxy request: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Copy headers from the original request
+	req.Header.Set("User-Agent", r.Header.Get("User-Agent"))
+
+	// Execute the request
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		s.log.Errorf("Failed to fetch HLS content from mediamtx: %v", err)
+		http.Error(w, "Bad Gateway", http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Copy headers from the mediamtx response to our response
+	for key, values := range resp.Header {
+		for _, value := range values {
+			w.Header().Add(key, value)
+		}
+	}
+
+	// Set the status code
+	w.WriteHeader(resp.StatusCode)
+
+	// Copy the body (the .m3u8 or .ts file content)
+	io.Copy(w, resp.Body)
 }
 
 // HandleStream upgrades the client connection to WebSocket and proxies it to mediamtx.

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useWebRTCStream } from '../hooks/useWebRTCStream';
+import { useHLSStream } from '../hooks/useHLSStream';
 import type { Camera } from '../features/api/apiSlice';
 
 interface VideoPlayerProps {
@@ -7,7 +7,7 @@ interface VideoPlayerProps {
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ camera }) => {
-  const { videoRef, isConnected, error } = useWebRTCStream({ camera });
+  const { videoRef, isConnected, error } = useHLSStream({ camera });
 
   return (
     <div style={{ border: '1px solid #ccc', padding: '10px', margin: '10px' }}>

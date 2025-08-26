@@ -7,5 +7,8 @@ func (h *StreamingHandler) Routes() chi.Router {
 	r := chi.NewRouter()
 	// The path now includes a wildcard to capture the camera path.
 	r.Get("/ws/{cameraPath:*}", h.handleWebSocket)
+
+	// Новый маршрут для проксирования HLS
+	r.Get("/hls/{cameraPath}/{fileName}", h.handleHLSProxy)
 	return r
 }
