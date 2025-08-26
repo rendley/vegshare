@@ -36,7 +36,7 @@ export const useHLSStream = ({ camera }: UseHLSStreamProps) => {
             if ('frag' in context) {
               // Добавляем токен к URL сегмента.
               // Важно использовать `&`, так как `?` уже используется для токена в основном URL.
-              context.url += `&token=${token}`;
+              context.url += `?token=${token}`;
             }
             oldLoad(context, config, callbacks);
           };
