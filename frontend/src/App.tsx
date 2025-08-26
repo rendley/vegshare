@@ -6,13 +6,18 @@ import { PlotsPage } from './pages/PlotsPage';
 import { MyPlotsPage } from './pages/MyPlotsPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { AdminPage } from './pages/AdminPage';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout, selectCurrentUserRole, selectIsLoggedIn } from './features/auth/authSlice';
 
 function App() {
-  const token = localStorage.getItem('token');
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  const userRole = useSelector(selectCurrentUserRole);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    dispatch(logout());
     navigate('/login');
   };
 
@@ -29,7 +34,12 @@ function App() {
             <li>
               <Link to="/my-plots">Мои грядки</Link>
             </li>
-            {token ? (
+            {userRole === 'admin' && (
+              <li>
+                <Link to="/admin">Админка</Link>
+              </li>
+            )}
+            {isLoggedIn ? (
               <li>
                 <button onClick={handleLogout}>Выйти</button>
               </li>
@@ -52,6 +62,7 @@ function App() {
           <Route path="/my-plots" element={<MyPlotsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </div>
   );

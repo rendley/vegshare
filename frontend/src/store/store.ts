@@ -1,16 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiSlice } from '../features/api/apiSlice';
+import authReducer from '../features/auth/authSlice';
 
 export const store = configureStore({
   reducer: {
-    // Добавляем сгенерированный редюсер от apiSlice
     [apiSlice.reducerPath]: apiSlice.reducer,
+    auth: authReducer,
   },
-  // Добавляем middleware от RTK Query. Это необходимо для кеширования, инвалидации и т.д.
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(apiSlice.middleware),
 });
 
-// Типы для всего стора, чтобы использовать их в приложении
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
