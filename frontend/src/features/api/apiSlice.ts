@@ -176,7 +176,7 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: 'Greenhouse', id: 'LIST' }],
     }),
-    createPlot: builder.mutation<Plot, { greenhouseId: string; name: string }>({
+    createPlot: builder.mutation<Plot, { greenhouse_id: string; name: string; size: string }>({
       query: (body) => ({
         url: 'plots',
         method: 'POST',

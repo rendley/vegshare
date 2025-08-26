@@ -114,6 +114,7 @@ const CreateGreenhouseForm = () => {
 
 const CreatePlotForm = () => {
     const [name, setName] = useState('');
+    const [size, setSize] = useState('');
     const [regionId, setRegionId] = useState('');
     const [landParcelId, setLandParcelId] = useState('');
     const [greenhouseId, setGreenhouseId] = useState('');
@@ -129,7 +130,13 @@ const CreatePlotForm = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (name.trim() && greenhouseId) {
-            createPlot({ greenhouseId, name }).unwrap().then(() => { setName(''); setGreenhouseId(''); setLandParcelId(''); setRegionId(''); });
+            createPlot({ greenhouse_id: greenhouseId, name, size }).unwrap().then(() => { 
+                setName(''); 
+                setSize('');
+                setGreenhouseId(''); 
+                setLandParcelId(''); 
+                setRegionId(''); 
+            });
         }
     };
 
@@ -140,6 +147,7 @@ const CreatePlotForm = () => {
             <FormControl fullWidth margin="normal" required disabled={!regionId}><InputLabel>Участок</InputLabel><Select value={landParcelId} label="Участок" onChange={(e) => setLandParcelId(e.target.value)}>{landParcels?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
             <FormControl fullWidth margin="normal" required disabled={!landParcelId}><InputLabel>Теплица</InputLabel><Select value={greenhouseId} label="Теплица" onChange={(e) => setGreenhouseId(e.target.value)}>{greenhouses?.map(g => <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>)}</Select></FormControl>
             <TextField label="Название грядки" value={name} onChange={(e) => setName(e.target.value)} fullWidth margin="normal" required />
+            <TextField label="Размер (например, 2x1.5м)" value={size} onChange={(e) => setSize(e.target.value)} fullWidth margin="normal" />
             <Button type="submit" variant="contained" disabled={isLoading || !greenhouseId}>{isLoading ? <CircularProgress size={24} /> : 'Создать'}</Button>
             {isSuccess && <Typography color="green" sx={{ mt: 1 }}>Успешно!</Typography>}
             {isError && <Typography color="error" sx={{ mt: 1 }}>Ошибка.</Typography>}
