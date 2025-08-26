@@ -7,7 +7,7 @@ import (
 )
 
 type Generator interface {
-	GenerateAccessToken(userID uuid.UUID) (string, error)
+	GenerateAccessToken(userID uuid.UUID, role string) (string, error)
 	GenerateRefreshToken() (string, error)
 }
 
@@ -25,9 +25,10 @@ func NewGenerator(secretKey string, accessExpiry, refreshExpiry time.Duration) *
 	}
 }
 
-func (g *JWTGenerator) GenerateAccessToken(userID uuid.UUID) (string, error) {
+func (g *JWTGenerator) GenerateAccessToken(userID uuid.UUID, role string) (string, error) {
 	claims := jwt.MapClaims{
 		"sub": userID.String(),
+		"role": role,
 		"exp": time.Now().Add(g.accessExpiry).Unix(),
 		"iat": time.Now().Unix(),
 	}

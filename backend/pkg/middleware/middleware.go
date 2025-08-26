@@ -14,8 +14,12 @@ import (
 // ContextKey is a custom type to avoid key collisions in context.
 type ContextKey string
 
-// UserIDKey is the key for the user ID in the context.
-const UserIDKey ContextKey = "userID"
+const (
+	// UserIDKey is the key for the user ID in the context.
+	UserIDKey     ContextKey = "userID"
+	// UserClaimsKey is the key for the user claims in the context.
+	UserClaimsKey ContextKey = "userClaims"
+)
 
 type Middleware struct {
 	cfg    *config.Config
@@ -79,7 +83,30 @@ func (m *Middleware) AuthMiddleware(next http.Handler) http.Handler {
 		m.logger.Infof("userID from token: %s", userID)
 
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
+		ctx = context.WithValue(ctx, UserClaimsKey, claims)
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// AdminMiddleware checks if the user has admin role.
+// This middleware must be used AFTER AuthMiddleware.
+func (m *Middleware) AdminMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := r.Context().Value(UserClaimsKey).(jwt.MapClaims)
+		if !ok {
+			m.logger.Error("Admin middleware error: claims not found in context. Is AuthMiddleware running before?")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		role, ok := claims["role"].(string)
+		if !ok || role != "admin" {
+			m.logger.Warnf("Forbidden: user %s with role '%s' tried to access admin route", claims["sub"], role)
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	})
 }
 

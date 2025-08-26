@@ -58,8 +58,8 @@ type MockGenerator struct {
 	mock.Mock
 }
 
-func (m *MockGenerator) GenerateAccessToken(userID uuid.UUID) (string, error) {
-	args := m.Called(userID)
+func (m *MockGenerator) GenerateAccessToken(userID uuid.UUID, role string) (string, error) {
+	args := m.Called(userID, role)
 	return args.String(0), args.Error(1)
 }
 
@@ -78,18 +78,22 @@ func TestAuthService_Register(t *testing.T) {
 
 	authSvc := NewAuthService(mockRepo, mockHasher, mockGenerator)
 
-	t.Run("should register user successfully", func(t *testing.T) {
+	t.Run("should register user successfully with default role", func(t *testing.T) {
 		// Arrange
 		name := "Test User"
 		email := "test@example.com"
 		password := "password123"
 		hashedPassword := "hashed-password"
 		refreshToken := "refresh-token"
+		accessToken := "access-token"
+		defaultRole := "user"
 
 		mockRepo.On("UserExists", ctx, email).Return(false, nil).Once()
 		mockHasher.On("Hash", password).Return(hashedPassword, nil).Once()
-		mockRepo.On("CreateUser", ctx, mock.AnythingOfType("*models.User")).Return(nil).Once()
-		mockGenerator.On("GenerateAccessToken", mock.AnythingOfType("uuid.UUID")).Return("access-token", nil).Once()
+		mockRepo.On("CreateUser", ctx, mock.MatchedBy(func(u *models.User) bool {
+			return u.Email == email && u.Role == defaultRole
+		})).Return(nil).Once()
+		mockGenerator.On("GenerateAccessToken", mock.AnythingOfType("uuid.UUID"), defaultRole).Return(accessToken, nil).Once()
 		mockGenerator.On("GenerateRefreshToken").Return(refreshToken, nil).Once()
 		mockRepo.On("SaveRefreshToken", ctx, mock.AnythingOfType("uuid.UUID"), refreshToken).Return(nil).Once()
 
@@ -102,7 +106,8 @@ func TestAuthService_Register(t *testing.T) {
 		assert.NotNil(t, tokens)
 		assert.Equal(t, email, user.Email)
 		assert.Equal(t, hashedPassword, user.PasswordHash)
-		assert.Equal(t, "access-token", tokens.AccessToken)
+		assert.Equal(t, defaultRole, user.Role)
+		assert.Equal(t, accessToken, tokens.AccessToken)
 		mockRepo.AssertExpectations(t)
 		mockHasher.AssertExpectations(t)
 		mockGenerator.AssertExpectations(t)
@@ -136,17 +141,19 @@ func TestAuthService_Login(t *testing.T) {
 
 	authSvc := NewAuthService(mockRepo, mockHasher, mockGenerator)
 
-	t.Run("should login user successfully", func(t *testing.T) {
+	t.Run("should login user successfully and generate token with role", func(t *testing.T) {
 		// Arrange
 		email := "test@example.com"
 		password := "password123"
 		hashedPassword := "hashed-password"
-		user := &models.User{ID: uuid.New(), Email: email, PasswordHash: hashedPassword}
+		userRole := "admin"
+		user := &models.User{ID: uuid.New(), Email: email, PasswordHash: hashedPassword, Role: userRole}
 		refreshToken := "refresh-token"
+		accessToken := "access-token"
 
 		mockRepo.On("GetUserByEmail", ctx, email).Return(user, nil).Once()
 		mockHasher.On("Check", hashedPassword, password).Return(true).Once()
-		mockGenerator.On("GenerateAccessToken", user.ID).Return("access-token", nil).Once()
+		mockGenerator.On("GenerateAccessToken", user.ID, user.Role).Return(accessToken, nil).Once()
 		mockGenerator.On("GenerateRefreshToken").Return(refreshToken, nil).Once()
 		mockRepo.On("SaveRefreshToken", ctx, user.ID, refreshToken).Return(nil).Once()
 
@@ -158,6 +165,7 @@ func TestAuthService_Login(t *testing.T) {
 		assert.NotNil(t, loggedInUser)
 		assert.NotNil(t, tokens)
 		assert.Equal(t, user.ID, loggedInUser.ID)
+		assert.Equal(t, user.Role, loggedInUser.Role)
 		mockRepo.AssertExpectations(t)
 		mockHasher.AssertExpectations(t)
 		mockGenerator.AssertExpectations(t)
@@ -186,7 +194,7 @@ func TestAuthService_Login(t *testing.T) {
 		email := "test@example.com"
 		password := "wrong-password"
 		hashedPassword := "hashed-password"
-		user := &models.User{ID: uuid.New(), Email: email, PasswordHash: hashedPassword}
+		user := &models.User{ID: uuid.New(), Email: email, PasswordHash: hashedPassword, Role: "user"}
 
 		mockRepo.On("GetUserByEmail", ctx, email).Return(user, nil).Once()
 		mockHasher.On("Check", hashedPassword, password).Return(false).Once()

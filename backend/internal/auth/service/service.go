@@ -50,13 +50,14 @@ func (s *authService) Register(ctx context.Context, name, email, password string
 		Name:         name,
 		Email:        email,
 		PasswordHash: hashedPassword,
+		Role:         "user", // Default role
 	}
 
 	if err := s.repo.CreateUser(ctx, user); err != nil {
 		return nil, nil, err
 	}
 
-	tokens, err := s.generateTokens(user.ID)
+	tokens, err := s.generateTokens(user.ID, user.Role)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -79,7 +80,7 @@ func (s *authService) Login(ctx context.Context, email, password string) (*model
 		return nil, nil, models.ErrInvalidCredentials
 	}
 
-	tokens, err := s.generateTokens(user.ID)
+	tokens, err := s.generateTokens(user.ID, user.Role)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -92,8 +93,8 @@ func (s *authService) Login(ctx context.Context, email, password string) (*model
 }
 
 // generateTokens generates new access and refresh tokens.
-func (s *authService) generateTokens(userID uuid.UUID) (*models.TokenPair, error) {
-	accessToken, err := s.jwtGenerator.GenerateAccessToken(userID)
+func (s *authService) generateTokens(userID uuid.UUID, role string) (*models.TokenPair, error) {
+	accessToken, err := s.jwtGenerator.GenerateAccessToken(userID, role)
 	if err != nil {
 		return nil, err
 	}

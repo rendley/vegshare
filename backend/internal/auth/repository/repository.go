@@ -38,8 +38,8 @@ func (r *authRepository) CreateUser(ctx context.Context, user *models.User) erro
 	}
 
 	query := `
-		INSERT INTO users (id, name, email, password_hash, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO users (id, name, email, password_hash, role, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 	now := time.Now()
 	user.CreatedAt = now
@@ -50,6 +50,7 @@ func (r *authRepository) CreateUser(ctx context.Context, user *models.User) erro
 		user.Name,
 		user.Email,
 		user.PasswordHash,
+		user.Role,
 		user.CreatedAt,
 		user.UpdatedAt,
 	)
@@ -64,7 +65,7 @@ func (r *authRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 	}
 
 	query := `
-		SELECT id, name, email, password_hash, created_at, updated_at
+		SELECT id, name, email, password_hash, role, created_at, updated_at
 		FROM users
 		WHERE email = $1
 		LIMIT 1
@@ -76,6 +77,7 @@ func (r *authRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 		&user.Name,
 		&user.Email,
 		&user.PasswordHash,
+		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)

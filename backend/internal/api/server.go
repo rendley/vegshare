@@ -78,71 +78,71 @@ func (s *Server) Start() error {
 
 	// API v1 routes
 	r.Route("/api/v1", func(r chi.Router) {
-		// Public routes
+		// --- УРОВЕНЬ 1: ПУБЛИЧНЫЕ РОУТЫ ---
+		// Доступны всем, без аутентификации.
 		r.Mount("/auth", s.AuthHandler.Routes())
 		r.Mount("/catalog", s.CatalogHandler.Routes())
 
-		// Protected routes
+		// --- УРОВЕНЬ 2: РОУТЫ ДЛЯ ЛЮБОГО ЗАЛОГИНЕННОГО ПОЛЬЗОВАТЕЛЯ ---
+		// К этой группе применяется AuthMiddleware. Все, что внутри, требует наличия валидного токена.
 		r.Group(func(r chi.Router) {
-			r.Use(s.mw.AuthMiddleware)
+			r.Use(s.mw.AuthMiddleware) // ПРОВЕРКА №1: Пользователь залогинен?
 
-			// User routes
+			// --- Роуты, доступные всем аутентифицированным пользователям ---
+
+			// Пользовательские операции (аренда, действия на грядке и т.д.)
 			r.Mount("/users", s.UserHandler.Routes())
-
-			// Leasing routes
 			r.Mount("/leasing", s.LeasingHandler.Routes())
-
-			// Operations routes
 			r.Mount("/operations", s.OperationsHandler.Routes())
 
-			// Farm routes (Regions, LandParcels, Greenhouses)
-			r.Route("/farm", func(r chi.Router) {
-				r.Route("/regions", func(r chi.Router) {
-					r.Post("/", s.FarmHandler.CreateRegion)
-					r.Get("/", s.FarmHandler.GetAllRegions)
-					r.Route("/{regionID}", func(r chi.Router) {
-						r.Get("/", s.FarmHandler.GetRegionByID)
+			// Роуты на ЧТЕНИЕ данных о ферме (просмотр иерархии)
+			r.Get("/farm/regions", s.FarmHandler.GetAllRegions)
+			r.Get("/farm/regions/{regionID}", s.FarmHandler.GetRegionByID)
+			r.Get("/farm/regions/{regionID}/land-parcels", s.FarmHandler.GetLandParcelsByRegion)
+			r.Get("/farm/land-parcels/{parcelID}", s.FarmHandler.GetLandParcelByID)
+			r.Get("/farm/land-parcels/{parcelID}/greenhouses", s.FarmHandler.GetGreenhousesByLandParcel)
+			r.Get("/farm/greenhouses/{greenhouseID}", s.FarmHandler.GetGreenhouseByID)
+			r.Get("/plots", s.PlotHandler.GetPlots) // Handles ?greenhouse_id=...
+			r.Get("/plots/{plotID}", s.PlotHandler.GetPlotByID)
+			r.Get("/plots/{plotID}/cameras", s.CameraHandler.GetCamerasByPlotID)
+
+			// --- УРОВЕНЬ 3: РОУТЫ ТОЛЬКО ДЛЯ АДМИНИСТРАТОРА ---
+			// Вложенная группа, к которой дополнительно применяется AdminMiddleware.
+			// Запрос должен пройти обе проверки: AuthMiddleware и AdminMiddleware.
+			r.Group(func(r chi.Router) {
+				r.Use(s.mw.AdminMiddleware) // ПРОВЕРКА №2: Является ли пользователь админом?
+
+				// Роуты на СОЗДАНИЕ, ИЗМЕНЕНИЕ и УДАЛЕНИЕ иерархии фермы
+				r.Route("/farm", func(r chi.Router) {
+					r.Post("/regions", s.FarmHandler.CreateRegion)
+					r.Route("/regions/{regionID}", func(r chi.Router) {
 						r.Put("/", s.FarmHandler.UpdateRegion)
 						r.Delete("/", s.FarmHandler.DeleteRegion)
-						r.Get("/land-parcels", s.FarmHandler.GetLandParcelsByRegion)
 						r.Post("/land-parcels", s.FarmHandler.CreateLandParcelForRegion)
 					})
-				})
-				r.Route("/land-parcels", func(r chi.Router) {
-					r.Route("/{parcelID}", func(r chi.Router) {
-						r.Get("/", s.FarmHandler.GetLandParcelByID)
+					r.Route("/land-parcels/{parcelID}", func(r chi.Router) {
 						r.Put("/", s.FarmHandler.UpdateLandParcel)
 						r.Delete("/", s.FarmHandler.DeleteLandParcel)
-						r.Get("/greenhouses", s.FarmHandler.GetGreenhousesByLandParcel)
 						r.Post("/greenhouses", s.FarmHandler.CreateGreenhouseForLandParcel)
 					})
-				})
-				r.Route("/greenhouses", func(r chi.Router) {
-					r.Route("/{greenhouseID}", func(r chi.Router) {
-						r.Get("/", s.FarmHandler.GetGreenhouseByID)
+					r.Route("/greenhouses/{greenhouseID}", func(r chi.Router) {
 						r.Put("/", s.FarmHandler.UpdateGreenhouse)
 						r.Delete("/", s.FarmHandler.DeleteGreenhouse)
 					})
 				})
-			})
 
-			// Plot routes (now a top-level resource)
-			r.Route("/plots", func(r chi.Router) {
-				r.Post("/", s.PlotHandler.CreatePlot)
-				r.Get("/", s.PlotHandler.GetPlots) // Handles ?greenhouse_id=...
-				r.Route("/{plotID}", func(r chi.Router) {
-					r.Get("/", s.PlotHandler.GetPlotByID)
-					r.Put("/", s.PlotHandler.UpdatePlot)
-					r.Delete("/", s.PlotHandler.DeletePlot)
-					// Nested camera routes
-					r.Get("/cameras", s.CameraHandler.GetCamerasByPlotID)
-					r.Post("/cameras", s.CameraHandler.CreateCamera)
+				// Роуты на СОЗДАНИЕ, ИЗМЕНЕНИЕ и УДАЛЕНИЕ грядок и камер
+				r.Route("/plots", func(r chi.Router) {
+					r.Post("/", s.PlotHandler.CreatePlot)
+					r.Route("/{plotID}", func(r chi.Router) {
+						r.Put("/", s.PlotHandler.UpdatePlot)
+						r.Delete("/", s.PlotHandler.DeletePlot)
+						r.Post("/cameras", s.CameraHandler.CreateCamera)
+					})
 				})
-			})
-
-			// Camera routes (for top-level access like delete)
-			r.Route("/cameras", func(r chi.Router) {
-				r.Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
+				r.Route("/cameras", func(r chi.Router) {
+					r.Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
+				})
 			})
 		})
 
