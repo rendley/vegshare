@@ -18,25 +18,22 @@ export const useHLSStream = ({ camera }: UseHLSStreamProps) => {
       return;
     }
 
-    // URL для основного плейлиста. Токен добавляется сразу.
     const hlsUrl = `/api/v1/stream/hls/${camera.rtsp_path_name}/index.m3u8?token=${token}`;
 
     const videoElement = videoRef.current;
     let hls: Hls | null = null;
 
-    // Конфигурация для hls.js
     const hlsConfig = {
       loader: class CustomLoader extends Hls.DefaultConfig.loader {
         constructor(config: any) {
           super(config);
           const oldLoad = this.load.bind(this);
           this.load = (context, config, callbacks) => {
-            // Используем type guard "in" для проверки наличия свойства frag.
-            // Это доказывает TypeScript, что мы работаем с контекстом сегмента.
-            if ('frag' in context) {
-              // Добавляем токен к URL сегмента.
-              // Важно использовать `&`, так как `?` уже используется для токена в основном URL.
-              context.url += `?token=${token}`;
+            // К самому первому запросу (hlsUrl) токен уже добавлен.
+            // Этот код добавляет токен ко всем остальным запросам (другие плейлисты, сегменты).
+            if (context.url !== hlsUrl) {
+              const separator = context.url.includes('?') ? '&' : '?';
+              context.url = `${context.url}${separator}token=${token}`;
             }
             oldLoad(context, config, callbacks);
           };
@@ -45,7 +42,7 @@ export const useHLSStream = ({ camera }: UseHLSStreamProps) => {
     };
 
     if (Hls.isSupported()) {
-      console.log("Using hls.js for playback with custom loader");
+      console.log("Using hls.js for playback with robust custom loader");
       hls = new Hls(hlsConfig);
       hls.loadSource(hlsUrl);
       hls.attachMedia(videoElement);
