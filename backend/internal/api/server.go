@@ -146,9 +146,9 @@ func (s *Server) Start() error {
 			})
 		})
 
-		// WebSocket route for streaming with its own auth middleware
+		// Streaming routes (HLS and WebSocket) with query param auth
 		r.Group(func(r chi.Router) {
-			r.Use(s.mw.WebSocketAuthMiddleware)
+			r.Use(s.mw.QueryParamAuthMiddleware)
 			r.Mount("/stream", s.StreamingHandler.Routes())
 		})
 	})

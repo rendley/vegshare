@@ -100,9 +100,8 @@ func CorsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// WebSocketAuthMiddleware is a middleware to authenticate users for WebSocket connections.
-// It checks for a token in the "token" query parameter.
-func (m *Middleware) WebSocketAuthMiddleware(next http.Handler) http.Handler {
+// QueryParamAuthMiddleware is a middleware to authenticate users by checking the "token" query parameter.
+func (m *Middleware) QueryParamAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenString := r.URL.Query().Get("token")
 

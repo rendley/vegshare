@@ -12,8 +12,15 @@ export const useHLSStream = ({ camera }: UseHLSStreamProps) => {
   useEffect(() => {
     if (!camera || !videoRef.current) return;
 
-    // HLS URL, который предоставляет mediamtx
-    const hlsUrl = `/api/v1/stream/hls/${camera.rtsp_path_name}/index.m3u8`;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Handle missing token case
+      console.error("Auth token not found for HLS stream");
+      return;
+    }
+
+    // HLS URL, который проксируется через наш бэкенд
+    const hlsUrl = `/api/v1/stream/hls/${camera.rtsp_path_name}/index.m3u8?token=${token}`;
 
     const videoElement = videoRef.current;
     let hls: Hls | null = null;
