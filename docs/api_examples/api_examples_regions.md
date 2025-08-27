@@ -1,9 +1,9 @@
 ### Управление Регионами (Regions)
 
-**1. Создание региона (Требуются права администратора)**
+**1. Создание региона**
 
 ```bash
-ACCESS_TOKEN="your_admin_access_token"
+ACCESS_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTYxMDg3MDQsImlhdCI6MTc1NjA3OTkwNCwic3ViIjoiY2YzMGU1NzAtMDhkNS00NjY1LWE3NjYtZTc4ZmQ2YWZmMGU5In0.nAZMy5d_rh-KhhsNvNRLIFOkuXSDrRLahvCE_SxIBUc"
 curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" -d '{"name": "Krasnodarskiy kray"}' http://localhost:8080/api/v1/farm/regions
 ```
 

@@ -1,15 +1,21 @@
 ### Управление Камерами (Cameras)
 
-**1. Создание камеры для грядки (Требуются права администратора)**
+**1. Создание камеры для грядки**
 
 Предполагается, что у вас уже есть ID грядки (`PLOT_ID`). 
 
 ```bash
-ACCESS_TOKEN="your_admin_access_token"
+ACCESS_TOKEN="your_access_token"
 PLOT_ID="83cd4784-4724-4756-a21c-33f2b0c74293"
 curl -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" \
--d '{"name": "Refactor Front View", "rtsp_path_name": "refactor_front_cam"}' \
+-d '{"name": "Refactor Front View", "rtsp_url": "rtsp://192.168.0.60:554/user=admin&password=zz123456&channel=1&stream=0.sdp"}' \
 http://localhost:8080/api/v1/plots/$PLOT_ID/cameras
+
+
+curl -X POST http://localhost:8080/api/v1/plots/$PLOT_ID/cameras \
+-H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" \
+-d '{"name": "My Local Camera", "rtsp_path_name": "local_cam"}'
+
 ```
 
 *Успешный ответ (201 Created):*
@@ -46,10 +52,10 @@ curl -s -X GET -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/ap
 ]
 ```
 
-**3. Удаление камеры (Требуются права администратора)**
+**3. Удаление камеры**
 
 ```bash
-ACCESS_TOKEN="your_admin_access_token"
+ACCESS_TOKEN="your_access_token"
 CAMERA_ID="2febab9e-e149-40fd-ab71-6bb4c3640a7b"
 curl -s -i -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/api/v1/cameras/$CAMERA_ID
 ```
