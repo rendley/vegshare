@@ -13,6 +13,7 @@ import GreenhouseManagementPage from './pages/admin/GreenhouseManagementPage';
 import PlotManagementPage from './pages/admin/PlotManagementPage';
 import CameraManagementPage from './pages/admin/CameraManagementPage';
 import CropManagementPage from './pages/admin/CropManagementPage';
+import UserManagementPage from './pages/admin/UserManagementPage'; // Импортируем новую страницу
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectCurrentUserRole, selectIsLoggedIn } from './features/auth/authSlice';
 
@@ -50,7 +51,7 @@ function App() {
             </li>
             {userRole === 'admin' && (
               <li>
-                <Link to="/admin/regions">Админка</Link>
+                <Link to="/admin/users">Админка</Link> // Изменяем ссылку на новую страницу
               </li>
             )}
             {isLoggedIn ? (
@@ -86,6 +87,7 @@ function App() {
               </ProtectedRoute>
             }
           >
+            <Route path="users" element={<UserManagementPage />} />
             <Route path="regions" element={<RegionManagementPage />} />
             <Route path="parcels" element={<LandParcelManagementPage />} />
             <Route path="greenhouses" element={<GreenhouseManagementPage />} />

@@ -18,6 +18,11 @@ const AdminLayout = () => {
         <Box sx={{ overflow: 'auto' }}>
           <List>
             <ListItem disablePadding>
+              <ListItemButton component={NavLink} to="/admin/users">
+                <ListItemText primary="Пользователи" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
               <ListItemButton component={NavLink} to="/admin/regions">
                 <ListItemText primary="Регионы" />
               </ListItemButton>

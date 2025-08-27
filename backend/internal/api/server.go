@@ -152,6 +152,13 @@ func (s *Server) Start() error {
 			r.Route("/cameras", func(r chi.Router) {
 				r.With(s.mw.AdminMiddleware).Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
 			})
+
+			// --- Админ-панель: Управление пользователями ---
+			r.Route("/admin/users", func(r chi.Router) {
+				r.Use(s.mw.AdminMiddleware) // Защищаем все роуты в этой группе
+				r.Get("/", s.UserHandler.GetAllUsers)
+				r.Put("/{userID}/role", s.UserHandler.UpdateUserRole)
+			})
 		})
 
 		// Streaming routes (HLS and WebSocket) with query param auth

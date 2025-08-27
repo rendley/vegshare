@@ -35,6 +35,19 @@ func (m *MockUserRepository) DeleteUser(ctx context.Context, id uuid.UUID) error
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) GetAllUsers(ctx context.Context) ([]models.UserProfile, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.UserProfile), args.Error(1)
+}
+
+func (m *MockUserRepository) UpdateUserRole(ctx context.Context, id uuid.UUID, role string) error {
+	args := m.Called(ctx, id, role)
+	return args.Error(0)
+}
+
 // --- Tests ---
 
 func TestUserService(t *testing.T) {
@@ -105,5 +118,47 @@ func TestUserService(t *testing.T) {
 		// Assert
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("GetAllUsers", func(t *testing.T) {
+		// Arrange
+		expectedUsers := []models.UserProfile{{ID: uuid.New(), Name: "User 1"}, {ID: uuid.New(), Name: "User 2"}}
+		mockRepo.On("GetAllUsers", ctx).Return(expectedUsers, nil).Once()
+
+		// Act
+		users, err := userSvc.GetAllUsers(ctx)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, expectedUsers, users)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("UpdateUserRole", func(t *testing.T) {
+		userID := uuid.New()
+		t.Run("should update role successfully", func(t *testing.T) {
+			// Arrange
+			newRole := "admin"
+			updatedUser := &models.UserProfile{ID: userID, Role: newRole}
+			mockRepo.On("UpdateUserRole", ctx, userID, newRole).Return(nil).Once()
+			mockRepo.On("GetUserByID", ctx, userID).Return(updatedUser, nil).Once()
+
+			// Act
+			user, err := userSvc.UpdateUserRole(ctx, userID, newRole)
+
+			// Assert
+			assert.NoError(t, err)
+			assert.Equal(t, updatedUser, user)
+			mockRepo.AssertExpectations(t)
+		})
+
+		t.Run("should return error for invalid role", func(t *testing.T) {
+			// Act
+			user, err := userSvc.UpdateUserRole(ctx, userID, "invalid_role")
+
+			// Assert
+			assert.Error(t, err)
+			assert.Nil(t, user)
+		})
 	})
 }

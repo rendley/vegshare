@@ -10,6 +10,15 @@ interface AuthResponse {
   user_id: string;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+  avatar_url?: string;
+  created_at: string;
+}
+
 export interface Region {
   id: string;
   name: string;
@@ -81,7 +90,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Region', 'LandParcel', 'Greenhouse', 'Plot', 'Lease', 'PlotCrop', 'Camera', 'Crop'],
+  tagTypes: ['Region', 'LandParcel', 'Greenhouse', 'Plot', 'Lease', 'PlotCrop', 'Camera', 'Crop', 'User'],
   endpoints: (builder) => ({
     // QUERIES
     getRegions: builder.query<Region[], void>({
@@ -159,7 +168,21 @@ export const apiSlice = createApi({
       }),
     }),
 
+    // Admin Queries
+    getUsers: builder.query<User[], void>({
+      query: () => 'admin/users',
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'User', id: 'LIST' }] : [{ type: 'User', id: 'LIST' }],
+    }),
+
     // Admin Mutations
+    updateUserRole: builder.mutation<User, { userId: string; role: string }>({
+      query: ({ userId, role }) => ({
+        url: `admin/users/${userId}/role`,
+        method: 'PUT',
+        body: { role },
+      }),
+      invalidatesTags: (_, __, { userId }) => [{ type: 'User', id: userId }, { type: 'User', id: 'LIST' }],
+    }),
     createRegion: builder.mutation<Region, { name: string }>({
       query: (body) => ({
         url: 'farm/regions',
@@ -325,6 +348,8 @@ export const {
   usePlantCropMutation,
   useRemoveCropMutation,
   usePerformActionMutation,
+  useGetUsersQuery,
+  useUpdateUserRoleMutation,
   useCreateRegionMutation,
   useCreateLandParcelMutation,
   useCreateGreenhouseMutation,
