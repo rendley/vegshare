@@ -200,6 +200,21 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: 'Crop', id: 'LIST' }],
     }),
+    updateRegion: builder.mutation<Region, { id: string; name: string }>({
+      query: ({ id, ...body }) => ({
+        url: `farm/regions/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: 'Region', id }, { type: 'Region', id: 'LIST' }],
+    }),
+    deleteRegion: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `farm/regions/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'Region', id: 'LIST' }],
+    }),
   }),
 });
 
@@ -225,4 +240,6 @@ export const {
   useCreatePlotMutation,
   useCreateCameraMutation,
   useCreateCropMutation,
+  useUpdateRegionMutation,
+  useDeleteRegionMutation,
 } = apiSlice;

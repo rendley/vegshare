@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import { RegionsPage } from './pages/RegionsPage';
 import { LandParcelsPage } from './pages/LandParcelsPage';
 import { GreenhousesPage } from './pages/GreenhousesPage';
@@ -6,9 +6,18 @@ import { PlotsPage } from './pages/PlotsPage';
 import { MyPlotsPage } from './pages/MyPlotsPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { AdminPage } from './pages/AdminPage';
+import AdminLayout from './pages/admin/AdminLayout';
+import RegionManagementPage from './pages/admin/RegionManagementPage';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectCurrentUserRole, selectIsLoggedIn } from './features/auth/authSlice';
+
+// Компонент для защиты роутов
+const ProtectedRoute = ({ isAllowed, children }: { isAllowed: boolean, children: React.ReactNode }) => {
+  if (!isAllowed) {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+};
 
 function App() {
   const isLoggedIn = useSelector(selectIsLoggedIn);
@@ -36,7 +45,7 @@ function App() {
             </li>
             {userRole === 'admin' && (
               <li>
-                <Link to="/admin">Админка</Link>
+                <Link to="/admin/regions">Админка</Link>
               </li>
             )}
             {isLoggedIn ? (
@@ -62,7 +71,20 @@ function App() {
           <Route path="/my-plots" element={<MyPlotsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/admin" element={<AdminPage />} />
+
+          {/* Админские роуты */}
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute isAllowed={userRole === 'admin'}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="regions" element={<RegionManagementPage />} />
+            {/* Другие админские страницы будут здесь */}
+          </Route>
+
         </Routes>
       </div>
   );
