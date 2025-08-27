@@ -10,24 +10,29 @@ interface AuthResponse {
   user_id: string;
 }
 
-interface Region {
+export interface Region {
   id: string;
   name: string;
 }
 
-interface LandParcel {
+export interface LandParcel {
   id: string;
   name: string;
+  region_id: string;
 }
 
-interface Greenhouse {
+export interface Greenhouse {
   id: string;
   name: string;
+  land_parcel_id: string;
+  type?: string;
 }
 
 export interface Plot {
   id: string;
   name: string;
+  greenhouse_id: string;
+  size?: string;
   status: string;
 }
 
@@ -46,6 +51,9 @@ export interface PlotLease {
 export interface Crop {
   id: string;
   name: string;
+  description?: string;
+  planting_time?: number;
+  harvest_time?: number;
 }
 
 export interface PlotCrop {
@@ -168,7 +176,7 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: 'LandParcel', id: 'LIST' }],
     }),
-    createGreenhouse: builder.mutation<Greenhouse, { landParcelId: string; name: string }>({
+    createGreenhouse: builder.mutation<Greenhouse, { landParcelId: string; name: string; type?: string }>({
       query: ({ landParcelId, ...body }) => ({
         url: `farm/land-parcels/${landParcelId}/greenhouses`,
         method: 'POST',
@@ -176,7 +184,7 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: 'Greenhouse', id: 'LIST' }],
     }),
-    createPlot: builder.mutation<Plot, { greenhouse_id: string; name: string; size: string }>({
+    createPlot: builder.mutation<Plot, { greenhouse_id: string; name: string; size?: string }>({
       query: (body) => ({
         url: 'plots',
         method: 'POST',
@@ -215,6 +223,89 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: 'Region', id: 'LIST' }],
     }),
+    updateLandParcel: builder.mutation<LandParcel, { id: string; name: string }>({
+      query: ({ id, ...body }) => ({
+        url: `farm/land-parcels/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: 'LandParcel', id }, { type: 'LandParcel', id: 'LIST' }],
+    }),
+    deleteLandParcel: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `farm/land-parcels/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'LandParcel', id: 'LIST' }],
+    }),
+
+    // Greenhouses
+    updateGreenhouse: builder.mutation<Greenhouse, { id: string; name: string; type?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `farm/greenhouses/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: 'Greenhouse', id }, { type: 'Greenhouse', id: 'LIST' }],
+    }),
+    deleteGreenhouse: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `farm/greenhouses/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'Greenhouse', id: 'LIST' }],
+    }),
+
+    // Plots
+    updatePlot: builder.mutation<Plot, { id: string; name: string; size?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `plots/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: 'Plot', id }, { type: 'Plot', id: 'LIST' }],
+    }),
+    deletePlot: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `plots/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'Plot', id: 'LIST' }],
+    }),
+
+    // Cameras
+    updateCamera: builder.mutation<Camera, { id: string; name: string; rtsp_path_name: string }>({
+      query: ({ id, ...body }) => ({
+        url: `cameras/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: 'Camera', id }, { type: 'Camera', id: 'LIST' }],
+    }),
+    deleteCamera: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `cameras/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'Camera', id: 'LIST' }],
+    }),
+
+    // Crops
+    updateCrop: builder.mutation<Crop, Partial<Crop> & { id: string }>(({
+      query: ({ id, ...body }) => ({
+        url: `catalog/crops/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: 'Crop', id }, { type: 'Crop', id: 'LIST' }],
+    })),
+    deleteCrop: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `catalog/crops/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'Crop', id: 'LIST' }],
+    }),
   }),
 });
 
@@ -242,4 +333,14 @@ export const {
   useCreateCropMutation,
   useUpdateRegionMutation,
   useDeleteRegionMutation,
+  useUpdateLandParcelMutation,
+  useDeleteLandParcelMutation,
+  useUpdateGreenhouseMutation,
+  useDeleteGreenhouseMutation,
+  useUpdatePlotMutation,
+  useDeletePlotMutation,
+  useUpdateCameraMutation,
+  useDeleteCameraMutation,
+  useUpdateCropMutation,
+  useDeleteCropMutation,
 } = apiSlice;

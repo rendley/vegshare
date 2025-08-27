@@ -8,6 +8,11 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import RegionManagementPage from './pages/admin/RegionManagementPage';
+import LandParcelManagementPage from './pages/admin/LandParcelManagementPage';
+import GreenhouseManagementPage from './pages/admin/GreenhouseManagementPage';
+import PlotManagementPage from './pages/admin/PlotManagementPage';
+import CameraManagementPage from './pages/admin/CameraManagementPage';
+import CropManagementPage from './pages/admin/CropManagementPage';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectCurrentUserRole, selectIsLoggedIn } from './features/auth/authSlice';
 
@@ -82,6 +87,11 @@ function App() {
             }
           >
             <Route path="regions" element={<RegionManagementPage />} />
+            <Route path="parcels" element={<LandParcelManagementPage />} />
+            <Route path="greenhouses" element={<GreenhouseManagementPage />} />
+            <Route path="plots" element={<PlotManagementPage />} />
+            <Route path="cameras" element={<CameraManagementPage />} />
+            <Route path="crops" element={<CropManagementPage />} />
             {/* Другие админские страницы будут здесь */}
           </Route>
 

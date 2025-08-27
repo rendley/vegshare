@@ -22,6 +22,31 @@ const AdminLayout = () => {
                 <ListItemText primary="Регионы" />
               </ListItemButton>
             </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton component={NavLink} to="/admin/parcels">
+                <ListItemText primary="Участки" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton component={NavLink} to="/admin/greenhouses">
+                <ListItemText primary="Теплицы" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton component={NavLink} to="/admin/plots">
+                <ListItemText primary="Грядки" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton component={NavLink} to="/admin/cameras">
+                <ListItemText primary="Камеры" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton component={NavLink} to="/admin/crops">
+                <ListItemText primary="Культуры" />
+              </ListItemButton>
+            </ListItem>
             {/* Ссылки на другие разделы будут здесь */}
           </List>
         </Box>
