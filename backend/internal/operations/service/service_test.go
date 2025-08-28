@@ -7,11 +7,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/streadway/amqp"
 	"github.com/rendley/vegshare/backend/internal/catalog/models"
 	leasingModels "github.com/rendley/vegshare/backend/internal/leasing/models"
 	plotModels "github.com/rendley/vegshare/backend/internal/plot/models"
 	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
+	"github.com/rendley/vegshare/backend/pkg/config"
+	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -130,8 +131,13 @@ func TestOperationsService(t *testing.T) {
 	mockLeasingRepo := new(MockLeasingRepository)
 	mockCatalogSvc := new(MockCatalogService)
 	mockRabbitMQ := new(MockRabbitMQClient)
+	cfg := &config.Config{
+		RabbitMQ: config.RabbitMQConfig{
+			Queues: map[string]string{"actions": "actions_queue_test"},
+		},
+	}
 
-	opsSvc := NewOperationsService(mockOpsRepo, mockPlotSvc, mockLeasingRepo, mockCatalogSvc, mockRabbitMQ)
+	opsSvc := NewOperationsService(mockOpsRepo, mockPlotSvc, mockLeasingRepo, mockCatalogSvc, mockRabbitMQ, cfg)
 
 	t.Run("PlantCrop", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
@@ -183,7 +189,7 @@ func TestOperationsService(t *testing.T) {
 			// Arrange
 			plotID := uuid.New()
 			action := "water"
-			mockRabbitMQ.On("Publish", "actions", mock.AnythingOfType("string")).Return(nil).Once()
+			mockRabbitMQ.On("Publish", cfg.RabbitMQ.Queues["actions"], mock.AnythingOfType("string")).Return(nil).Once()
 
 			// Act
 			err := opsSvc.PerformAction(ctx, plotID, action)
@@ -198,7 +204,7 @@ func TestOperationsService(t *testing.T) {
 			plotID := uuid.New()
 			action := "water"
 			expectedErr := errors.New("publish error")
-			mockRabbitMQ.On("Publish", "actions", mock.AnythingOfType("string")).Return(expectedErr).Once()
+			mockRabbitMQ.On("Publish", cfg.RabbitMQ.Queues["actions"], mock.AnythingOfType("string")).Return(expectedErr).Once()
 
 			// Act
 			err := opsSvc.PerformAction(ctx, plotID, action)

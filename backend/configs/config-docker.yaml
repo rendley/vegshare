@@ -21,6 +21,8 @@ redis:
 
 rabbitmq:
   url: "amqp://guest:guest@rabbitmq:5672/"
+  queues:
+    actions: "actions_queue"
 
 mediamtx:
   host: "mediamtx"

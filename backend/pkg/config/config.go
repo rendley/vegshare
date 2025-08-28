@@ -46,7 +46,8 @@ type RedisConfig struct {
 }
 
 type RabbitMQConfig struct {
-	URL string `yaml:"url"`
+	URL    string            `yaml:"url"`
+	Queues map[string]string `yaml:"queues"`
 }
 
 type MediaMTXConfig struct {

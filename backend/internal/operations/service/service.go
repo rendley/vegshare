@@ -13,6 +13,7 @@ import (
 	leasingRepository "github.com/rendley/vegshare/backend/internal/leasing/repository"
 	"github.com/rendley/vegshare/backend/internal/operations/repository"
 	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
+	"github.com/rendley/vegshare/backend/pkg/config"
 	"github.com/rendley/vegshare/backend/pkg/rabbitmq"
 )
 
@@ -30,16 +31,18 @@ type service struct {
 	leasingRepo    leasingRepository.Repository
 	catalogService catalogService.Service
 	rabbitmq       rabbitmq.ClientInterface
+	cfg            *config.Config
 }
 
 // NewOperationsService - конструктор для сервиса.
-func NewOperationsService(repo repository.Repository, plotSvc plotService.Service, leasingRepo leasingRepository.Repository, catalogService catalogService.Service, rabbitmq rabbitmq.ClientInterface) Service {
+func NewOperationsService(repo repository.Repository, plotSvc plotService.Service, leasingRepo leasingRepository.Repository, catalogService catalogService.Service, rabbitmq rabbitmq.ClientInterface, cfg *config.Config) Service {
 	return &service{
 		repo:           repo,
 		plotSvc:        plotSvc,
 		leasingRepo:    leasingRepo,
 		catalogService: catalogService,
 		rabbitmq:       rabbitmq,
+		cfg:            cfg,
 	}
 }
 
@@ -108,5 +111,5 @@ func (s *service) PerformAction(ctx context.Context, plotID uuid.UUID, action st
 		return fmt.Errorf("failed to marshal action message: %w", err)
 	}
 
-	return s.rabbitmq.Publish("actions", string(body))
+	return s.rabbitmq.Publish(s.cfg.RabbitMQ.Queues["actions"], string(body))
 }

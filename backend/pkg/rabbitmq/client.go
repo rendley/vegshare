@@ -38,7 +38,7 @@ func (c *Client) Close() {
 func (c *Client) Publish(queueName, body string) error {
 	q, err := c.ch.QueueDeclare(
 		queueName, // name
-		false,     // durable
+		true,      // durable
 		false,     // delete when unused
 		false,     // exclusive
 		false,     // no-wait
@@ -54,8 +54,9 @@ func (c *Client) Publish(queueName, body string) error {
 		false,  // mandatory
 		false,  // immediate
 		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(body),
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "text/plain",
+			Body:         []byte(body),
 		},
 	)
 	if err != nil {
@@ -69,7 +70,7 @@ func (c *Client) Publish(queueName, body string) error {
 func (c *Client) Consume(queueName string) (<-chan amqp.Delivery, error) {
 	q, err := c.ch.QueueDeclare(
 		queueName, // name
-		false,     // durable
+		true,      // durable
 		false,     // delete when unused
 		false,     // exclusive
 		false,     // no-wait
@@ -82,7 +83,7 @@ func (c *Client) Consume(queueName string) (<-chan amqp.Delivery, error) {
 	msgs, err := c.ch.Consume(
 		q.Name, // queue
 		"",     // consumer
-		true,   // auto-ack
+		false,  // auto-ack
 		false,  // exclusive
 		false,  // no-local
 		false,  // no-wait
