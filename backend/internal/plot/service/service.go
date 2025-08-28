@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	farmService "github.com/rendley/vegshare/backend/internal/farm/service"
 	"github.com/rendley/vegshare/backend/internal/plot/models"
 	"github.com/rendley/vegshare/backend/internal/plot/repository"
@@ -18,6 +19,7 @@ type Service interface {
 	GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]models.Plot, error)
 	UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*models.Plot, error)
 	DeletePlot(ctx context.Context, id uuid.UUID) error
+	WithTx(tx *sqlx.Tx) Service
 }
 
 // service implements the Service interface.
@@ -29,6 +31,14 @@ type service struct {
 // NewService is a constructor for the plot service.
 func NewService(repo repository.Repository, farmSvc farmService.Service) Service {
 	return &service{repo: repo, farmSvc: farmSvc}
+}
+
+// WithTx creates a new service instance with a transaction.
+func (s *service) WithTx(tx *sqlx.Tx) Service {
+	return &service{
+		repo:    repository.NewRepository(tx),
+		farmSvc: s.farmSvc,
+	}
 }
 
 func (s *service) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*models.Plot, error) {

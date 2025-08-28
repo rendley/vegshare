@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
 	"github.com/rendley/vegshare/backend/internal/plot/models"
+	"github.com/rendley/vegshare/backend/pkg/database"
 )
 
 // Repository defines the contract for plot data storage.
@@ -20,11 +20,11 @@ type Repository interface {
 
 // repository implements the Repository interface.
 type repository struct {
-	db *sqlx.DB
+	db database.DBTX
 }
 
 // NewRepository is a constructor for the repository.
-func NewRepository(db *sqlx.DB) Repository {
+func NewRepository(db database.DBTX) Repository {
 	return &repository{db: db}
 }
 

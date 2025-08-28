@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
 	"github.com/rendley/vegshare/backend/internal/leasing/models"
+	"github.com/rendley/vegshare/backend/pkg/database"
 )
 
 // Repository определяет контракт для хранилища данных аренды.
@@ -16,10 +16,10 @@ type Repository interface {
 }
 
 type repository struct {
-	db *sqlx.DB
+	db database.DBTX
 }
 
-func NewRepository(db *sqlx.DB) Repository {
+func NewRepository(db database.DBTX) Repository {
 	return &repository{db: db}
 }
 

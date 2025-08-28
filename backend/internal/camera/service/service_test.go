@@ -6,8 +6,10 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	"github.com/rendley/vegshare/backend/internal/camera/models"
 	plotModels "github.com/rendley/vegshare/backend/internal/plot/models"
+	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -62,6 +64,7 @@ func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, gre
 func (m *MockPlotService) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]plotModels.Plot, error) { return nil, nil }
 func (m *MockPlotService) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*plotModels.Plot, error) { return nil, nil }
 func (m *MockPlotService) DeletePlot(ctx context.Context, id uuid.UUID) error { return nil }
+func (m *MockPlotService) WithTx(tx *sqlx.Tx) plotService.Service { return m }
 
 
 // --- Tests ---

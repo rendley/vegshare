@@ -79,7 +79,7 @@ func main() {
 	userSvc := userService.NewUserService(userRepo)
 	farmSvc := farmService.NewFarmService(farmRepo)
 	plotSvc := plotService.NewService(plotRepo, farmSvc)
-	leasingSvc := leasingService.NewLeasingService(leasingRepo, plotSvc)
+	leasingSvc := leasingService.NewLeasingService(db, leasingRepo, plotSvc)
 	catalogSvc := catalogService.NewService(catalogRepo)
 	operationsSvc := operationsService.NewOperationsService(operationsRepo, plotSvc, leasingRepo, catalogSvc, rabbitMQClient)
 	cameraSvc := cameraService.NewService(cameraRepo, plotSvc)
