@@ -3,6 +3,7 @@ version: '3.8'
 
 # В этом разделе мы определяем все сервисы (контейнеры),
 # которые необходимы для работы нашего приложения.
+
 services:
   # Сервис базы данных PostgreSQL.
   # Здесь будут храниться данные о пользователях, фермах, участках.
@@ -46,6 +47,8 @@ services:
       # Порт 15672 - это веб-интерфейс для управления и мониторинга.
       # Вы сможете открыть в браузере http://localhost:15672
       - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
     restart: unless-stopped
 
   # Сервис MediaMTX - медиа-сервер.
@@ -67,7 +70,19 @@ services:
       - MTX_CONF_PATH=/mediamtx.yml
     restart: unless-stopped
 
+  # Сервис для фоновой обработки задач из очереди RabbitMQ.
+  backend-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    restart: unless-stopped
+
 # Здесь мы определяем тома (volumes) для хранения данных.
 volumes:
   pg_data: # Именованный том для данных PostgreSQL.
+  rabbitmq_data: # Именованный том для данных RabbitMQ.
 

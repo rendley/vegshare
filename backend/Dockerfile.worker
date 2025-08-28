@@ -1,0 +1,26 @@
+# --- Этап 1: Сборщик ---
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /src
+
+# Копируем файлы зависимостей и скачиваем их
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Копируем остальной исходный код
+COPY . .
+
+# Собираем воркер
+RUN go build -o /worker ./cmd/worker/main.go
+
+
+# --- Этап 2: Финальный образ ---
+FROM alpine:latest
+
+WORKDIR /app
+
+# Копируем скомпилированное приложение из сборщика
+COPY --from=builder /worker /worker
+
+# Команда для запуска воркера
+CMD [ "/worker" ]
