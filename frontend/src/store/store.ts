@@ -1,12 +1,24 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { combineReducers, configureStore, type PayloadAction } from '@reduxjs/toolkit';
 import { apiSlice } from '../features/api/apiSlice';
-import authReducer from '../features/auth/authSlice';
+import authReducer, { logout } from '../features/auth/authSlice';
+
+// Комбинируем все редьюсеры в один корневой редьюсер
+const rootReducer = combineReducers({
+  [apiSlice.reducerPath]: apiSlice.reducer,
+  auth: authReducer,
+});
+
+// Создаем обертку над корневым редьюсером, которая будет сбрасывать состояние при выходе
+const resettableRootReducer = (state: ReturnType<typeof rootReducer> | undefined, action: PayloadAction) => {
+  if (action.type === logout.type) {
+    // При вызове logout, передаем undefined, чтобы сбросить состояние к начальному
+    return rootReducer(undefined, action);
+  }
+  return rootReducer(state, action);
+};
 
 export const store = configureStore({
-  reducer: {
-    [apiSlice.reducerPath]: apiSlice.reducer,
-    auth: authReducer,
-  },
+  reducer: resettableRootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(apiSlice.middleware),
 });

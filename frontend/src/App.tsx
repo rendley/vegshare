@@ -51,7 +51,7 @@ function App() {
             </li>
             {userRole === 'admin' && (
               <li>
-                <Link to="/admin/users">Админка</Link> // Изменяем ссылку на новую страницу
+                <Link to="/admin/users">Админка</Link>
               </li>
             )}
             {isLoggedIn ? (
