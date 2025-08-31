@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stream Test</title>
+    <style>
+        body { font-family: sans-serif; display: flex; gap: 20px; }
+        video { width: 640px; height: 480px; border: 1px solid black; background-color: #333; }
+        div { display: flex; flex-direction: column; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+
+    <div>
+        <h2>Main Stream (Transcoded to H.264)</h2>
+        <video id="videoMain" controls></video>
+    </div>
+
+    <div>
+        <h2>Sub Stream (Copied - hopefully H.264)</h2>
+        <video id="videoSub" controls></video>
+    </div>
+
+<script>
+    function setupPlayer(videoId, streamUrl) {
+        var video = document.getElementById(videoId);
+        if (Hls.isSupported()) {
+            var hls = new Hls();
+            hls.loadSource(streamUrl);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                video.play();
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = streamUrl;
+            video.addEventListener('loadedmetadata', function() {
+                video.play();
+            });
+        }
+    }
+
+    // We connect directly to mediamtx's HLS port (8888) to bypass the auth proxy for this simple test.
+    var mainStreamUrl = 'http://localhost:8888/main_stream/index.m3u8';
+    var subStreamUrl = 'http://localhost:8888/sub_stream/index.m3u8';
+
+    setupPlayer('videoMain', mainStreamUrl);
+    setupPlayer('videoSub', subStreamUrl);
+
+</script>
+
+</body>
+</html>

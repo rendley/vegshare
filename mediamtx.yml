@@ -25,15 +25,22 @@ paths:
   all:
     # Конфигурация для всех путей (пока пустая)
 
-  local_cam:
-    # Запускаем ffmpeg при старте mediamtx.
-    # Эта команда забирает поток с камеры (H.265) и перекодирует его
-    # в совместимый с браузерами формат H.264.
+  # Основной поток (stream=0), принудительно транскодируем в H.264
+  main_stream:
     runOnInit: >-
       ffmpeg -rtsp_transport tcp
       -i "rtsp://192.168.0.60:554/user=admin&password=zz123456&channel=1&stream=0.sdp"
       -c:v libx264 -profile:v baseline -pix_fmt yuv420p
       -c:a copy
-      -f flv rtmp://localhost:1935/local_cam
-    # Перезапускать ffmpeg, если он упадет.
+      -f flv rtmp://localhost:1935/main_stream
+    runOnInitRestart: yes
+
+  # Дополнительный поток (stream=1), просто копируем (надеемся, что он H.264)
+  sub_stream:
+    runOnInit: >-
+      ffmpeg -rtsp_transport tcp
+      -i "rtsp://192.168.0.60:554/user=admin&password=zz123456&channel=1&stream=1.sdp"
+      -c:v copy
+      -c:a copy
+      -f flv rtmp://localhost:1935/sub_stream
     runOnInitRestart: yes
