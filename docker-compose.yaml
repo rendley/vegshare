@@ -55,7 +55,7 @@ services:
   # Его задача - принимать видеопотоки с камер (по RTSP) и раздавать их
   # пользователям в браузер (по WebRTC).
   mediamtx:
-    image: bluenviron/mediamtx:latest
+    image: bluenviron/mediamtx:latest-ffmpeg
     container_name: mediamtx
     ports:
       - "8554:8554"      # RTSP
