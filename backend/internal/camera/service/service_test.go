@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/rendley/vegshare/backend/internal/camera/models"
+	leasingDomain "github.com/rendley/vegshare/backend/internal/leasing/domain"
 	plotModels "github.com/rendley/vegshare/backend/internal/plot/models"
-	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -60,12 +60,25 @@ func (m *MockPlotService) GetPlotByID(ctx context.Context, id uuid.UUID) (*plotM
 }
 
 // Dummy implementations for other plot service methods to satisfy the interface
-func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*plotModels.Plot, error) { return nil, nil }
-func (m *MockPlotService) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]plotModels.Plot, error) { return nil, nil }
-func (m *MockPlotService) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*plotModels.Plot, error) { return nil, nil }
+func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*plotModels.Plot, error) {
+	return nil, nil
+}
+func (m *MockPlotService) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]plotModels.Plot, error) {
+	return nil, nil
+}
+func (m *MockPlotService) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*plotModels.Plot, error) {
+	return nil, nil
+}
 func (m *MockPlotService) DeletePlot(ctx context.Context, id uuid.UUID) error { return nil }
-func (m *MockPlotService) WithTx(tx *sqlx.Tx) plotService.Service { return m }
+func (m *MockPlotService) WithTx(tx *sqlx.Tx) leasingDomain.UnitManager       { return m }
 
+// Добавляем недостающие методы для соответствия интерфейсу plot.Service
+func (m *MockPlotService) GetLeasableUnit(ctx context.Context, unitID uuid.UUID) (leasingDomain.LeasableUnit, error) {
+	return nil, nil
+}
+func (m *MockPlotService) UpdateUnitStatus(ctx context.Context, unitID uuid.UUID, status string) error {
+	return nil
+}
 
 // --- Tests ---
 

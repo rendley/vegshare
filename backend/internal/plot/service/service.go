@@ -8,18 +8,23 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	farmService "github.com/rendley/vegshare/backend/internal/farm/service"
+	"github.com/rendley/vegshare/backend/internal/leasing/domain"
 	"github.com/rendley/vegshare/backend/internal/plot/models"
 	"github.com/rendley/vegshare/backend/internal/plot/repository"
 )
 
-// Service defines the contract for the plot service.
+// Service определяет контракт для plot service, который теперь полностью реализует domain.UnitManager
 type Service interface {
 	CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*models.Plot, error)
 	GetPlotByID(ctx context.Context, id uuid.UUID) (*models.Plot, error)
 	GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]models.Plot, error)
 	UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*models.Plot, error)
 	DeletePlot(ctx context.Context, id uuid.UUID) error
-	WithTx(tx *sqlx.Tx) Service
+
+	// Методы из domain.UnitManager
+	GetLeasableUnit(ctx context.Context, unitID uuid.UUID) (domain.LeasableUnit, error)
+	UpdateUnitStatus(ctx context.Context, unitID uuid.UUID, status string) error
+	WithTx(tx *sqlx.Tx) domain.UnitManager // <- ИСПРАВЛЕНО
 }
 
 // service implements the Service interface.
@@ -33,16 +38,16 @@ func NewService(repo repository.Repository, farmSvc farmService.Service) Service
 	return &service{repo: repo, farmSvc: farmSvc}
 }
 
-// WithTx creates a new service instance with a transaction.
-func (s *service) WithTx(tx *sqlx.Tx) Service {
+// WithTx создает новый сервис в рамках транзакции.
+func (s *service) WithTx(tx *sqlx.Tx) domain.UnitManager { // <- ИСПРАВЛЕНО
 	return &service{
 		repo:    repository.NewRepository(tx),
 		farmSvc: s.farmSvc,
 	}
 }
 
+// ... (остальные методы без изменений) ...
 func (s *service) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*models.Plot, error) {
-	// Check if the greenhouse exists
 	_, err := s.farmSvc.GetGreenhouseByID(ctx, greenhouseID)
 	if err != nil {
 		return nil, fmt.Errorf("теплица с ID %s не найдена: %w", greenhouseID, err)
@@ -96,4 +101,17 @@ func (s *service) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, stat
 
 func (s *service) DeletePlot(ctx context.Context, id uuid.UUID) error {
 	return s.repo.DeletePlot(ctx, id)
+}
+
+func (s *service) GetLeasableUnit(ctx context.Context, unitID uuid.UUID) (domain.LeasableUnit, error) {
+	return s.GetPlotByID(ctx, unitID)
+}
+
+func (s *service) UpdateUnitStatus(ctx context.Context, unitID uuid.UUID, status string) error {
+	plot, err := s.GetPlotByID(ctx, unitID)
+	if err != nil {
+		return err
+	}
+	_, err = s.UpdatePlot(ctx, unitID, plot.Name, plot.Size, status)
+	return err
 }

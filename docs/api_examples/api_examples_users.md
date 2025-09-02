@@ -6,7 +6,7 @@
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{
   "name": "Test User",
-  "email": "test@example.com",
+  "email": "admin@example.com",
   "password": "password"
 }' http://localhost:8080/api/v1/auth/register
 ```

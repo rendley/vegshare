@@ -33,13 +33,13 @@ export const MyPlotsPage = () => {
         <ul>
           {leases.map((lease) => (
             <li key={lease.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
-              <p><b>ID Грядки:</b> {lease.plot_id}</p>
+              <p><b>ID Грядки:</b> {lease.unit_id}</p>
               <hr />
-              <PlotCameraViewer plotId={lease.plot_id} />
+              <PlotCameraViewer plotId={lease.unit_id} />
               <hr />
               <div>
                 <b>Управление посадкой:</b>
-                <PlantingControl plotId={lease.plot_id} />
+                <PlantingControl plotId={lease.unit_id} />
               </div>
             </li>
           ))}

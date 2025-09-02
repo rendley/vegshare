@@ -7,143 +7,126 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/rendley/vegshare/backend/internal/leasing/domain"
 	"github.com/rendley/vegshare/backend/internal/leasing/models"
-	plotModels "github.com/rendley/vegshare/backend/internal/plot/models"
-	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 // --- Mocks ---
 
-// MockLeasingRepository is a mock for the leasing repository
 type MockLeasingRepository struct {
 	mock.Mock
 }
 
-func (m *MockLeasingRepository) CreateLease(ctx context.Context, lease *models.PlotLease) error {
+func (m *MockLeasingRepository) CreateLease(ctx context.Context, lease *models.Lease) error {
 	args := m.Called(ctx, lease)
 	return args.Error(0)
 }
 
-func (m *MockLeasingRepository) GetLeasesByUserID(ctx context.Context, userID uuid.UUID) ([]models.PlotLease, error) {
+func (m *MockLeasingRepository) GetLeasesByUserID(ctx context.Context, userID uuid.UUID) ([]models.Lease, error) {
 	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]models.PlotLease), args.Error(1)
+	return args.Get(0).([]models.Lease), args.Error(1)
 }
 
-// MockPlotService is a mock for the plot service
-type MockPlotService struct {
+type MockUnitManager struct {
 	mock.Mock
 }
 
-func (m *MockPlotService) GetPlotByID(ctx context.Context, id uuid.UUID) (*plotModels.Plot, error) {
-	args := m.Called(ctx, id)
+func (m *MockUnitManager) GetLeasableUnit(ctx context.Context, unitID uuid.UUID) (domain.LeasableUnit, error) {
+	args := m.Called(ctx, unitID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*plotModels.Plot), args.Error(1)
+	return args.Get(0).(domain.LeasableUnit), args.Error(1)
 }
 
-func (m *MockPlotService) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*plotModels.Plot, error) {
-	args := m.Called(ctx, id, name, size, status)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*plotModels.Plot), args.Error(1)
+func (m *MockUnitManager) UpdateUnitStatus(ctx context.Context, unitID uuid.UUID, status string) error {
+	args := m.Called(ctx, unitID, status)
+	return args.Error(0)
 }
 
-func (m *MockPlotService) WithTx(tx *sqlx.Tx) plotService.Service {
-	// In tests, we can often just return the same mock
-	// if we don't need to test the transactional behavior itself.
+func (m *MockUnitManager) WithTx(tx *sqlx.Tx) domain.UnitManager {
 	return m
 }
 
-// Dummy implementations for other plot service methods
-func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*plotModels.Plot, error) { return nil, nil }
-func (m *MockPlotService) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]plotModels.Plot, error) { return nil, nil }
-func (m *MockPlotService) DeletePlot(ctx context.Context, id uuid.UUID) error { return nil }
+// MockLeasableUnit - это мок для самого юнита, чтобы мы могли контролировать его статус.
+type MockLeasableUnit struct {
+	mock.Mock
+}
 
+func (m *MockLeasableUnit) GetID() uuid.UUID    { return uuid.New() }
+func (m *MockLeasableUnit) GetUnitType() string { return string(models.UnitTypePlot) }
+func (m *MockLeasableUnit) GetStatus() string {
+	args := m.Called()
+	return args.String(0)
+}
 
 // --- Tests ---
 
 func TestLeasingService(t *testing.T) {
 	ctx := context.Background()
 	mockLeasingRepo := new(MockLeasingRepository)
-	mockPlotSvc := new(MockPlotService)
+	mockUnitMgr := new(MockUnitManager)
 
-	// We pass nil for the DB connection, as unit tests for business logic
-	// shouldn't rely on a real database connection.
-	leasingSvc := NewLeasingService(nil, mockLeasingRepo, mockPlotSvc)
+	leasingSvc := NewLeasingService(nil, mockLeasingRepo)
+	leasingSvc.RegisterUnitManager(models.UnitTypePlot, mockUnitMgr)
 
-	t.Run("LeasePlot", func(t *testing.T) {
-		t.Run("Plot not found", func(t *testing.T) {
-			// Arrange
+	t.Run("CreateLease", func(t *testing.T) {
+		t.Run("Unit not found", func(t *testing.T) {
 			userID := uuid.New()
-			plotID := uuid.New()
-			mockPlotSvc.On("GetPlotByID", ctx, plotID).Return(nil, errors.New("not found")).Once()
+			unitID := uuid.New()
+			mockUnitMgr.On("GetLeasableUnit", ctx, unitID).Return(nil, errors.New("not found")).Once()
 
-			// Act
-			lease, err := leasingSvc.LeasePlot(ctx, userID, plotID)
+			lease, err := leasingSvc.CreateLease(ctx, userID, unitID, models.UnitTypePlot)
 
-			// Assert
 			assert.Error(t, err)
 			assert.Nil(t, lease)
-			mockPlotSvc.AssertExpectations(t)
+			mockUnitMgr.AssertExpectations(t)
 		})
 
-		t.Run("Plot not available", func(t *testing.T) {
-			// Arrange
+		t.Run("Unit not available", func(t *testing.T) {
 			userID := uuid.New()
-			plotID := uuid.New()
-			rentedPlot := &plotModels.Plot{ID: plotID, Status: "rented"}
+			unitID := uuid.New()
 
-			mockPlotSvc.On("GetPlotByID", ctx, plotID).Return(rentedPlot, nil).Once()
+			mockUnit := new(MockLeasableUnit)
+			mockUnit.On("GetStatus").Return("rented")
 
-			// Act
-			lease, err := leasingSvc.LeasePlot(ctx, userID, plotID)
+			mockUnitMgr.On("GetLeasableUnit", ctx, unitID).Return(mockUnit, nil).Once()
 
-			// Assert
+			lease, err := leasingSvc.CreateLease(ctx, userID, unitID, models.UnitTypePlot)
+
 			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "недоступен для аренды")
 			assert.Nil(t, lease)
-			mockPlotSvc.AssertExpectations(t)
+			mockUnitMgr.AssertExpectations(t)
 		})
 
-		// Note: A successful transaction test is an integration test, not a unit test.
-		// The unit test for the success case would fail on `db.BeginTxx` because db is nil.
-		// We are only testing the business logic branches here.
+		t.Run("Unit Manager not registered", func(t *testing.T) {
+			userID := uuid.New()
+			unitID := uuid.New()
+
+			// Пытаемся арендовать несуществующий тип юнита
+			lease, err := leasingSvc.CreateLease(ctx, userID, unitID, "non_existent_type")
+
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "не зарегистрирован")
+			assert.Nil(t, lease)
+		})
 	})
 
 	t.Run("GetMyLeases", func(t *testing.T) {
-		t.Run("Success", func(t *testing.T) {
-			// Arrange
-			userID := uuid.New()
-			expectedLeases := []models.PlotLease{{ID: uuid.New(), UserID: userID}}
-			mockLeasingRepo.On("GetLeasesByUserID", ctx, userID).Return(expectedLeases, nil).Once()
+		userID := uuid.New()
+		expectedLeases := []models.Lease{{ID: uuid.New(), UserID: userID}}
+		mockLeasingRepo.On("GetLeasesByUserID", ctx, userID).Return(expectedLeases, nil).Once()
 
-			// Act
-			leases, err := leasingSvc.GetMyLeases(ctx, userID)
+		leases, err := leasingSvc.GetMyLeases(ctx, userID)
 
-			// Assert
-			assert.NoError(t, err)
-			assert.Equal(t, expectedLeases, leases)
-			mockLeasingRepo.AssertExpectations(t)
-		})
-
-		t.Run("Error", func(t *testing.T) {
-			// Arrange
-			userID := uuid.New()
-			mockLeasingRepo.On("GetLeasesByUserID", ctx, userID).Return(nil, errors.New("db error")).Once()
-
-			// Act
-			leases, err := leasingSvc.GetMyLeases(ctx, userID)
-
-			// Assert
-			assert.Error(t, err)
-			assert.Nil(t, leases)
-			mockLeasingRepo.AssertExpectations(t)
-		})
+		assert.NoError(t, err)
+		assert.Equal(t, expectedLeases, leases)
+		mockLeasingRepo.AssertExpectations(t)
 	})
 }

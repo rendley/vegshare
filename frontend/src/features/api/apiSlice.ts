@@ -52,9 +52,16 @@ export interface Camera {
   rtsp_path_name: string;
 }
 
-export interface PlotLease {
+export interface Lease {
   id: string;
-  plot_id: string;
+  user_id: string;
+  unit_id: string;
+  unit_type: string;
+  status: string;
+  start_date: string;
+  end_date: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Crop {
@@ -113,8 +120,8 @@ export const apiSlice = createApi({
       query: (plotId) => `plots/${plotId}/cameras`,
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Camera' as const, id })), { type: 'Camera', id: 'LIST' }] : [{ type: 'Camera', id: 'LIST' }],
     }),
-    getMyLeases: builder.query<PlotLease[], void>({
-      query: () => 'leasing/me/leases',
+    getMyLeases: builder.query<Lease[], void>({
+      query: () => 'leasing',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Lease' as const, id })), { type: 'Lease', id: 'LIST' }] : [{ type: 'Lease', id: 'LIST' }],
     }),
     getAvailableCrops: builder.query<Crop[], void>({
@@ -141,8 +148,12 @@ export const apiSlice = createApi({
         body: credentials,
       }),
     }),
-    leasePlot: builder.mutation<PlotLease, string>({
-      query: (plotId) => ({ url: `leasing/plots/${plotId}/lease`, method: 'POST' }),
+    leasePlot: builder.mutation<Lease, { unit_id: string; unit_type: string }>({
+      query: (leaseRequest) => ({
+        url: 'leasing',
+        method: 'POST',
+        body: leaseRequest,
+      }),
       invalidatesTags: [{ type: 'Plot', id: 'LIST' }, { type: 'Lease', id: 'LIST' }],
     }),
     plantCrop: builder.mutation<PlotCrop, { plotId: string; cropId: string }>({

@@ -10,7 +10,7 @@ export const PlotsPage = () => {
 
   const handleLeaseClick = async (plotId: string) => {
     try {
-      await leasePlot(plotId).unwrap();
+      await leasePlot({ unit_id: plotId, unit_type: 'plot' }).unwrap();
       // RTK Query автоматически обновит список благодаря тегам
       alert('Грядка успешно арендована!');
     } catch (err) {

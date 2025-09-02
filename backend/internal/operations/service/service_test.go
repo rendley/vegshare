@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/rendley/vegshare/backend/internal/catalog/models"
+	leasingDomain "github.com/rendley/vegshare/backend/internal/leasing/domain"
 	leasingModels "github.com/rendley/vegshare/backend/internal/leasing/models"
 	plotModels "github.com/rendley/vegshare/backend/internal/plot/models"
-	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
 	"github.com/rendley/vegshare/backend/pkg/config"
 	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/assert"
@@ -52,7 +52,6 @@ func (m *MockPlotService) GetPlotByID(ctx context.Context, id uuid.UUID) (*plotM
 	}
 	return args.Get(0).(*plotModels.Plot), args.Error(1)
 }
-
 func (m *MockPlotService) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*plotModels.Plot, error) {
 	args := m.Called(ctx, id, name, size, status)
 	if args.Get(0) == nil {
@@ -60,28 +59,35 @@ func (m *MockPlotService) UpdatePlot(ctx context.Context, id uuid.UUID, name, si
 	}
 	return args.Get(0).(*plotModels.Plot), args.Error(1)
 }
-
-// Dummy implementations for other plot service methods
-func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*plotModels.Plot, error) { return nil, nil }
-func (m *MockPlotService) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]plotModels.Plot, error) { return nil, nil }
+func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*plotModels.Plot, error) {
+	return nil, nil
+}
+func (m *MockPlotService) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]plotModels.Plot, error) {
+	return nil, nil
+}
 func (m *MockPlotService) DeletePlot(ctx context.Context, id uuid.UUID) error { return nil }
-func (m *MockPlotService) WithTx(tx *sqlx.Tx) plotService.Service { return m }
-
+func (m *MockPlotService) GetLeasableUnit(ctx context.Context, unitID uuid.UUID) (leasingDomain.LeasableUnit, error) {
+	return nil, nil
+}
+func (m *MockPlotService) UpdateUnitStatus(ctx context.Context, unitID uuid.UUID, status string) error {
+	return nil
+}
+func (m *MockPlotService) WithTx(tx *sqlx.Tx) leasingDomain.UnitManager { return m }
 
 // MockLeasingRepository mocks the leasing repository
 type MockLeasingRepository struct {
 	mock.Mock
 }
 
-func (m *MockLeasingRepository) CreateLease(ctx context.Context, lease *leasingModels.PlotLease) error {
+func (m *MockLeasingRepository) CreateLease(ctx context.Context, lease *leasingModels.Lease) error {
 	return m.Called(ctx, lease).Error(0)
 }
-func (m *MockLeasingRepository) GetLeasesByUserID(ctx context.Context, userID uuid.UUID) ([]leasingModels.PlotLease, error) {
+func (m *MockLeasingRepository) GetLeasesByUserID(ctx context.Context, userID uuid.UUID) ([]leasingModels.Lease, error) {
 	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]leasingModels.PlotLease), args.Error(1)
+	return args.Get(0).([]leasingModels.Lease), args.Error(1)
 }
 
 // MockCatalogService mocks the catalog service
@@ -96,13 +102,9 @@ func (m *MockCatalogService) GetCropByID(ctx context.Context, id uuid.UUID) (*mo
 	}
 	return args.Get(0).(*models.Crop), args.Error(1)
 }
-func (m *MockCatalogService) GetAllCrops(ctx context.Context) ([]models.Crop, error) {
-	args := m.Called(ctx)
-	return args.Get(0).([]models.Crop), args.Error(1)
-}
+func (m *MockCatalogService) GetAllCrops(ctx context.Context) ([]models.Crop, error) { return nil, nil }
 func (m *MockCatalogService) CreateCrop(ctx context.Context, name, description string, plantingTime, harvestTime int) (*models.Crop, error) {
-	args := m.Called(ctx, name, description, plantingTime, harvestTime)
-	return args.Get(0).(*models.Crop), args.Error(1)
+	return nil, nil
 }
 
 // MockRabbitMQClient mocks the RabbitMQ client
@@ -111,16 +113,10 @@ type MockRabbitMQClient struct {
 }
 
 func (m *MockRabbitMQClient) Publish(queueName, body string) error {
-	args := m.Called(queueName, body)
-	return args.Error(0)
+	return m.Called(queueName, body).Error(0)
 }
-func (m *MockRabbitMQClient) Consume(queueName string) (<-chan amqp.Delivery, error) {
-	args := m.Called(queueName)
-	return args.Get(0).(<-chan amqp.Delivery), args.Error(1)
-}
-func (m *MockRabbitMQClient) Close() {
-	m.Called()
-}
+func (m *MockRabbitMQClient) Consume(queueName string) (<-chan amqp.Delivery, error) { return nil, nil }
+func (m *MockRabbitMQClient) Close()                                                 { m.Called() }
 
 // --- Tests ---
 
@@ -146,7 +142,7 @@ func TestOperationsService(t *testing.T) {
 			plotID := uuid.New()
 			cropID := uuid.New()
 			leaseID := uuid.New()
-			activeLease := []leasingModels.PlotLease{{ID: leaseID, PlotID: plotID, UserID: userID, Status: "active"}}
+			activeLease := []leasingModels.Lease{{ID: leaseID, UnitID: plotID, UserID: userID, Status: "active", UnitType: leasingModels.UnitTypePlot}}
 			crop := &models.Crop{ID: cropID}
 
 			mockLeasingRepo.On("GetLeasesByUserID", ctx, userID).Return(activeLease, nil).Once()
@@ -170,7 +166,7 @@ func TestOperationsService(t *testing.T) {
 			userID := uuid.New()
 			plotID := uuid.New()
 			cropID := uuid.New()
-			activeLease := []leasingModels.PlotLease{}
+			activeLease := []leasingModels.Lease{}
 
 			mockLeasingRepo.On("GetLeasesByUserID", ctx, userID).Return(activeLease, nil).Once()
 
@@ -184,6 +180,7 @@ func TestOperationsService(t *testing.T) {
 		})
 	})
 
+	// ... (остальные тесты для PerformAction без изменений) ...
 	t.Run("PerformAction", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			// Arrange

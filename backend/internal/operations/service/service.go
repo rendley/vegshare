@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	catalogModels "github.com/rendley/vegshare/backend/internal/catalog/models"
 	catalogService "github.com/rendley/vegshare/backend/internal/catalog/service"
-	leasingModels "github.com/rendley/vegshare/backend/internal/leasing/models"
+	"github.com/rendley/vegshare/backend/internal/leasing/models"
 	leasingRepository "github.com/rendley/vegshare/backend/internal/leasing/repository"
 	"github.com/rendley/vegshare/backend/internal/operations/repository"
 	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
@@ -47,15 +47,22 @@ func NewOperationsService(repo repository.Repository, plotSvc plotService.Servic
 }
 
 func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUID) (*catalogModels.PlotCrop, error) {
-	// ... (previous implementation)
+	// Получаем универсальные аренды пользователя
 	leases, err := s.leasingRepo.GetLeasesByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось проверить аренду: %w", err)
 	}
-	var activeLease *leasingModels.PlotLease
+
+	// Ищем активную аренду для конкретной грядки
+	var activeLease *models.Lease // <- ИЗМЕНЕНИЕ: используем новую модель
 	for _, lease := range leases {
-		if lease.PlotID == plotID && lease.Status == "active" {
-			activeLease = &lease
+		// Копируем lease в локальную переменную, чтобы избежать проблем с указателем в цикле
+		currentLease := lease
+		// --- ИЗМЕНЕНИЯ ---
+		// 1. Проверяем UnitID вместо PlotID
+		// 2. Добавляем проверку, что тип юнита - это "plot"
+		if currentLease.UnitID == plotID && currentLease.UnitType == models.UnitTypePlot && currentLease.Status == "active" {
+			activeLease = &currentLease
 			break
 		}
 	}
@@ -63,6 +70,7 @@ func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUI
 		return nil, fmt.Errorf("у пользователя нет активной аренды для грядки %s", plotID)
 	}
 
+	// Остальная логика метода остается без изменений
 	_, err = s.catalogService.GetCropByID(ctx, cropID)
 	if err != nil {
 		return nil, fmt.Errorf("культура с ID %s не найдена: %w", cropID, err)

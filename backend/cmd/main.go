@@ -16,7 +16,9 @@ import (
 	farmHandler "github.com/rendley/vegshare/backend/internal/farm/handler"
 	farmRepository "github.com/rendley/vegshare/backend/internal/farm/repository"
 	farmService "github.com/rendley/vegshare/backend/internal/farm/service"
+	"github.com/rendley/vegshare/backend/internal/leasing/domain"
 	leasingHandler "github.com/rendley/vegshare/backend/internal/leasing/handler"
+	leasingModels "github.com/rendley/vegshare/backend/internal/leasing/models"
 	leasingRepository "github.com/rendley/vegshare/backend/internal/leasing/repository"
 	leasingService "github.com/rendley/vegshare/backend/internal/leasing/service"
 	operationsHandler "github.com/rendley/vegshare/backend/internal/operations/handler"
@@ -79,7 +81,15 @@ func main() {
 	userSvc := userService.NewUserService(userRepo)
 	farmSvc := farmService.NewFarmService(farmRepo)
 	plotSvc := plotService.NewService(plotRepo, farmSvc)
-	leasingSvc := leasingService.NewLeasingService(db, leasingRepo, plotSvc)
+	leasingSvc := leasingService.NewLeasingService(db, leasingRepo)
+
+	// --- Регистрация UnitManager ---
+	unitManager, ok := plotSvc.(domain.UnitManager)
+	if !ok {
+		log.Fatalf("plot.Service не реализует интерфейс domain.UnitManager")
+	}
+	leasingSvc.RegisterUnitManager(leasingModels.UnitTypePlot, unitManager)
+
 	catalogSvc := catalogService.NewService(catalogRepo)
 	operationsSvc := operationsService.NewOperationsService(operationsRepo, plotSvc, leasingRepo, catalogSvc, rabbitMQClient, cfg)
 	cameraSvc := cameraService.NewService(cameraRepo, plotSvc)

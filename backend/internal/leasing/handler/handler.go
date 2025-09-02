@@ -1,11 +1,12 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/rendley/vegshare/backend/internal/leasing/models"
 	"github.com/rendley/vegshare/backend/internal/leasing/service"
 	"github.com/rendley/vegshare/backend/pkg/api"
 	"github.com/rendley/vegshare/backend/pkg/middleware"
@@ -14,7 +15,7 @@ import (
 
 // LeasingHandler содержит зависимости для обработчиков аренды.
 type LeasingHandler struct {
-	service  service.Service
+	service  service.Service // Зависим от интерфейса из пакета service
 	logger   *logrus.Logger
 	validate *validator.Validate
 }
@@ -28,23 +29,35 @@ func NewLeasingHandler(s service.Service, l *logrus.Logger) *LeasingHandler {
 	}
 }
 
-func (h *LeasingHandler) LeasePlot(w http.ResponseWriter, r *http.Request) {
+// createLeaseRequest определяет структуру тела запроса на создание аренды.
+type createLeaseRequest struct {
+	UnitID   uuid.UUID         `json:"unit_id" validate:"required"`
+	UnitType models.UnitType `json:"unit_type" validate:"required"`
+}
+
+// CreateLease - новый обработчик для создания универсальной аренды.
+func (h *LeasingHandler) CreateLease(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
 		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	plotIDStr := chi.URLParam(r, "plotID")
-	plotID, err := uuid.Parse(plotIDStr)
-	if err != nil {
-		api.RespondWithError(w, "invalid plot ID in URL", http.StatusBadRequest)
+	var req createLeaseRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		api.RespondWithError(w, "некорректное тело запроса", http.StatusBadRequest)
 		return
 	}
 
-	lease, err := h.service.LeasePlot(r.Context(), userID, plotID)
+	if err := h.validate.Struct(req); err != nil {
+		api.RespondWithError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Вызываем новый, универсальный метод сервиса
+	lease, err := h.service.CreateLease(r.Context(), userID, req.UnitID, req.UnitType)
 	if err != nil {
-		h.logger.Errorf("ошибка при аренде грядки: %v", err)
+		h.logger.Errorf("ошибка при создании аренды: %v", err)
 		api.RespondWithError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -52,6 +65,8 @@ func (h *LeasingHandler) LeasePlot(w http.ResponseWriter, r *http.Request) {
 	api.RespondWithJSON(h.logger, w, lease, http.StatusCreated)
 }
 
+// GetMyLeases - обработчик для получения списка аренд пользователя.
+// Теперь он будет возвращать список универсальных моделей Lease.
 func (h *LeasingHandler) GetMyLeases(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
