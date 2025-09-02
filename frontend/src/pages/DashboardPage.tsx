@@ -1,0 +1,1 @@
+export const DashboardPage = () => <h2>Моя ферма</h2>;

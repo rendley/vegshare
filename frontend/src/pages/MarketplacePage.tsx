@@ -1,0 +1,1 @@
+export const MarketplacePage = () => <h2>Торговая площадка</h2>;
