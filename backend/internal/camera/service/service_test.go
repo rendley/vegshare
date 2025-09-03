@@ -60,10 +60,10 @@ func (m *MockPlotService) GetPlotByID(ctx context.Context, id uuid.UUID) (*plotM
 }
 
 // Dummy implementations for other plot service methods to satisfy the interface
-func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*plotModels.Plot, error) {
+func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, structureID uuid.UUID) (*plotModels.Plot, error) {
 	return nil, nil
 }
-func (m *MockPlotService) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]plotModels.Plot, error) {
+func (m *MockPlotService) GetPlotsByStructure(ctx context.Context, structureID uuid.UUID) ([]plotModels.Plot, error) {
 	return nil, nil
 }
 func (m *MockPlotService) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*plotModels.Plot, error) {

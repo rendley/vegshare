@@ -11,8 +11,6 @@ import (
 
 // Service - это интерфейс, определяющий контракт для сервиса фермы.
 type Service interface {
-	
-
 	// Region methods
 	CreateRegion(ctx context.Context, name string) (*models.Region, error)
 	GetRegionByID(ctx context.Context, id uuid.UUID) (*models.Region, error)
@@ -27,12 +25,13 @@ type Service interface {
 	UpdateLandParcel(ctx context.Context, id uuid.UUID, name string) (*models.LandParcel, error)
 	DeleteLandParcel(ctx context.Context, id uuid.UUID) error
 
-	// Greenhouse methods
-	CreateGreenhouse(ctx context.Context, name, typeName string, landParcelID uuid.UUID) (*models.Greenhouse, error)
-	GetGreenhouseByID(ctx context.Context, id uuid.UUID) (*models.Greenhouse, error)
-	GetGreenhousesByLandParcel(ctx context.Context, landParcelID uuid.UUID) ([]models.Greenhouse, error)
-	UpdateGreenhouse(ctx context.Context, id uuid.UUID, name, typeName string) (*models.Greenhouse, error)
-	DeleteGreenhouse(ctx context.Context, id uuid.UUID) error
+	// Structure methods
+	CreateStructure(ctx context.Context, name, typeName string, landParcelID uuid.UUID) (*models.Structure, error)
+	GetStructureByID(ctx context.Context, id uuid.UUID) (*models.Structure, error)
+	GetStructuresByLandParcel(ctx context.Context, landParcelID uuid.UUID) ([]models.Structure, error)
+	UpdateStructure(ctx context.Context, id uuid.UUID, name, typeName string) (*models.Structure, error)
+	DeleteStructure(ctx context.Context, id uuid.UUID) error
+	GetStructureTypes(ctx context.Context) ([]string, error)
 }
 
 // service - это приватная структура, реализующая интерфейс Service.

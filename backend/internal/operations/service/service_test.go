@@ -59,10 +59,10 @@ func (m *MockPlotService) UpdatePlot(ctx context.Context, id uuid.UUID, name, si
 	}
 	return args.Get(0).(*plotModels.Plot), args.Error(1)
 }
-func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*plotModels.Plot, error) {
+func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, structureID uuid.UUID) (*plotModels.Plot, error) {
 	return nil, nil
 }
-func (m *MockPlotService) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]plotModels.Plot, error) {
+func (m *MockPlotService) GetPlotsByStructure(ctx context.Context, structureID uuid.UUID) ([]plotModels.Plot, error) {
 	return nil, nil
 }
 func (m *MockPlotService) DeletePlot(ctx context.Context, id uuid.UUID) error { return nil }

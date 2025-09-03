@@ -33,8 +33,8 @@ const AdminLayout = () => {
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton component={NavLink} to="/admin/greenhouses">
-                <ListItemText primary="Теплицы" />
+              <ListItemButton component={NavLink} to="/admin/structures">
+                <ListItemText primary="Сооружения" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>

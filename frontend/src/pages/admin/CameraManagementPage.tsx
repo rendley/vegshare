@@ -3,8 +3,8 @@ import type { Camera } from '../../features/api/apiSlice';
 import {
     useGetRegionsQuery,
     useGetLandParcelsByRegionQuery,
-    useGetGreenhousesByLandParcelQuery,
-    useGetPlotsByGreenhouseQuery,
+    useGetStructuresByLandParcelQuery,
+    useGetPlotsByStructureQuery,
     useGetCamerasByPlotQuery,
     useCreateCameraMutation,
     useUpdateCameraMutation,
@@ -43,19 +43,19 @@ const CreateCameraForm = () => {
     const [name, setName] = useState('');
     const [rtspPath, setRtspPath] = useState('');
     const [plotId, setPlotId] = useState('');
-    const [greenhouseId, setGreenhouseId] = useState('');
+    const [structureId, setStructureId] = useState('');
     const [landParcelId, setLandParcelId] = useState('');
     const [regionId, setRegionId] = useState('');
 
     const { data: regions, isLoading: isLoadingRegions } = useGetRegionsQuery();
     const { data: landParcels, isLoading: isLoadingParcels } = useGetLandParcelsByRegionQuery(regionId, { skip: !regionId });
-    const { data: greenhouses, isLoading: isLoadingGreenhouses } = useGetGreenhousesByLandParcelQuery(landParcelId, { skip: !landParcelId });
-    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsByGreenhouseQuery(greenhouseId, { skip: !greenhouseId });
+    const { data: structures, isLoading: isLoadingStructures } = useGetStructuresByLandParcelQuery(landParcelId, { skip: !landParcelId });
+    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsByStructureQuery(structureId, { skip: !structureId });
     const [createCamera, { isLoading }] = useCreateCameraMutation();
 
-    useEffect(() => { setLandParcelId(''); setGreenhouseId(''); setPlotId(''); }, [regionId]);
-    useEffect(() => { setGreenhouseId(''); setPlotId(''); }, [landParcelId]);
-    useEffect(() => { setPlotId(''); }, [greenhouseId]);
+    useEffect(() => { setLandParcelId(''); setStructureId(''); setPlotId(''); }, [regionId]);
+    useEffect(() => { setStructureId(''); setPlotId(''); }, [landParcelId]);
+    useEffect(() => { setPlotId(''); }, [structureId]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -64,7 +64,7 @@ const CreateCameraForm = () => {
                 setName('');
                 setRtspPath('');
                 setPlotId('');
-                setGreenhouseId('');
+                setStructureId('');
                 setLandParcelId('');
                 setRegionId('');
             });
@@ -76,8 +76,8 @@ const CreateCameraForm = () => {
             <Typography variant="h6">Создать новую камеру</Typography>
             <FormControl fullWidth margin="normal" required><InputLabel>Регион</InputLabel><Select value={regionId} label="Регион" onChange={(e) => setRegionId(e.target.value)} disabled={isLoadingRegions}>{regions?.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}</Select></FormControl>
             <FormControl fullWidth margin="normal" required disabled={!regionId || isLoadingParcels}><InputLabel>Участок</InputLabel><Select value={landParcelId} label="Участок" onChange={(e) => setLandParcelId(e.target.value)}>{landParcels?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" required disabled={!landParcelId || isLoadingGreenhouses}><InputLabel>Теплица</InputLabel><Select value={greenhouseId} label="Теплица" onChange={(e) => setGreenhouseId(e.target.value)}>{greenhouses?.map(g => <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" required disabled={!greenhouseId || isLoadingPlots}><InputLabel>Грядка</InputLabel><Select value={plotId} label="Грядка" onChange={(e) => setPlotId(e.target.value)}>{plots?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
+            <FormControl fullWidth margin="normal" required disabled={!landParcelId || isLoadingStructures}><InputLabel>Сооружение</InputLabel><Select value={structureId} label="Сооружение" onChange={(e) => setStructureId(e.target.value)}>{structures?.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select></FormControl>
+            <FormControl fullWidth margin="normal" required disabled={!structureId || isLoadingPlots}><InputLabel>Грядка</InputLabel><Select value={plotId} label="Грядка" onChange={(e) => setPlotId(e.target.value)}>{plots?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
             <TextField label="Название камеры" value={name} onChange={(e) => setName(e.target.value)} fullWidth margin="normal" required />
             <TextField label="Путь RTSP" value={rtspPath} onChange={(e) => setRtspPath(e.target.value)} fullWidth margin="normal" required />
             <Button type="submit" variant="contained" disabled={isLoading || !plotId}>{isLoading ? <CircularProgress size={24} /> : 'Создать'}</Button>
@@ -89,13 +89,13 @@ const CreateCameraForm = () => {
 const CameraManagementPage = () => {
     const [selectedRegion, setSelectedRegion] = useState('');
     const [selectedParcel, setSelectedParcel] = useState('');
-    const [selectedGreenhouse, setSelectedGreenhouse] = useState('');
+    const [selectedStructure, setSelectedStructure] = useState('');
     const [selectedPlot, setSelectedPlot] = useState('');
 
     const { data: regions, isLoading: isLoadingRegions } = useGetRegionsQuery();
     const { data: parcels, isLoading: isLoadingParcels } = useGetLandParcelsByRegionQuery(selectedRegion, { skip: !selectedRegion });
-    const { data: greenhouses, isLoading: isLoadingGreenhouses } = useGetGreenhousesByLandParcelQuery(selectedParcel, { skip: !selectedParcel });
-    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsByGreenhouseQuery(selectedGreenhouse, { skip: !selectedGreenhouse });
+    const { data: structures, isLoading: isLoadingStructures } = useGetStructuresByLandParcelQuery(selectedParcel, { skip: !selectedParcel });
+    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsByStructureQuery(selectedStructure, { skip: !selectedStructure });
     const { data: cameras, isLoading: isLoadingCameras } = useGetCamerasByPlotQuery(selectedPlot, { skip: !selectedPlot });
 
     const [deleteCamera] = useDeleteCameraMutation();
@@ -107,9 +107,9 @@ const CameraManagementPage = () => {
     const [editedName, setEditedName] = useState('');
     const [editedRtspPath, setEditedRtspPath] = useState('');
 
-    useEffect(() => { setSelectedParcel(''); setSelectedGreenhouse(''); setSelectedPlot(''); }, [selectedRegion]);
-    useEffect(() => { setSelectedGreenhouse(''); setSelectedPlot(''); }, [selectedParcel]);
-    useEffect(() => { setSelectedPlot(''); }, [selectedGreenhouse]);
+    useEffect(() => { setSelectedParcel(''); setSelectedStructure(''); setSelectedPlot(''); }, [selectedRegion]);
+    useEffect(() => { setSelectedStructure(''); setSelectedPlot(''); }, [selectedParcel]);
+    useEffect(() => { setSelectedPlot(''); }, [selectedStructure]);
 
     const handleOpenEditModal = (camera: Camera) => {
         setSelectedCamera(camera);
@@ -149,8 +149,8 @@ const CameraManagementPage = () => {
             <Typography variant="h6" sx={{ mb: 2 }}>Список камер</Typography>
             <FormControl fullWidth margin="normal"><InputLabel>Фильтр по региону</InputLabel><Select value={selectedRegion} label="Фильтр по региону" onChange={(e) => setSelectedRegion(e.target.value)} disabled={isLoadingRegions}>{regions?.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}</Select></FormControl>
             <FormControl fullWidth margin="normal" disabled={!selectedRegion || isLoadingParcels}><InputLabel>Фильтр по участку</InputLabel><Select value={selectedParcel} label="Фильтр по участку" onChange={(e) => setSelectedParcel(e.target.value)}>{parcels?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" disabled={!selectedParcel || isLoadingGreenhouses}><InputLabel>Фильтр по теплице</InputLabel><Select value={selectedGreenhouse} label="Фильтр по теплице" onChange={(e) => setSelectedGreenhouse(e.target.value)}>{greenhouses?.map(g => <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" disabled={!selectedGreenhouse || isLoadingPlots}><InputLabel>Фильтр по грядке</InputLabel><Select value={selectedPlot} label="Фильтр по грядке" onChange={(e) => setSelectedPlot(e.target.value)}>{plots?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
+            <FormControl fullWidth margin="normal" disabled={!selectedParcel || isLoadingStructures}><InputLabel>Фильтр по сооружению</InputLabel><Select value={selectedStructure} label="Фильтр по сооружению" onChange={(e) => setSelectedStructure(e.target.value)}>{structures?.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select></FormControl>
+            <FormControl fullWidth margin="normal" disabled={!selectedStructure || isLoadingPlots}><InputLabel>Фильтр по грядке</InputLabel><Select value={selectedPlot} label="Фильтр по грядке" onChange={(e) => setSelectedPlot(e.target.value)}>{plots?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
 
             {isLoadingCameras && <CircularProgress />}
 

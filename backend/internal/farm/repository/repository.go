@@ -11,8 +11,6 @@ import (
 
 // Repository - это ИНТЕРФЕЙС, который определяет "контракт" для нашего хранилища.
 type Repository interface {
-	
-
 	// Region methods
 	CreateRegion(ctx context.Context, region *models.Region) error
 	GetRegionByID(ctx context.Context, id uuid.UUID) (*models.Region, error)
@@ -27,12 +25,13 @@ type Repository interface {
 	UpdateLandParcel(ctx context.Context, parcel *models.LandParcel) error
 	DeleteLandParcel(ctx context.Context, id uuid.UUID) error
 
-	// Greenhouse methods
-	CreateGreenhouse(ctx context.Context, greenhouse *models.Greenhouse) error
-	GetGreenhouseByID(ctx context.Context, id uuid.UUID) (*models.Greenhouse, error)
-	GetGreenhousesByLandParcel(ctx context.Context, landParcelID uuid.UUID) ([]models.Greenhouse, error)
-	UpdateGreenhouse(ctx context.Context, greenhouse *models.Greenhouse) error
-	DeleteGreenhouse(ctx context.Context, id uuid.UUID) error
+	// Structure methods
+	CreateStructure(ctx context.Context, structure *models.Structure) error
+	GetStructureByID(ctx context.Context, id uuid.UUID) (*models.Structure, error)
+	GetStructuresByLandParcel(ctx context.Context, landParcelID uuid.UUID) ([]models.Structure, error)
+	UpdateStructure(ctx context.Context, structure *models.Structure) error
+	DeleteStructure(ctx context.Context, id uuid.UUID) error
+	GetStructureTypes(ctx context.Context) ([]string, error)
 }
 
 // repository - это СТРУКТУРА, которая реализует интерфейс Repository.

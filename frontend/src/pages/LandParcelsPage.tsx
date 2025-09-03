@@ -17,7 +17,7 @@ export const LandParcelsPage = () => {
         {parcels && parcels.length > 0 ? (
           parcels.map((parcel) => (
             <li key={parcel.id}>
-              <Link to={`/land-parcels/${parcel.id}/greenhouses`}>{parcel.name}</Link>
+              <Link to={`/land-parcels/${parcel.id}/structures`}>{parcel.name}</Link>
             </li>
           ))
         ) : (

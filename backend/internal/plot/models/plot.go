@@ -7,10 +7,10 @@ import (
 	// Импорт leasing/models больше не нужен
 )
 
-// Plot представляет конечную, арендуемую пользователем грядку в теплице.
+// Plot представляет конечную, арендуемую пользователем грядку в строении.
 type Plot struct {
 	ID           uuid.UUID `db:"id" json:"id"`
-	GreenhouseID uuid.UUID `db:"greenhouse_id" json:"greenhouse_id"`
+	StructureID  uuid.UUID `db:"structure_id" json:"structure_id"`
 	Name         string    `db:"name" json:"name"`
 	Size         string    `db:"size" json:"size"`
 	// Status показывает текущее состояние грядки: 'available', 'rented', 'maintenance'.

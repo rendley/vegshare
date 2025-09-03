@@ -1,11 +1,11 @@
 import { useParams } from 'react-router-dom';
-import { useGetPlotsByGreenhouseQuery, useLeasePlotMutation } from '../features/api/apiSlice';
+import { useGetPlotsByStructureQuery, useLeasePlotMutation } from '../features/api/apiSlice';
 
 export const PlotsPage = () => {
-  const { greenhouseId } = useParams<{ greenhouseId: string }>();
-  if (!greenhouseId) return <div>Ошибка: ID теплицы не указан.</div>;
+  const { structureId } = useParams<{ structureId: string }>();
+  if (!structureId) return <div>Ошибка: ID сооружения не указан.</div>;
 
-  const { data: plots, error, isLoading } = useGetPlotsByGreenhouseQuery(greenhouseId);
+  const { data: plots, error, isLoading } = useGetPlotsByStructureQuery(structureId);
   const [leasePlot, { isLoading: isLeasing }] = useLeasePlotMutation();
 
   const handleLeaseClick = async (plotId: string) => {
@@ -37,7 +37,7 @@ export const PlotsPage = () => {
             </li>
           ))
         ) : (
-          <li>Грядок в этой теплице не найдено</li>
+          <li>Грядок в этом сооружении не найдено</li>
         )}
       </ul>
     </div>

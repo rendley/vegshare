@@ -13,7 +13,7 @@ import (
 type Repository interface {
 	CreatePlot(ctx context.Context, plot *models.Plot) error
 	GetPlotByID(ctx context.Context, id uuid.UUID) (*models.Plot, error)
-	GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]models.Plot, error)
+	GetPlotsByStructure(ctx context.Context, structureID uuid.UUID) ([]models.Plot, error)
 	UpdatePlot(ctx context.Context, plot *models.Plot) error
 	DeletePlot(ctx context.Context, id uuid.UUID) error
 }
@@ -29,7 +29,7 @@ func NewRepository(db database.DBTX) Repository {
 }
 
 func (r *repository) CreatePlot(ctx context.Context, plot *models.Plot) error {
-	query := `INSERT INTO plots (id, greenhouse_id, name, size, status, created_at, updated_at) VALUES (:id, :greenhouse_id, :name, :size, :status, :created_at, :updated_at)`
+	query := `INSERT INTO plots (id, structure_id, name, size, status, created_at, updated_at) VALUES (:id, :structure_id, :name, :size, :status, :created_at, :updated_at)`
 	_, err := r.db.NamedExecContext(ctx, query, plot)
 	if err != nil {
 		return fmt.Errorf("не удалось создать грядку: %w", err)
@@ -47,12 +47,12 @@ func (r *repository) GetPlotByID(ctx context.Context, id uuid.UUID) (*models.Plo
 	return &plot, nil
 }
 
-func (r *repository) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]models.Plot, error) {
+func (r *repository) GetPlotsByStructure(ctx context.Context, structureID uuid.UUID) ([]models.Plot, error) {
 	var plots []models.Plot
-	query := `SELECT * FROM plots WHERE greenhouse_id = $1`
-	err := r.db.SelectContext(ctx, &plots, query, greenhouseID)
+	query := `SELECT * FROM plots WHERE structure_id = $1`
+	err := r.db.SelectContext(ctx, &plots, query, structureID)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось получить список грядок для теплицы: %w", err)
+		return nil, fmt.Errorf("не удалось получить список грядок для строения: %w", err)
 	}
 	return plots, nil
 }

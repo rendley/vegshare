@@ -118,22 +118,25 @@ func (s *Server) Start() error {
 			// --- Иерархия фермы: УЧАСТКИ ---
 			r.Route("/farm/land-parcels/{parcelID}", func(r chi.Router) {
 				r.Get("/", s.FarmHandler.GetLandParcelByID)
-				r.Get("/greenhouses", s.FarmHandler.GetGreenhousesByLandParcel)
+				r.Get("/structures", s.FarmHandler.GetStructuresByLandParcel)
 				r.With(s.mw.AdminMiddleware).Put("/", s.FarmHandler.UpdateLandParcel)
 				r.With(s.mw.AdminMiddleware).Delete("/", s.FarmHandler.DeleteLandParcel)
-				r.With(s.mw.AdminMiddleware).Post("/greenhouses", s.FarmHandler.CreateGreenhouseForLandParcel)
+				r.With(s.mw.AdminMiddleware).Post("/structures", s.FarmHandler.CreateStructureForLandParcel)
 			})
 
-			// --- Иерархия фермы: ТЕПЛИЦЫ ---
-			r.Route("/farm/greenhouses/{greenhouseID}", func(r chi.Router) {
-				r.Get("/", s.FarmHandler.GetGreenhouseByID)
-				r.With(s.mw.AdminMiddleware).Put("/", s.FarmHandler.UpdateGreenhouse)
-				r.With(s.mw.AdminMiddleware).Delete("/", s.FarmHandler.DeleteGreenhouse)
+			// --- Иерархия фермы: СТРОЕНИЯ ---
+			r.Route("/farm/structures", func(r chi.Router) {
+				r.Get("/types", s.FarmHandler.GetStructureTypes)
+				r.Route("/{structureID}", func(r chi.Router) {
+					r.Get("/", s.FarmHandler.GetStructureByID)
+					r.With(s.mw.AdminMiddleware).Put("/", s.FarmHandler.UpdateStructure)
+					r.With(s.mw.AdminMiddleware).Delete("/", s.FarmHandler.DeleteStructure)
+				})
 			})
 
 			// --- ГРЯДКИ (Plots) ---
 			r.Route("/plots", func(r chi.Router) {
-				// GET /plots?greenhouse_id=... - получить грядки в теплице (для всех)
+				// GET /plots?structure_id=... - получить грядки в строении (для всех)
 				r.Get("/", s.PlotHandler.GetPlots)
 				// POST /plots - создать грядку (только админ)
 				r.With(s.mw.AdminMiddleware).Post("/", s.PlotHandler.CreatePlot)

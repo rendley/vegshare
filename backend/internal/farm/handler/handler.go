@@ -17,9 +17,9 @@ type LandParcelRequest struct {
 	Name string `json:"name" validate:"required,min=2,max=100"`
 }
 
-type GreenhouseRequest struct {
+type StructureRequest struct {
 	Name string `json:"name" validate:"required,min=2,max=100"`
-	Type string `json:"type" validate:"omitempty,min=2,max=50"`
+	Type string `json:"type" validate:"required,min=2,max=50"`
 }
 
 type PlotRequest struct {

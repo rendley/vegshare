@@ -30,7 +30,7 @@ export interface LandParcel {
   region_id: string;
 }
 
-export interface Greenhouse {
+export interface Structure {
   id: string;
   name: string;
   land_parcel_id: string;
@@ -40,7 +40,7 @@ export interface Greenhouse {
 export interface Plot {
   id: string;
   name: string;
-  greenhouse_id: string;
+  structure_id: string;
   size?: string;
   status: string;
 }
@@ -97,7 +97,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Region', 'LandParcel', 'Greenhouse', 'Plot', 'Lease', 'PlotCrop', 'Camera', 'Crop', 'User'],
+  tagTypes: ['Region', 'LandParcel', 'Structure', 'Plot', 'Lease', 'PlotCrop', 'Camera', 'Crop', 'User', 'StructureType'],
   endpoints: (builder) => ({
     // QUERIES
     getRegions: builder.query<Region[], void>({
@@ -108,12 +108,16 @@ export const apiSlice = createApi({
       query: (regionId) => `farm/regions/${regionId}/land-parcels`,
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'LandParcel' as const, id })), { type: 'LandParcel', id: 'LIST' }] : [{ type: 'LandParcel', id: 'LIST' }],
     }),
-    getGreenhousesByLandParcel: builder.query<Greenhouse[], string>({
-      query: (landParcelId) => `farm/land-parcels/${landParcelId}/greenhouses`,
-      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Greenhouse' as const, id })), { type: 'Greenhouse', id: 'LIST' }] : [{ type: 'Greenhouse', id: 'LIST' }],
+    getStructuresByLandParcel: builder.query<Structure[], string>({
+      query: (landParcelId) => `farm/land-parcels/${landParcelId}/structures`,
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Structure' as const, id })), { type: 'Structure', id: 'LIST' }] : [{ type: 'Structure', id: 'LIST' }],
     }),
-    getPlotsByGreenhouse: builder.query<Plot[], string>({
-      query: (greenhouseId) => `plots?greenhouse_id=${greenhouseId}`,
+    getStructureTypes: builder.query<string[], void>({
+      query: () => 'farm/structures/types',
+      providesTags: ['StructureType'],
+    }),
+    getPlotsByStructure: builder.query<Plot[], string>({
+      query: (structureId) => `plots?structure_id=${structureId}`,
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Plot' as const, id })), { type: 'Plot', id: 'LIST' }] : [{ type: 'Plot', id: 'LIST' }],
     }),
     getCamerasByPlot: builder.query<Camera[], string>({
@@ -210,15 +214,15 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: 'LandParcel', id: 'LIST' }],
     }),
-    createGreenhouse: builder.mutation<Greenhouse, { landParcelId: string; name: string; type?: string }>({
+    createStructure: builder.mutation<Structure, { landParcelId: string; name: string; type?: string }>({
       query: ({ landParcelId, ...body }) => ({
-        url: `farm/land-parcels/${landParcelId}/greenhouses`,
+        url: `farm/land-parcels/${landParcelId}/structures`,
         method: 'POST',
         body,
       }),
-      invalidatesTags: [{ type: 'Greenhouse', id: 'LIST' }],
+      invalidatesTags: [{ type: 'Structure', id: 'LIST' }, 'StructureType'],
     }),
-    createPlot: builder.mutation<Plot, { greenhouse_id: string; name: string; size?: string }>({
+    createPlot: builder.mutation<Plot, { structure_id: string; name: string; size?: string }>({
       query: (body) => ({
         url: 'plots',
         method: 'POST',
@@ -273,21 +277,21 @@ export const apiSlice = createApi({
       invalidatesTags: [{ type: 'LandParcel', id: 'LIST' }],
     }),
 
-    // Greenhouses
-    updateGreenhouse: builder.mutation<Greenhouse, { id: string; name: string; type?: string }>({
+    // Structures
+    updateStructure: builder.mutation<Structure, { id: string; name: string; type?: string }>({
       query: ({ id, ...body }) => ({
-        url: `farm/greenhouses/${id}`,
+        url: `farm/structures/${id}`,
         method: 'PUT',
         body,
       }),
-      invalidatesTags: (_, __, { id }) => [{ type: 'Greenhouse', id }, { type: 'Greenhouse', id: 'LIST' }],
+      invalidatesTags: (_, __, { id }) => [{ type: 'Structure', id }, { type: 'Structure', id: 'LIST' }, 'StructureType'],
     }),
-    deleteGreenhouse: builder.mutation<void, string>({
+    deleteStructure: builder.mutation<void, string>({
       query: (id) => ({
-        url: `farm/greenhouses/${id}`,
+        url: `farm/structures/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: [{ type: 'Greenhouse', id: 'LIST' }],
+      invalidatesTags: [{ type: 'Structure', id: 'LIST' }, 'StructureType'],
     }),
 
     // Plots
@@ -325,14 +329,14 @@ export const apiSlice = createApi({
     }),
 
     // Crops
-    updateCrop: builder.mutation<Crop, Partial<Crop> & { id: string }>(({
+    updateCrop: builder.mutation<Crop, Partial<Crop> & { id: string }>({
       query: ({ id, ...body }) => ({
         url: `catalog/crops/${id}`,
         method: 'PUT',
         body,
       }),
       invalidatesTags: (_, __, { id }) => [{ type: 'Crop', id }, { type: 'Crop', id: 'LIST' }],
-    })),
+    }),
     deleteCrop: builder.mutation<void, string>({
       query: (id) => ({
         url: `catalog/crops/${id}`,
@@ -347,8 +351,9 @@ export const apiSlice = createApi({
 export const {
   useGetRegionsQuery,
   useGetLandParcelsByRegionQuery,
-  useGetGreenhousesByLandParcelQuery,
-  useGetPlotsByGreenhouseQuery,
+  useGetStructuresByLandParcelQuery,
+  useGetStructureTypesQuery,
+  useGetPlotsByStructureQuery,
   useGetCamerasByPlotQuery,
   useGetMyLeasesQuery,
   useGetAvailableCropsQuery,
@@ -363,7 +368,7 @@ export const {
   useUpdateUserRoleMutation,
   useCreateRegionMutation,
   useCreateLandParcelMutation,
-  useCreateGreenhouseMutation,
+  useCreateStructureMutation,
   useCreatePlotMutation,
   useCreateCameraMutation,
   useCreateCropMutation,
@@ -371,8 +376,8 @@ export const {
   useDeleteRegionMutation,
   useUpdateLandParcelMutation,
   useDeleteLandParcelMutation,
-  useUpdateGreenhouseMutation,
-  useDeleteGreenhouseMutation,
+  useUpdateStructureMutation,
+  useDeleteStructureMutation,
   useUpdatePlotMutation,
   useDeletePlotMutation,
   useUpdateCameraMutation,

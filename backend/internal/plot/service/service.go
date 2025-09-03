@@ -13,18 +13,18 @@ import (
 	"github.com/rendley/vegshare/backend/internal/plot/repository"
 )
 
-// Service определяет контракт для plot service, который теперь полностью реализует domain.UnitManager
+// Service определяет контракт для plot service
 type Service interface {
-	CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*models.Plot, error)
+	CreatePlot(ctx context.Context, name, size string, structureID uuid.UUID) (*models.Plot, error)
 	GetPlotByID(ctx context.Context, id uuid.UUID) (*models.Plot, error)
-	GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]models.Plot, error)
+	GetPlotsByStructure(ctx context.Context, structureID uuid.UUID) ([]models.Plot, error)
 	UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*models.Plot, error)
 	DeletePlot(ctx context.Context, id uuid.UUID) error
 
 	// Методы из domain.UnitManager
 	GetLeasableUnit(ctx context.Context, unitID uuid.UUID) (domain.LeasableUnit, error)
 	UpdateUnitStatus(ctx context.Context, unitID uuid.UUID, status string) error
-	WithTx(tx *sqlx.Tx) domain.UnitManager // <- ИСПРАВЛЕНО
+	WithTx(tx *sqlx.Tx) domain.UnitManager
 }
 
 // service implements the Service interface.
@@ -47,21 +47,21 @@ func (s *service) WithTx(tx *sqlx.Tx) domain.UnitManager { // <- ИСПРАВЛ�
 }
 
 // ... (остальные методы без изменений) ...
-func (s *service) CreatePlot(ctx context.Context, name, size string, greenhouseID uuid.UUID) (*models.Plot, error) {
-	_, err := s.farmSvc.GetGreenhouseByID(ctx, greenhouseID)
+func (s *service) CreatePlot(ctx context.Context, name, size string, structureID uuid.UUID) (*models.Plot, error) {
+	_, err := s.farmSvc.GetStructureByID(ctx, structureID)
 	if err != nil {
-		return nil, fmt.Errorf("теплица с ID %s не найдена: %w", greenhouseID, err)
+		return nil, fmt.Errorf("строение с ID %s не найдено: %w", structureID, err)
 	}
 
 	now := time.Now()
 	plot := &models.Plot{
-		ID:           uuid.New(),
-		Name:         name,
-		Size:         size,
-		GreenhouseID: greenhouseID,
-		Status:       "available",
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		ID:          uuid.New(),
+		Name:        name,
+		Size:        size,
+		StructureID: structureID,
+		Status:      "available",
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
 	err = s.repo.CreatePlot(ctx, plot)
@@ -76,8 +76,8 @@ func (s *service) GetPlotByID(ctx context.Context, id uuid.UUID) (*models.Plot, 
 	return s.repo.GetPlotByID(ctx, id)
 }
 
-func (s *service) GetPlotsByGreenhouse(ctx context.Context, greenhouseID uuid.UUID) ([]models.Plot, error) {
-	return s.repo.GetPlotsByGreenhouse(ctx, greenhouseID)
+func (s *service) GetPlotsByStructure(ctx context.Context, structureID uuid.UUID) ([]models.Plot, error) {
+	return s.repo.GetPlotsByStructure(ctx, structureID)
 }
 
 func (s *service) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*models.Plot, error) {

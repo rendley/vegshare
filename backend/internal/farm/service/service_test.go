@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rendley/vegshare/backend/internal/farm/models"
+	"github.com/rendley/vegshare/backend/internal/farm/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -17,9 +18,10 @@ type MockFarmRepository struct {
 	mock.Mock
 }
 
+// Статическая проверка, что MockFarmRepository реализует интерфейс repository.Repository
+var _ repository.Repository = &MockFarmRepository{}
+
 // Implement all methods of the repository.Repository interface
-
-
 
 func (m *MockFarmRepository) CreateRegion(ctx context.Context, region *models.Region) error {
 	args := m.Called(ctx, region)
@@ -36,6 +38,9 @@ func (m *MockFarmRepository) GetRegionByID(ctx context.Context, id uuid.UUID) (*
 
 func (m *MockFarmRepository) GetAllRegions(ctx context.Context) ([]models.Region, error) {
 	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]models.Region), args.Error(1)
 }
 
@@ -48,8 +53,6 @@ func (m *MockFarmRepository) DeleteRegion(ctx context.Context, id uuid.UUID) err
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
-
-// ... Implement mock methods for LandParcel, Greenhouse, and Plot in a similar fashion ...
 
 func (m *MockFarmRepository) CreateLandParcel(ctx context.Context, parcel *models.LandParcel) error {
 	args := m.Called(ctx, parcel)
@@ -64,6 +67,9 @@ func (m *MockFarmRepository) GetLandParcelByID(ctx context.Context, id uuid.UUID
 }
 func (m *MockFarmRepository) GetLandParcelsByRegion(ctx context.Context, regionID uuid.UUID) ([]models.LandParcel, error) {
 	args := m.Called(ctx, regionID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]models.LandParcel), args.Error(1)
 }
 func (m *MockFarmRepository) UpdateLandParcel(ctx context.Context, parcel *models.LandParcel) error {
@@ -75,28 +81,39 @@ func (m *MockFarmRepository) DeleteLandParcel(ctx context.Context, id uuid.UUID)
 	return args.Error(0)
 }
 
-func (m *MockFarmRepository) CreateGreenhouse(ctx context.Context, gh *models.Greenhouse) error {
-	args := m.Called(ctx, gh)
+func (m *MockFarmRepository) CreateStructure(ctx context.Context, structure *models.Structure) error {
+	args := m.Called(ctx, structure)
 	return args.Error(0)
 }
-func (m *MockFarmRepository) GetGreenhouseByID(ctx context.Context, id uuid.UUID) (*models.Greenhouse, error) {
+func (m *MockFarmRepository) GetStructureByID(ctx context.Context, id uuid.UUID) (*models.Structure, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.Greenhouse), args.Error(1)
+	return args.Get(0).(*models.Structure), args.Error(1)
 }
-func (m *MockFarmRepository) GetGreenhousesByLandParcel(ctx context.Context, landParcelID uuid.UUID) ([]models.Greenhouse, error) {
+func (m *MockFarmRepository) GetStructuresByLandParcel(ctx context.Context, landParcelID uuid.UUID) ([]models.Structure, error) {
 	args := m.Called(ctx, landParcelID)
-	return args.Get(0).([]models.Greenhouse), args.Error(1)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Structure), args.Error(1)
 }
-func (m *MockFarmRepository) UpdateGreenhouse(ctx context.Context, gh *models.Greenhouse) error {
-	args := m.Called(ctx, gh)
+func (m *MockFarmRepository) UpdateStructure(ctx context.Context, structure *models.Structure) error {
+	args := m.Called(ctx, structure)
 	return args.Error(0)
 }
-func (m *MockFarmRepository) DeleteGreenhouse(ctx context.Context, id uuid.UUID) error {
+func (m *MockFarmRepository) DeleteStructure(ctx context.Context, id uuid.UUID) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
+}
+
+func (m *MockFarmRepository) GetStructureTypes(ctx context.Context) ([]string, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]string), args.Error(1)
 }
 
 // --- Tests ---

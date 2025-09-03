@@ -14,9 +14,9 @@ import (
 
 // --- DTOs ---
 type PlotRequest struct {
-	Name         string    `json:"name" validate:"required,min=2,max=100"`
-	Size         string    `json:"size" validate:"omitempty,min=1,max=50"`
-	GreenhouseID uuid.UUID `json:"greenhouse_id" validate:"required"`
+	Name        string    `json:"name" validate:"required,min=2,max=100"`
+	Size        string    `json:"size" validate:"omitempty,min=1,max=50"`
+	StructureID uuid.UUID `json:"structure_id" validate:"required"`
 }
 
 type UpdatePlotRequest struct {
@@ -53,7 +53,7 @@ func (h *PlotHandler) CreatePlot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	plot, err := h.service.CreatePlot(r.Context(), req.Name, req.Size, req.GreenhouseID)
+	plot, err := h.service.CreatePlot(r.Context(), req.Name, req.Size, req.StructureID)
 	if err != nil {
 		h.logger.Errorf("ошибка при создании грядки: %v", err)
 		api.RespondWithError(w, "could not create plot", http.StatusInternalServerError)
@@ -64,20 +64,19 @@ func (h *PlotHandler) CreatePlot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PlotHandler) GetPlots(w http.ResponseWriter, r *http.Request) {
-	greenhouseIDStr := r.URL.Query().Get("greenhouse_id")
-	if greenhouseIDStr == "" {
-		// Handle case where we might want to list all plots in the future
-		api.RespondWithError(w, "greenhouse_id query parameter is required", http.StatusBadRequest)
+	structureIDStr := r.URL.Query().Get("structure_id")
+	if structureIDStr == "" {
+		api.RespondWithError(w, "structure_id query parameter is required", http.StatusBadRequest)
 		return
 	}
 
-	greenhouseID, err := uuid.Parse(greenhouseIDStr)
+	structureID, err := uuid.Parse(structureIDStr)
 	if err != nil {
-		api.RespondWithError(w, "invalid greenhouse_id query parameter", http.StatusBadRequest)
+		api.RespondWithError(w, "invalid structure_id query parameter", http.StatusBadRequest)
 		return
 	}
 
-	plots, err := h.service.GetPlotsByGreenhouse(r.Context(), greenhouseID)
+	plots, err := h.service.GetPlotsByStructure(r.Context(), structureID)
 	if err != nil {
 		h.logger.Errorf("ошибка при получении списка грядок: %v", err)
 		api.RespondWithError(w, "could not retrieve plots", http.StatusInternalServerError)

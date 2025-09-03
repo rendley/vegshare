@@ -11,7 +11,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import RegionManagementPage from './pages/admin/RegionManagementPage';
 import LandParcelManagementPage from './pages/admin/LandParcelManagementPage';
-import GreenhouseManagementPage from './pages/admin/GreenhouseManagementPage';
+import StructureManagementPage from './pages/admin/StructureManagementPage';
 import PlotManagementPage from './pages/admin/PlotManagementPage';
 import CameraManagementPage from './pages/admin/CameraManagementPage';
 import CropManagementPage from './pages/admin/CropManagementPage';
@@ -60,7 +60,7 @@ function App() {
             <Route path="users" element={<UserManagementPage />} />
             <Route path="regions" element={<RegionManagementPage />} />
             <Route path="parcels" element={<LandParcelManagementPage />} />
-            <Route path="greenhouses" element={<GreenhouseManagementPage />} />
+            <Route path="structures" element={<StructureManagementPage />} />
             <Route path="plots" element={<PlotManagementPage />} />
             <Route path="cameras" element={<CameraManagementPage />} />
             <Route path="crops" element={<CropManagementPage />} />

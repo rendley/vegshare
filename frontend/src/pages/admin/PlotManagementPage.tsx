@@ -3,8 +3,8 @@ import type { Plot } from '../../features/api/apiSlice';
 import {
     useGetRegionsQuery,
     useGetLandParcelsByRegionQuery,
-    useGetGreenhousesByLandParcelQuery,
-    useGetPlotsByGreenhouseQuery,
+    useGetStructuresByLandParcelQuery,
+    useGetPlotsByStructureQuery,
     useCreatePlotMutation,
     useUpdatePlotMutation,
     useDeletePlotMutation
@@ -43,23 +43,23 @@ const CreatePlotForm = () => {
     const [size, setSize] = useState('');
     const [regionId, setRegionId] = useState('');
     const [landParcelId, setLandParcelId] = useState('');
-    const [greenhouseId, setGreenhouseId] = useState('');
+    const [structureId, setStructureId] = useState('');
 
     const { data: regions, isLoading: isLoadingRegions } = useGetRegionsQuery();
     const { data: landParcels, isLoading: isLoadingParcels } = useGetLandParcelsByRegionQuery(regionId, { skip: !regionId });
-    const { data: greenhouses, isLoading: isLoadingGreenhouses } = useGetGreenhousesByLandParcelQuery(landParcelId, { skip: !landParcelId });
+    const { data: structures, isLoading: isLoadingStructures } = useGetStructuresByLandParcelQuery(landParcelId, { skip: !landParcelId });
     const [createPlot, { isLoading }] = useCreatePlotMutation();
 
-    useEffect(() => { setLandParcelId(''); setGreenhouseId(''); }, [regionId]);
-    useEffect(() => { setGreenhouseId(''); }, [landParcelId]);
+    useEffect(() => { setLandParcelId(''); setStructureId(''); }, [regionId]);
+    useEffect(() => { setStructureId(''); }, [landParcelId]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (name.trim() && greenhouseId) {
-            createPlot({ greenhouse_id: greenhouseId, name, size }).unwrap().then(() => {
+        if (name.trim() && structureId) {
+            createPlot({ structure_id: structureId, name, size }).unwrap().then(() => {
                 setName('');
                 setSize('');
-                setGreenhouseId('');
+                setStructureId('');
                 setLandParcelId('');
                 setRegionId('');
             });
@@ -71,10 +71,10 @@ const CreatePlotForm = () => {
             <Typography variant="h6">Создать новую грядку</Typography>
             <FormControl fullWidth margin="normal" required><InputLabel>Регион</InputLabel><Select value={regionId} label="Регион" onChange={(e) => setRegionId(e.target.value)} disabled={isLoadingRegions}>{regions?.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}</Select></FormControl>
             <FormControl fullWidth margin="normal" required disabled={!regionId || isLoadingParcels}><InputLabel>Участок</InputLabel><Select value={landParcelId} label="Участок" onChange={(e) => setLandParcelId(e.target.value)}>{landParcels?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" required disabled={!landParcelId || isLoadingGreenhouses}><InputLabel>Теплица</InputLabel><Select value={greenhouseId} label="Теплица" onChange={(e) => setGreenhouseId(e.target.value)}>{greenhouses?.map(g => <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>)}</Select></FormControl>
+            <FormControl fullWidth margin="normal" required disabled={!landParcelId || isLoadingStructures}><InputLabel>Сооружение</InputLabel><Select value={structureId} label="Сооружение" onChange={(e) => setStructureId(e.target.value)}>{structures?.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select></FormControl>
             <TextField label="Название грядки" value={name} onChange={(e) => setName(e.target.value)} fullWidth margin="normal" required />
             <TextField label="Размер (опционально)" value={size} onChange={(e) => setSize(e.target.value)} fullWidth margin="normal" />
-            <Button type="submit" variant="contained" disabled={isLoading || !greenhouseId}>{isLoading ? <CircularProgress size={24} /> : 'Создать'}</Button>
+            <Button type="submit" variant="contained" disabled={isLoading || !structureId}>{isLoading ? <CircularProgress size={24} /> : 'Создать'}</Button>
         </Box>
     );
 }
@@ -83,12 +83,12 @@ const CreatePlotForm = () => {
 const PlotManagementPage = () => {
     const [selectedRegion, setSelectedRegion] = useState('');
     const [selectedParcel, setSelectedParcel] = useState('');
-    const [selectedGreenhouse, setSelectedGreenhouse] = useState('');
+    const [selectedStructure, setSelectedStructure] = useState('');
 
     const { data: regions, isLoading: isLoadingRegions } = useGetRegionsQuery();
     const { data: parcels, isLoading: isLoadingParcels } = useGetLandParcelsByRegionQuery(selectedRegion, { skip: !selectedRegion });
-    const { data: greenhouses, isLoading: isLoadingGreenhouses } = useGetGreenhousesByLandParcelQuery(selectedParcel, { skip: !selectedParcel });
-    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsByGreenhouseQuery(selectedGreenhouse, { skip: !selectedGreenhouse });
+    const { data: structures, isLoading: isLoadingStructures } = useGetStructuresByLandParcelQuery(selectedParcel, { skip: !selectedParcel });
+    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsByStructureQuery(selectedStructure, { skip: !selectedStructure });
 
     const [deletePlot] = useDeletePlotMutation();
     const [updatePlot] = useUpdatePlotMutation();
@@ -99,8 +99,8 @@ const PlotManagementPage = () => {
     const [editedName, setEditedName] = useState('');
     const [editedSize, setEditedSize] = useState('');
 
-    useEffect(() => { setSelectedParcel(''); setSelectedGreenhouse(''); }, [selectedRegion]);
-    useEffect(() => { setSelectedGreenhouse(''); }, [selectedParcel]);
+    useEffect(() => { setSelectedParcel(''); setSelectedStructure(''); }, [selectedRegion]);
+    useEffect(() => { setSelectedStructure(''); }, [selectedParcel]);
 
     const handleOpenEditModal = (plot: Plot) => {
         setSelectedPlot(plot);
@@ -146,14 +146,14 @@ const PlotManagementPage = () => {
                 <InputLabel>Фильтр по участку</InputLabel>
                 <Select value={selectedParcel} label="Фильтр по участку" onChange={(e) => setSelectedParcel(e.target.value)}>{parcels?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select>
             </FormControl>
-            <FormControl fullWidth margin="normal" disabled={!selectedParcel || isLoadingGreenhouses}>
-                <InputLabel>Фильтр по теплице</InputLabel>
-                <Select value={selectedGreenhouse} label="Фильтр по теплице" onChange={(e) => setSelectedGreenhouse(e.target.value)}>{greenhouses?.map(g => <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>)}</Select>
+            <FormControl fullWidth margin="normal" disabled={!selectedParcel || isLoadingStructures}>
+                <InputLabel>Фильтр по сооружению</InputLabel>
+                <Select value={selectedStructure} label="Фильтр по сооружению" onChange={(e) => setSelectedStructure(e.target.value)}>{structures?.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select>
             </FormControl>
 
             {isLoadingPlots && <CircularProgress />}
 
-            {selectedGreenhouse && plots && (
+            {selectedStructure && plots && (
                 <TableContainer component={Paper} sx={{mt: 2}}>
                     <Table>
                         <TableHead>
