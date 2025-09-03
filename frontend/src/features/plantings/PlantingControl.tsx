@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { useGetAvailableCropsQuery, useGetPlotCropsQuery, usePlantCropMutation, useRemoveCropMutation, usePerformActionMutation } from '../api/apiSlice';
+import { useGetAvailableCropsQuery, useGetActionsForUnitQuery, useCreateActionMutation, useCancelActionMutation } from '../api/apiSlice';
 
 interface PlantingControlProps {
   plotId: string;
@@ -8,51 +7,62 @@ interface PlantingControlProps {
 
 const PlantingControl: React.FC<PlantingControlProps> = ({ plotId }) => {
   const { data: availableCrops, isLoading: isLoadingCrops } = useGetAvailableCropsQuery();
-  const { data: plotCrops, isLoading: isLoadingPlotCrops } = useGetPlotCropsQuery(plotId);
-  const [plantCrop, { isLoading: isPlanting }] = usePlantCropMutation();
-  const [removeCrop, { isLoading: isRemoving }] = useRemoveCropMutation();
-  const [performAction, { isLoading: isPerformingAction }] = usePerformActionMutation();
+  const { data: actions, isLoading: isLoadingActions } = useGetActionsForUnitQuery(plotId);
+  const [createAction, { isLoading: isCreatingAction }] = useCreateActionMutation();
+  const [cancelAction, { isLoading: isCancellingAction }] = useCancelActionMutation();
   const [selectedCrop, setSelectedCrop] = useState<string>('');
 
   const handlePlant = async () => {
     if (selectedCrop) {
       try {
-        await plantCrop({ plotId, cropId: selectedCrop }).unwrap();
+        await createAction({
+          unit_id: plotId,
+          unit_type: 'plot',
+          action_type: 'plant',
+          parameters: { crop_id: selectedCrop },
+        }).unwrap();
       } catch (error) {
         console.error('Failed to plant crop: ', error);
       }
     }
   };
 
-  const handleRemove = async (plantingId: string) => {
+  const handleCancel = async (actionId: string) => {
     try {
-      await removeCrop({ plotId, plantingId }).unwrap();
+      await cancelAction(actionId).unwrap();
     } catch (error) {
-      console.error('Failed to remove crop: ', error);
+      console.error('Failed to cancel action: ', error);
     }
   };
 
   const handleWater = async () => {
     try {
-      await performAction({ plotId, action: 'water' }).unwrap();
+      await createAction({
+        unit_id: plotId,
+        unit_type: 'plot',
+        action_type: 'water',
+        parameters: { volume_liters: 5 },
+      }).unwrap();
     } catch (error) {
       console.error('Failed to water crop: ', error);
     }
   };
 
-  if (isLoadingCrops || isLoadingPlotCrops) {
+  if (isLoadingCrops || isLoadingActions) {
     return <p>Loading...</p>;
   }
 
-  if (plotCrops && plotCrops.length > 0) {
+  const plantAction = actions?.find(a => a.action_type === 'plant' && a.status === 'completed');
+
+  if (plantAction) {
     return (
       <div>
-        <p>Planted crop: {plotCrops[0].crop_id}</p>
-        <button onClick={() => handleRemove(plotCrops[0].id)} disabled={isRemoving}>
-          {isRemoving ? 'Removing...' : 'Remove'}
+        <p>Planted crop: {plantAction.parameters.crop_id}</p>
+        <button onClick={() => handleCancel(plantAction.id)} disabled={isCancellingAction}>
+          {isCancellingAction ? 'Removing...' : 'Remove'}
         </button>
-        <button onClick={handleWater} disabled={isPerformingAction}>
-          {isPerformingAction ? 'Watering...' : 'Water'}
+        <button onClick={handleWater} disabled={isCreatingAction}>
+          {isCreatingAction ? 'Watering...' : 'Water'}
         </button>
       </div>
     );
@@ -68,8 +78,8 @@ const PlantingControl: React.FC<PlantingControlProps> = ({ plotId }) => {
           </option>
         ))}
       </select>
-      <button onClick={handlePlant} disabled={!selectedCrop || isPlanting}>
-        {isPlanting ? 'Planting...' : 'Plant'}
+      <button onClick={handlePlant} disabled={!selectedCrop || isCreatingAction}>
+        {isCreatingAction ? 'Planting...' : 'Plant'}
       </button>
     </div>
   );

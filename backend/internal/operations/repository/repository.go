@@ -6,14 +6,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/rendley/vegshare/backend/internal/catalog/models"
+	"github.com/rendley/vegshare/backend/internal/operations/models"
 )
 
-// Repository определяет контракт для хранилища.
+// Repository определяет контракт для хранилища операций.
 type Repository interface {
-	CreatePlotCrop(ctx context.Context, plotCrop *models.PlotCrop) error
-	GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]models.PlotCrop, error)
-	DeletePlotCrop(ctx context.Context, plantingID uuid.UUID) error
+	CreateOperationLog(ctx context.Context, log *models.OperationLog) error
+	GetOperationLogsForUnit(ctx context.Context, unitID uuid.UUID) ([]models.OperationLog, error)
+	DeleteOperationLog(ctx context.Context, logID uuid.UUID) error
+	UpdateOperationLogStatus(ctx context.Context, logID uuid.UUID, status string) error
 }
 
 type repository struct {
@@ -24,30 +25,40 @@ func NewRepository(db *sqlx.DB) Repository {
 	return &repository{db: db}
 }
 
-func (r *repository) CreatePlotCrop(ctx context.Context, plotCrop *models.PlotCrop) error {
-	query := `INSERT INTO plot_crops (id, plot_id, crop_id, lease_id, planted_at, status, created_at, updated_at) VALUES (:id, :plot_id, :crop_id, :lease_id, :planted_at, :status, :created_at, :updated_at)`
-	_, err := r.db.NamedExecContext(ctx, query, plotCrop)
+func (r *repository) CreateOperationLog(ctx context.Context, log *models.OperationLog) error {
+	query := `INSERT INTO operation_log (id, unit_id, unit_type, user_id, action_type, parameters, status, executed_at, created_at, updated_at) 
+	          VALUES (:id, :unit_id, :unit_type, :user_id, :action_type, :parameters, :status, :executed_at, :created_at, :updated_at)`
+	_, err := r.db.NamedExecContext(ctx, query, log)
 	if err != nil {
-		return fmt.Errorf("не удалось создать запись о посадке: %w", err)
+		return fmt.Errorf("не удалось создать запись в журнале операций: %w", err)
 	}
 	return nil
 }
 
-func (r *repository) GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]models.PlotCrop, error) {
-	var plotCrops []models.PlotCrop
-	query := `SELECT * FROM plot_crops WHERE plot_id = $1`
-	err := r.db.SelectContext(ctx, &plotCrops, query, plotID)
+func (r *repository) GetOperationLogsForUnit(ctx context.Context, unitID uuid.UUID) ([]models.OperationLog, error) {
+	var logs []models.OperationLog
+	query := `SELECT * FROM operation_log WHERE unit_id = $1 ORDER BY created_at DESC`
+	err := r.db.SelectContext(ctx, &logs, query, unitID)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось получить посадки для грядки: %w", err)
+		return nil, fmt.Errorf("не удалось получить журнал операций для юнита: %w", err)
 	}
-	return plotCrops, nil
+	return logs, nil
 }
 
-func (r *repository) DeletePlotCrop(ctx context.Context, plantingID uuid.UUID) error {
-	query := `DELETE FROM plot_crops WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, plantingID)
+func (r *repository) DeleteOperationLog(ctx context.Context, logID uuid.UUID) error {
+	query := `DELETE FROM operation_log WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, logID)
 	if err != nil {
-		return fmt.Errorf("не удалось удалить запись о посадке: %w", err)
+		return fmt.Errorf("не удалось удалить запись из журнала операций: %w", err)
+	}
+	return nil
+}
+
+func (r *repository) UpdateOperationLogStatus(ctx context.Context, logID uuid.UUID, status string) error {
+	query := `UPDATE operation_log SET status = $1, updated_at = NOW() WHERE id = $2`
+	_, err := r.db.ExecContext(ctx, query, status, logID)
+	if err != nil {
+		return fmt.Errorf("не удалось обновить статус операции: %w", err)
 	}
 	return nil
 }

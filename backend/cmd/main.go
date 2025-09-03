@@ -91,7 +91,7 @@ func main() {
 	leasingSvc.RegisterUnitManager(leasingModels.UnitTypePlot, unitManager)
 
 	catalogSvc := catalogService.NewService(catalogRepo)
-	operationsSvc := operationsService.NewOperationsService(operationsRepo, plotSvc, leasingRepo, catalogSvc, rabbitMQClient, cfg)
+	operationsSvc := operationsService.NewOperationsService(operationsRepo, leasingRepo, rabbitMQClient, cfg)
 	cameraSvc := cameraService.NewService(cameraRepo, plotSvc)
 	streamingSvc := streamingService.NewService(cfg, log, cameraSvc)
 

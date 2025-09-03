@@ -72,11 +72,17 @@ export interface Crop {
   harvest_time?: number;
 }
 
-export interface PlotCrop {
-  id: string;
-  plot_id: string;
-  crop_id: string;
-  status: string;
+export interface OperationLog {
+    id: string;
+    unit_id: string;
+    unit_type: string;
+    user_id: string;
+    action_type: string;
+    parameters: any; // Can be more specific, e.g., { crop_id: string } | { volume_liters: number }
+    status: string;
+    executed_at: string;
+    created_at: string;
+    updated_at: string;
 }
 
 interface AuthRequest {
@@ -97,7 +103,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Region', 'LandParcel', 'Structure', 'Plot', 'Lease', 'PlotCrop', 'Camera', 'Crop', 'User', 'StructureType'],
+  tagTypes: ['Region', 'LandParcel', 'Structure', 'Plot', 'Lease', 'OperationLog', 'Camera', 'Crop', 'User', 'StructureType'],
   endpoints: (builder) => ({
     // QUERIES
     getRegions: builder.query<Region[], void>({
@@ -132,9 +138,9 @@ export const apiSlice = createApi({
       query: () => 'catalog/crops',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Crop' as const, id })), { type: 'Crop', id: 'LIST' }] : [{ type: 'Crop', id: 'LIST' }],
     }),
-    getPlotCrops: builder.query<PlotCrop[], string>({
-      query: (plotId) => `operations/plots/${plotId}/plantings`,
-      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'PlotCrop' as const, id })), { type: 'PlotCrop', id: 'LIST' }] : [{ type: 'PlotCrop', id: 'LIST' }],
+    getActionsForUnit: builder.query<OperationLog[], string>({
+        query: (unitId) => `operations/units/${unitId}/actions`,
+        providesTags: (_result, _error, unitId) => [{ type: 'OperationLog', id: unitId }],
     }),
 
     // MUTATIONS
@@ -160,27 +166,20 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: 'Plot', id: 'LIST' }, { type: 'Lease', id: 'LIST' }],
     }),
-    plantCrop: builder.mutation<PlotCrop, { plotId: string; cropId: string }>({
-      query: ({ plotId, cropId }) => ({
-        url: `operations/plots/${plotId}/plantings`,
-        method: 'POST',
-        body: { crop_id: cropId },
-      }),
-      invalidatesTags: ['PlotCrop'],
-    }),
-    removeCrop: builder.mutation<void, { plotId: string; plantingId: string }>({
-      query: ({ plotId, plantingId }) => ({
-        url: `operations/plots/${plotId}/plantings/${plantingId}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['PlotCrop'],
-    }),
-    performAction: builder.mutation<void, { plotId: string; action: string }>({
-      query: ({ plotId, action }) => ({
-        url: `operations/plots/${plotId}/actions`,
-        method: 'POST',
-        body: { action },
-      }),
+    createAction: builder.mutation<OperationLog, { unit_id: string; unit_type: string; action_type: string; parameters: any }>(({
+        query: (actionRequest) => ({
+            url: 'operations/actions',
+            method: 'POST',
+            body: actionRequest,
+        }),
+        invalidatesTags: (_result, _error, arg) => [{ type: 'OperationLog', id: arg.unit_id }],
+    })),
+    cancelAction: builder.mutation<void, string>({
+        query: (actionId) => ({
+            url: `operations/actions/${actionId}`,
+            method: 'DELETE',
+        }),
+        invalidatesTags: (_result, _error, _actionId) => [{ type: 'OperationLog', id: 'LIST' }], // This will refetch all actions for all units, which is not ideal. A more specific invalidation would be better.
     }),
 
     // Admin Queries
@@ -357,13 +356,12 @@ export const {
   useGetCamerasByPlotQuery,
   useGetMyLeasesQuery,
   useGetAvailableCropsQuery,
-  useGetPlotCropsQuery,
+  useGetActionsForUnitQuery,
   useLoginMutation,
   useRegisterMutation,
   useLeasePlotMutation,
-  usePlantCropMutation,
-  useRemoveCropMutation,
-  usePerformActionMutation,
+  useCreateActionMutation,
+  useCancelActionMutation,
   useGetUsersQuery,
   useUpdateUserRoleMutation,
   useCreateRegionMutation,

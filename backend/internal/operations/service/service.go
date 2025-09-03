@@ -7,117 +7,110 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	catalogModels "github.com/rendley/vegshare/backend/internal/catalog/models"
-	catalogService "github.com/rendley/vegshare/backend/internal/catalog/service"
-	"github.com/rendley/vegshare/backend/internal/leasing/models"
 	leasingRepository "github.com/rendley/vegshare/backend/internal/leasing/repository"
+	operationsModels "github.com/rendley/vegshare/backend/internal/operations/models"
 	"github.com/rendley/vegshare/backend/internal/operations/repository"
-	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
 	"github.com/rendley/vegshare/backend/pkg/config"
 	"github.com/rendley/vegshare/backend/pkg/rabbitmq"
 )
 
-// Service определяет контракт для бизнес-логики.
+// ActionRequest - это структура для запроса на создание нового действия.
+type ActionRequest struct {
+	UnitID     uuid.UUID       `json:"unit_id"`
+	UnitType   string          `json:"unit_type"`
+	ActionType string          `json:"action_type"`
+	Parameters json.RawMessage `json:"parameters"`
+}
+
+// Service определяет контракт для бизнес-логики операций.
 type Service interface {
-	PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUID) (*catalogModels.PlotCrop, error)
-	GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]catalogModels.PlotCrop, error)
-	RemoveCrop(ctx context.Context, plantingID uuid.UUID) error
-	PerformAction(ctx context.Context, plotID uuid.UUID, action string) error
+	CreateAction(ctx context.Context, userID uuid.UUID, req ActionRequest) (*operationsModels.OperationLog, error)
+	GetActionsForUnit(ctx context.Context, unitID uuid.UUID) ([]operationsModels.OperationLog, error)
+	CancelAction(ctx context.Context, logID uuid.UUID) error
 }
 
 type service struct {
-	repo           repository.Repository
-	plotSvc        plotService.Service
-	leasingRepo    leasingRepository.Repository
-	catalogService catalogService.Service
-	rabbitmq       rabbitmq.ClientInterface
-	cfg            *config.Config
+	repo        repository.Repository
+	leasingRepo leasingRepository.Repository
+	rabbitmq    rabbitmq.ClientInterface
+	cfg         *config.Config
 }
 
 // NewOperationsService - конструктор для сервиса.
-func NewOperationsService(repo repository.Repository, plotSvc plotService.Service, leasingRepo leasingRepository.Repository, catalogService catalogService.Service, rabbitmq rabbitmq.ClientInterface, cfg *config.Config) Service {
+func NewOperationsService(repo repository.Repository, leasingRepo leasingRepository.Repository, rabbitmq rabbitmq.ClientInterface, cfg *config.Config) Service {
 	return &service{
-		repo:           repo,
-		plotSvc:        plotSvc,
-		leasingRepo:    leasingRepo,
-		catalogService: catalogService,
-		rabbitmq:       rabbitmq,
-		cfg:            cfg,
+		repo:        repo,
+		leasingRepo: leasingRepo,
+		rabbitmq:    rabbitmq,
+		cfg:         cfg,
 	}
 }
 
-func (s *service) PlantCrop(ctx context.Context, userID, plotID, cropID uuid.UUID) (*catalogModels.PlotCrop, error) {
-	// Получаем универсальные аренды пользователя
+func (s *service) CreateAction(ctx context.Context, userID uuid.UUID, req ActionRequest) (*operationsModels.OperationLog, error) {
+	// 1. Проверяем, что у пользователя есть активная аренда для данного юнита
 	leases, err := s.leasingRepo.GetLeasesByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось проверить аренду: %w", err)
 	}
 
-	// Ищем активную аренду для конкретной грядки
-	var activeLease *models.Lease // <- ИЗМЕНЕНИЕ: используем новую модель
+	var hasActiveLease bool
 	for _, lease := range leases {
-		// Копируем lease в локальную переменную, чтобы избежать проблем с указателем в цикле
-		currentLease := lease
-		// --- ИЗМЕНЕНИЯ ---
-		// 1. Проверяем UnitID вместо PlotID
-		// 2. Добавляем проверку, что тип юнита - это "plot"
-		if currentLease.UnitID == plotID && currentLease.UnitType == models.UnitTypePlot && currentLease.Status == "active" {
-			activeLease = &currentLease
+		if lease.UnitID == req.UnitID && string(lease.UnitType) == req.UnitType && lease.Status == "active" {
+			hasActiveLease = true
 			break
 		}
 	}
-	if activeLease == nil {
-		return nil, fmt.Errorf("у пользователя нет активной аренды для грядки %s", plotID)
+	if !hasActiveLease {
+		return nil, fmt.Errorf("у пользователя нет активной аренды для юнита %s", req.UnitID)
 	}
 
-	// Остальная логика метода остается без изменений
-	_, err = s.catalogService.GetCropByID(ctx, cropID)
-	if err != nil {
-		return nil, fmt.Errorf("культура с ID %s не найдена: %w", cropID, err)
-	}
+	// 2. TODO: Валидация action_type и parameters (например, через отдельный сервис-валидатор)
+	//    Сейчас мы доверяем данным, приходящим от клиента.
 
+	// 3. Создаем запись в журнале операций
 	now := time.Now()
-	plotCrop := &catalogModels.PlotCrop{
-		ID:        uuid.New(),
-		PlotID:    plotID,
-		CropID:    cropID,
-		LeaseID:   activeLease.ID,
-		PlantedAt: now,
-		Status:    "growing",
-		CreatedAt: now,
-		UpdatedAt: now,
+	logEntry := &operationsModels.OperationLog{
+		ID:         uuid.New(),
+		UnitID:     req.UnitID,
+		UnitType:   req.UnitType,
+		UserID:     userID,
+		ActionType: req.ActionType,
+		Parameters: req.Parameters,
+		Status:     "pending", // Начальный статус
+		ExecutedAt: now,     // Можно установить в null и обновлять в воркере
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 
-	if err := s.repo.CreatePlotCrop(ctx, plotCrop); err != nil {
+	if err := s.repo.CreateOperationLog(ctx, logEntry); err != nil {
 		return nil, err
 	}
 
-	return plotCrop, nil
-}
-
-func (s *service) GetPlotCrops(ctx context.Context, plotID uuid.UUID) ([]catalogModels.PlotCrop, error) {
-	return s.repo.GetPlotCrops(ctx, plotID)
-}
-
-func (s *service) RemoveCrop(ctx context.Context, plantingID uuid.UUID) error {
-	return s.repo.DeletePlotCrop(ctx, plantingID)
-}
-
-type ActionMessage struct {
-	PlotID uuid.UUID `json:"plot_id"`
-	Action string    `json:"action"`
-}
-
-func (s *service) PerformAction(ctx context.Context, plotID uuid.UUID, action string) error {
-	msg := ActionMessage{
-		PlotID: plotID,
-		Action: action,
-	}
-
-	body, err := json.Marshal(msg)
+	// 4. Отправляем сообщение в RabbitMQ
+	body, err := json.Marshal(logEntry)
 	if err != nil {
-		return fmt.Errorf("failed to marshal action message: %w", err)
+		// В реальном приложении здесь нужна более сложная логика обработки ошибок,
+		// возможно, откат транзакции создания записи в логе.
+		return nil, fmt.Errorf("failed to marshal action message: %w", err)
 	}
 
-	return s.rabbitmq.Publish(s.cfg.RabbitMQ.Queues["actions"], string(body))
+	queueName := s.cfg.RabbitMQ.Queues["actions"] // Универсальная очередь
+	if err := s.rabbitmq.Publish(queueName, string(body)); err != nil {
+		// Та же логика обработки ошибок
+		return nil, fmt.Errorf("failed to publish action message: %w", err)
+	}
+
+	return logEntry, nil
+}
+
+func (s *service) GetActionsForUnit(ctx context.Context, unitID uuid.UUID) ([]operationsModels.OperationLog, error) {
+	return s.repo.GetOperationLogsForUnit(ctx, unitID)
+}
+
+func (s *service) CancelAction(ctx context.Context, logID uuid.UUID) error {
+	// TODO: Добавить логику отмены. 
+	// Например, можно обновить статус в БД на 'cancelled' 
+	// и, возможно, отправить компенсирующее событие в RabbitMQ.
+	// Сейчас просто удаляем для простоты.
+	return s.repo.DeleteOperationLog(ctx, logID)
 }

@@ -18,16 +18,3 @@ type Crop struct {
 	CreatedAt   time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
 }
-
-// PlotCrop - это связующая запись, показывающая, какая культура была посажена на какой грядке в рамках какой аренды.
-type PlotCrop struct {
-	ID        uuid.UUID `db:"id" json:"id"`
-	PlotID    uuid.UUID `db:"plot_id" json:"plot_id"`
-	CropID    uuid.UUID `db:"crop_id" json:"crop_id"`
-	LeaseID   uuid.UUID `db:"lease_id" json:"lease_id"`
-	PlantedAt time.Time `db:"planted_at" json:"planted_at"`
-	// Status показывает состояние посадки: 'growing', 'harvested', 'failed'.
-	Status    string    `db:"status" json:"status"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
-}

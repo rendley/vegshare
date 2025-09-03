@@ -13,15 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// --- DTOs ---
-type PlantCropRequest struct {
-	CropID uuid.UUID `json:"crop_id" validate:"required"`
-}
-
-type ActionRequest struct {
-	Action string `json:"action" validate:"required"`
-}
-
 // --- Handler ---
 
 type OperationsHandler struct {
@@ -38,82 +29,62 @@ func NewOperationsHandler(s service.Service, l *logrus.Logger) *OperationsHandle
 	}
 }
 
-func (h *OperationsHandler) PlantCrop(w http.ResponseWriter, r *http.Request) {
+func (h *OperationsHandler) CreateAction(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
 		api.RespondWithError(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	plotIDStr := chi.URLParam(r, "plotID")
-	plotID, err := uuid.Parse(plotIDStr)
-	if err != nil {
-		api.RespondWithError(w, "invalid plot ID in URL", http.StatusBadRequest)
-		return
-	}
-
-	var req PlantCropRequest
+	var req service.ActionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		api.RespondWithError(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if err := h.validate.Struct(req); err != nil {
-		api.RespondWithError(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	// TODO: Add validation for the request
 
-	plotCrop, err := h.service.PlantCrop(r.Context(), userID, plotID, req.CropID)
+	logEntry, err := h.service.CreateAction(r.Context(), userID, req)
 	if err != nil {
-		h.logger.Errorf("ошибка при посадке культуры: %v", err)
+		h.logger.Errorf("ошибка при создании действия: %v", err)
 		api.RespondWithError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	api.RespondWithJSON(h.logger, w, plotCrop, http.StatusCreated)
+	api.RespondWithJSON(h.logger, w, logEntry, http.StatusCreated)
 }
 
-func (h *OperationsHandler) RemoveCrop(w http.ResponseWriter, r *http.Request) {
-	plantingIDStr := chi.URLParam(r, "plantingID")
-	plantingID, err := uuid.Parse(plantingIDStr)
+func (h *OperationsHandler) GetActionsForUnit(w http.ResponseWriter, r *http.Request) {
+	unitIDStr := chi.URLParam(r, "unitID")
+	unitID, err := uuid.Parse(unitIDStr)
 	if err != nil {
-		api.RespondWithError(w, "invalid planting ID in URL", http.StatusBadRequest)
+		api.RespondWithError(w, "invalid unit ID in URL", http.StatusBadRequest)
 		return
 	}
 
-	if err := h.service.RemoveCrop(r.Context(), plantingID); err != nil {
-		h.logger.Errorf("ошибка при удалении посадки: %v", err)
-		api.RespondWithError(w, "could not remove crop", http.StatusInternalServerError)
+	logs, err := h.service.GetActionsForUnit(r.Context(), unitID)
+	if err != nil {
+		h.logger.Errorf("ошибка при получении журнала действий: %v", err)
+		api.RespondWithError(w, "could not retrieve actions", http.StatusInternalServerError)
+		return
+	}
+
+	api.RespondWithJSON(h.logger, w, logs, http.StatusOK)
+}
+
+func (h *OperationsHandler) CancelAction(w http.ResponseWriter, r *http.Request) {
+	logIDStr := chi.URLParam(r, "actionID")
+	logID, err := uuid.Parse(logIDStr)
+	if err != nil {
+		api.RespondWithError(w, "invalid action ID in URL", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.CancelAction(r.Context(), logID); err != nil {
+		h.logger.Errorf("ошибка при отмене действия: %v", err)
+		api.RespondWithError(w, "could not cancel action", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *OperationsHandler) PerformAction(w http.ResponseWriter, r *http.Request) {
-	plotIDStr := chi.URLParam(r, "plotID")
-	plotID, err := uuid.Parse(plotIDStr)
-	if err != nil {
-		api.RespondWithError(w, "invalid plot ID in URL", http.StatusBadRequest)
-		return
-	}
-
-	var req ActionRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		api.RespondWithError(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if err := h.validate.Struct(req); err != nil {
-		api.RespondWithError(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := h.service.PerformAction(r.Context(), plotID, req.Action); err != nil {
-		h.logger.Errorf("ошибка при выполнении действия: %v", err)
-		api.RespondWithError(w, "could not perform action", http.StatusInternalServerError)
-		return
-	}
-
-	api.RespondWithJSON(h.logger, w, map[string]string{"message": "Action performed successfully"}, http.StatusOK)
 }
