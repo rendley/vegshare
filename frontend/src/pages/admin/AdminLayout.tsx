@@ -48,8 +48,8 @@ const AdminLayout = () => {
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton component={NavLink} to="/admin/crops">
-                <ListItemText primary="Культуры" />
+              <ListItemButton component={NavLink} to="/admin/catalog">
+                <ListItemText primary="Каталог" />
               </ListItemButton>
             </ListItem>
             {/* Ссылки на другие разделы будут здесь */}

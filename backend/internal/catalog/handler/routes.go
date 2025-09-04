@@ -1,4 +1,3 @@
-
 package handler
 
 import (
@@ -11,9 +10,11 @@ import (
 func (h *CatalogHandler) Routes() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/crops", h.GetAllCrops)
-	r.Post("/crops", h.CreateCrop)
+	// GET /items?type=crop - получить все элементы по типу
+	r.Get("/items", h.GetItems)
+
+	// POST /items - создать новый элемент
+	r.Post("/items", h.CreateItem) // В будущем защитить middleware для админа
 
 	return r
 }
-

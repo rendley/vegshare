@@ -8,8 +8,7 @@ import {
   useGetStructuresByLandParcelQuery,
   useCreatePlotMutation,
   useGetPlotsByStructureQuery,
-  useCreateCameraMutation,
-  useCreateCropMutation
+  useCreateCameraMutation
 } from '../features/api/apiSlice';
 import { 
   Box, TextField, Button, Typography, CircularProgress, Select, MenuItem, InputLabel, FormControl, Grid
@@ -199,38 +198,6 @@ const CreateCameraForm = () => {
     );
 }
 
-const CreateCropForm = () => {
-    const [formState, setFormState] = useState({ name: '', description: '', planting_time: 0, harvest_time: 0 });
-    const [createCrop, { isLoading, isSuccess, isError }] = useCreateCropMutation();
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormState(prev => ({ ...prev, [name]: name.includes('time') ? parseInt(value, 10) || 0 : value }));
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (formState.name.trim()) {
-            createCrop(formState).unwrap().then(() => {
-                setFormState({ name: '', description: '', planting_time: 0, harvest_time: 0 });
-            });
-        }
-    };
-
-    return (
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2, p: 2, border: '1px solid grey', borderRadius: 1 }}>
-            <Typography variant="h6">Создать культуру</Typography>
-            <TextField name="name" label="Название культуры" value={formState.name} onChange={handleChange} fullWidth margin="normal" required />
-            <TextField name="description" label="Описание" value={formState.description} onChange={handleChange} fullWidth margin="normal" multiline rows={2} />
-            <TextField name="planting_time" label="Время посадки (дней)" type="number" value={formState.planting_time} onChange={handleChange} fullWidth margin="normal" />
-            <TextField name="harvest_time" label="Время сбора (дней)" type="number" value={formState.harvest_time} onChange={handleChange} fullWidth margin="normal" />
-            <Button type="submit" variant="contained" disabled={isLoading}>{isLoading ? <CircularProgress size={24} /> : 'Создать'}</Button>
-            {isSuccess && <Typography color="green" sx={{ mt: 1 }}>Успешно!</Typography>}
-            {isError && <Typography color="error" sx={{ mt: 1 }}>Ошибка.</Typography>}
-        </Box>
-    );
-}
-
 export const AdminPage = () => {
   return (
     <div>
@@ -242,7 +209,6 @@ export const AdminPage = () => {
         <Grid size={{ xs: 12, md: 6 }}><CreateStructureForm /></Grid>
         <Grid size={{ xs: 12, md: 6 }}><CreatePlotForm /></Grid>
         <Grid size={{ xs: 12, md: 6 }}><CreateCameraForm /></Grid>
-        <Grid size={{ xs: 12, md: 6 }}><CreateCropForm /></Grid>
       </Grid>
     </div>
   );

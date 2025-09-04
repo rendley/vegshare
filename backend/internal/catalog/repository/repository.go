@@ -11,9 +11,9 @@ import (
 
 // Repository defines the contract for the catalog data storage.
 type Repository interface {
-	GetAllCrops(ctx context.Context) ([]models.Crop, error)
-	GetCropByID(ctx context.Context, id uuid.UUID) (*models.Crop, error)
-	CreateCrop(ctx context.Context, crop *models.Crop) error
+	GetItemsByType(ctx context.Context, itemType string) ([]models.CatalogItem, error)
+	GetItemByID(ctx context.Context, id uuid.UUID) (*models.CatalogItem, error)
+	CreateItem(ctx context.Context, item *models.CatalogItem) error
 }
 
 // repository implements the Repository interface.
@@ -26,31 +26,32 @@ func NewRepository(db *sqlx.DB) Repository {
 	return &repository{db: db}
 }
 
-func (r *repository) GetAllCrops(ctx context.Context) ([]models.Crop, error) {
-	var crops []models.Crop
-	query := "SELECT * FROM crops"
-	err := r.db.SelectContext(ctx, &crops, query)
+func (r *repository) GetItemsByType(ctx context.Context, itemType string) ([]models.CatalogItem, error) {
+	var items []models.CatalogItem
+	query := "SELECT * FROM catalog_items WHERE item_type = $1"
+	err := r.db.SelectContext(ctx, &items, query, itemType)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось получить список культур: %w", err)
+		return nil, fmt.Errorf("не удалось получить элементы каталога по типу '%s': %w", itemType, err)
 	}
-	return crops, nil
+	return items, nil
 }
 
-func (r *repository) GetCropByID(ctx context.Context, id uuid.UUID) (*models.Crop, error) {
-	var crop models.Crop
-	query := `SELECT * FROM crops WHERE id = $1`
-	err := r.db.GetContext(ctx, &crop, query, id)
+func (r *repository) GetItemByID(ctx context.Context, id uuid.UUID) (*models.CatalogItem, error) {
+	var item models.CatalogItem
+	query := `SELECT * FROM catalog_items WHERE id = $1`
+	err := r.db.GetContext(ctx, &item, query, id)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось получить культуру по ID: %w", err)
+		return nil, fmt.Errorf("не удалось получить элемент каталога по ID: %w", err)
 	}
-	return &crop, nil
+	return &item, nil
 }
 
-func (r *repository) CreateCrop(ctx context.Context, crop *models.Crop) error {
-	query := `INSERT INTO crops (id, name, description, planting_time, harvest_time, created_at, updated_at) VALUES (:id, :name, :description, :planting_time, :harvest_time, :created_at, :updated_at)`
-	_, err := r.db.NamedExecContext(ctx, query, crop)
+func (r *repository) CreateItem(ctx context.Context, item *models.CatalogItem) error {
+	query := `INSERT INTO catalog_items (id, item_type, name, description, attributes, created_at, updated_at) 
+			  VALUES (:id, :item_type, :name, :description, :attributes, :created_at, :updated_at)`
+	_, err := r.db.NamedExecContext(ctx, query, item)
 	if err != nil {
-		return fmt.Errorf("не удалось создать культуру: %w", err)
+		return fmt.Errorf("не удалось создать элемент каталога: %w", err)
 	}
 	return nil
 }

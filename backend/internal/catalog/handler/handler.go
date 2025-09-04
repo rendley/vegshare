@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/rendley/vegshare/backend/internal/catalog/models"
 	"github.com/rendley/vegshare/backend/internal/catalog/service"
 	"github.com/rendley/vegshare/backend/pkg/api"
 	"github.com/sirupsen/logrus"
@@ -12,11 +13,11 @@ import (
 
 // --- DTOs ---
 
-type CreateCropRequest struct {
-	Name         string `json:"name" validate:"required"`
-	Description  string `json:"description"`
-	PlantingTime int    `json:"planting_time"`
-	HarvestTime  int    `json:"harvest_time"`
+type CreateItemRequest struct {
+	ItemType    string         `json:"item_type" validate:"required"`
+	Name        string         `json:"name" validate:"required"`
+	Description string         `json:"description"`
+	Attributes  models.JSONB   `json:"attributes"`
 }
 
 // --- Handler ---
@@ -37,18 +38,27 @@ func NewCatalogHandler(s service.Service, l *logrus.Logger) *CatalogHandler {
 	}
 }
 
-func (h *CatalogHandler) GetAllCrops(w http.ResponseWriter, r *http.Request) {
-	crops, err := h.service.GetAllCrops(r.Context())
-	if err != nil {
-		h.logger.Errorf("ошибка при получении списка культур: %v", err)
-		api.RespondWithError(w, "could not retrieve crops", http.StatusInternalServerError)
+// GetItems handles GET requests to fetch catalog items, with filtering by type.
+func (h *CatalogHandler) GetItems(w http.ResponseWriter, r *http.Request) {
+	// Получаем параметр 'type' из URL
+	itemType := r.URL.Query().Get("type")
+	if itemType == "" {
+		api.RespondWithError(w, "query parameter 'type' is required", http.StatusBadRequest)
 		return
 	}
-	api.RespondWithJSON(h.logger, w, crops, http.StatusOK)
+
+	items, err := h.service.GetItems(r.Context(), itemType)
+	if err != nil {
+		h.logger.Errorf("ошибка при получении элементов каталога: %v", err)
+		api.RespondWithError(w, "could not retrieve catalog items", http.StatusInternalServerError)
+		return
+	}
+	api.RespondWithJSON(h.logger, w, items, http.StatusOK)
 }
 
-func (h *CatalogHandler) CreateCrop(w http.ResponseWriter, r *http.Request) {
-	var req CreateCropRequest
+// CreateItem handles POST requests to create a new catalog item.
+func (h *CatalogHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
+	var req CreateItemRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		api.RespondWithError(w, "invalid request body", http.StatusBadRequest)
 		return
@@ -59,12 +69,12 @@ func (h *CatalogHandler) CreateCrop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	crop, err := h.service.CreateCrop(r.Context(), req.Name, req.Description, req.PlantingTime, req.HarvestTime)
+	item, err := h.service.CreateItem(r.Context(), req.ItemType, req.Name, req.Description, req.Attributes)
 	if err != nil {
-		h.logger.Errorf("ошибка при создании культуры: %v", err)
-		api.RespondWithError(w, "could not create crop", http.StatusInternalServerError)
+		h.logger.Errorf("ошибка при создании элемента каталога: %v", err)
+		api.RespondWithError(w, "could not create catalog item", http.StatusInternalServerError)
 		return
 	}
 
-	api.RespondWithJSON(h.logger, w, crop, http.StatusCreated)
+	api.RespondWithJSON(h.logger, w, item, http.StatusCreated)
 }

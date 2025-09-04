@@ -12,9 +12,9 @@ import (
 
 // Service defines the contract for the catalog service.
 type Service interface {
-	GetAllCrops(ctx context.Context) ([]models.Crop, error)
-	GetCropByID(ctx context.Context, id uuid.UUID) (*models.Crop, error)
-	CreateCrop(ctx context.Context, name, description string, plantingTime, harvestTime int) (*models.Crop, error)
+	GetItems(ctx context.Context, itemType string) ([]models.CatalogItem, error)
+	GetItemByID(ctx context.Context, id uuid.UUID) (*models.CatalogItem, error)
+	CreateItem(ctx context.Context, itemType, name, description string, attributes models.JSONB) (*models.CatalogItem, error)
 }
 
 // service implements the Service interface.
@@ -27,32 +27,35 @@ func NewService(repo repository.Repository) Service {
 	return &service{repo: repo}
 }
 
-func (s *service) GetAllCrops(ctx context.Context) ([]models.Crop, error) {
-	crops, err := s.repo.GetAllCrops(ctx)
+func (s *service) GetItems(ctx context.Context, itemType string) ([]models.CatalogItem, error) {
+	if itemType == "" {
+		return nil, fmt.Errorf("тип элемента каталога не может быть пустым")
+	}
+	items, err := s.repo.GetItemsByType(ctx, itemType)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось получить культуры в сервисе: %w", err)
+		return nil, fmt.Errorf("не удалось получить элементы каталога в сервисе: %w", err)
 	}
-	return crops, nil
+	return items, nil
 }
 
-func (s *service) GetCropByID(ctx context.Context, id uuid.UUID) (*models.Crop, error) {
-	return s.repo.GetCropByID(ctx, id)
+func (s *service) GetItemByID(ctx context.Context, id uuid.UUID) (*models.CatalogItem, error) {
+	return s.repo.GetItemByID(ctx, id)
 }
 
-func (s *service) CreateCrop(ctx context.Context, name, description string, plantingTime, harvestTime int) (*models.Crop, error) {
+func (s *service) CreateItem(ctx context.Context, itemType, name, description string, attributes models.JSONB) (*models.CatalogItem, error) {
 	now := time.Now()
-	crop := &models.Crop{
-		ID:           uuid.New(),
-		Name:         name,
-		Description:  description,
-		PlantingTime: plantingTime,
-		HarvestTime:  harvestTime,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+	item := &models.CatalogItem{
+		ID:          uuid.New(),
+		ItemType:    itemType,
+		Name:        name,
+		Description: description,
+		Attributes:  attributes,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
-	if err := s.repo.CreateCrop(ctx, crop); err != nil {
+	if err := s.repo.CreateItem(ctx, item); err != nil {
 		return nil, err
 	}
-	return crop, nil
+	return item, nil
 }

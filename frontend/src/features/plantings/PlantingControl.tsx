@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useGetAvailableCropsQuery, useGetActionsForUnitQuery, useCreateActionMutation, useCancelActionMutation } from '../api/apiSlice';
+import { type CatalogItem, useGetCatalogItemsQuery, useGetActionsForUnitQuery, useCreateActionMutation, useCancelActionMutation } from '../api/apiSlice';
 
 interface PlantingControlProps {
   plotId: string;
 }
 
 const PlantingControl: React.FC<PlantingControlProps> = ({ plotId }) => {
-  const { data: availableCrops, isLoading: isLoadingCrops } = useGetAvailableCropsQuery();
+  const { data: availableCrops, isLoading: isLoadingCrops } = useGetCatalogItemsQuery('crop');
   const { data: actions, isLoading: isLoadingActions } = useGetActionsForUnitQuery(plotId);
   const [createAction, { isLoading: isCreatingAction }] = useCreateActionMutation();
   const [cancelAction, { isLoading: isCancellingAction }] = useCancelActionMutation();
@@ -55,9 +55,11 @@ const PlantingControl: React.FC<PlantingControlProps> = ({ plotId }) => {
   const plantAction = actions?.find(a => a.action_type === 'plant' && a.status === 'completed');
 
   if (plantAction) {
+    const plantedCrop = availableCrops?.find((c: CatalogItem) => c.id === plantAction.parameters.crop_id);
     return (
       <div>
-        <p>Planted crop: {plantAction.parameters.crop_id}</p>
+        <p>Planted: {plantedCrop ? plantedCrop.name : 'Unknown Crop'}</p>
+        <p>Harvest in: {plantedCrop?.attributes.harvest_time_days || 'N/A'} days</p>
         <button onClick={() => handleCancel(plantAction.id)} disabled={isCancellingAction}>
           {isCancellingAction ? 'Removing...' : 'Remove'}
         </button>
@@ -72,7 +74,7 @@ const PlantingControl: React.FC<PlantingControlProps> = ({ plotId }) => {
     <div>
       <select value={selectedCrop} onChange={(e) => setSelectedCrop(e.target.value)}>
         <option value="" disabled>Select a crop</option>
-        {availableCrops?.map((crop) => (
+        {availableCrops?.map((crop: CatalogItem) => (
           <option key={crop.id} value={crop.id}>
             {crop.name}
           </option>

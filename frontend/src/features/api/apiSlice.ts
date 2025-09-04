@@ -64,12 +64,12 @@ export interface Lease {
   updated_at: string;
 }
 
-export interface Crop {
+export interface CatalogItem {
   id: string;
+  item_type: string;
   name: string;
   description?: string;
-  planting_time?: number;
-  harvest_time?: number;
+  attributes: Record<string, any>;
 }
 
 export interface OperationLog {
@@ -103,7 +103,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Region', 'LandParcel', 'Structure', 'Plot', 'Lease', 'OperationLog', 'Camera', 'Crop', 'User', 'StructureType'],
+  tagTypes: ['Region', 'LandParcel', 'Structure', 'Plot', 'Lease', 'OperationLog', 'Camera', 'CatalogItem', 'User', 'StructureType'],
   endpoints: (builder) => ({
     // QUERIES
     getRegions: builder.query<Region[], void>({
@@ -134,9 +134,9 @@ export const apiSlice = createApi({
       query: () => 'leasing',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Lease' as const, id })), { type: 'Lease', id: 'LIST' }] : [{ type: 'Lease', id: 'LIST' }],
     }),
-    getAvailableCrops: builder.query<Crop[], void>({
-      query: () => 'catalog/crops',
-      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Crop' as const, id })), { type: 'Crop', id: 'LIST' }] : [{ type: 'Crop', id: 'LIST' }],
+    getCatalogItems: builder.query<CatalogItem[], string>({
+      query: (itemType) => `catalog/items?type=${itemType}`,
+      providesTags: (result, _error, itemType) => result ? [...result.map(({ id }) => ({ type: 'CatalogItem' as const, id })), { type: 'CatalogItem', id: 'LIST', itemType }] : [{ type: 'CatalogItem', id: 'LIST', itemType }],
     }),
     getActionsForUnit: builder.query<OperationLog[], string>({
         query: (unitId) => `operations/units/${unitId}/actions`,
@@ -237,14 +237,32 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: 'Camera', id: 'LIST' }],
     }),
-    createCrop: builder.mutation<Crop, Partial<Crop>>({
+
+    // Catalog Mutations
+    createCatalogItem: builder.mutation<CatalogItem, Partial<CatalogItem>>({
       query: (body) => ({
-        url: 'catalog/crops',
+        url: 'catalog/items',
         method: 'POST',
         body,
       }),
-      invalidatesTags: [{ type: 'Crop', id: 'LIST' }],
+      invalidatesTags: [{ type: 'CatalogItem', id: 'LIST' }],
     }),
+    updateCatalogItem: builder.mutation<CatalogItem, Partial<CatalogItem> & { id: string }>({
+      query: ({ id, ...body }) => ({
+        url: `catalog/items/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: 'CatalogItem', id }, { type: 'CatalogItem', id: 'LIST' }],
+    }),
+    deleteCatalogItem: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `catalog/items/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'CatalogItem', id: 'LIST' }],
+    }),
+
     updateRegion: builder.mutation<Region, { id: string; name: string }>({
       query: ({ id, ...body }) => ({
         url: `farm/regions/${id}`,
@@ -326,23 +344,6 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: 'Camera', id: 'LIST' }],
     }),
-
-    // Crops
-    updateCrop: builder.mutation<Crop, Partial<Crop> & { id: string }>({
-      query: ({ id, ...body }) => ({
-        url: `catalog/crops/${id}`,
-        method: 'PUT',
-        body,
-      }),
-      invalidatesTags: (_, __, { id }) => [{ type: 'Crop', id }, { type: 'Crop', id: 'LIST' }],
-    }),
-    deleteCrop: builder.mutation<void, string>({
-      query: (id) => ({
-        url: `catalog/crops/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: [{ type: 'Crop', id: 'LIST' }],
-    }),
   }),
 });
 
@@ -355,7 +356,7 @@ export const {
   useGetPlotsByStructureQuery,
   useGetCamerasByPlotQuery,
   useGetMyLeasesQuery,
-  useGetAvailableCropsQuery,
+  useGetCatalogItemsQuery,
   useGetActionsForUnitQuery,
   useLoginMutation,
   useRegisterMutation,
@@ -369,7 +370,9 @@ export const {
   useCreateStructureMutation,
   useCreatePlotMutation,
   useCreateCameraMutation,
-  useCreateCropMutation,
+  useCreateCatalogItemMutation,
+  useUpdateCatalogItemMutation,
+  useDeleteCatalogItemMutation,
   useUpdateRegionMutation,
   useDeleteRegionMutation,
   useUpdateLandParcelMutation,
@@ -380,6 +383,4 @@ export const {
   useDeletePlotMutation,
   useUpdateCameraMutation,
   useDeleteCameraMutation,
-  useUpdateCropMutation,
-  useDeleteCropMutation,
 } = apiSlice;
