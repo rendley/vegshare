@@ -64,6 +64,13 @@ export interface Lease {
   updated_at: string;
 }
 
+export interface EnrichedLease extends Lease {
+  plot?: Plot & { // plot is optional, for plot leases
+    cameras: Camera[];
+  };
+  // coop?: Coop & { ... } // Future enhancement
+}
+
 export interface CatalogItem {
   id: string;
   item_type: string;
@@ -130,7 +137,7 @@ export const apiSlice = createApi({
       query: (plotId) => `plots/${plotId}/cameras`,
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Camera' as const, id })), { type: 'Camera', id: 'LIST' }] : [{ type: 'Camera', id: 'LIST' }],
     }),
-    getMyLeases: builder.query<Lease[], void>({
+    getMyLeases: builder.query<EnrichedLease[], void>({
       query: () => 'leasing',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Lease' as const, id })), { type: 'Lease', id: 'LIST' }] : [{ type: 'Lease', id: 'LIST' }],
     }),

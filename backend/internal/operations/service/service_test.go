@@ -60,6 +60,14 @@ func (m *MockLeasingRepository) GetLeasesByUserID(ctx context.Context, userID uu
 	return args.Get(0).([]leasingModels.Lease), args.Error(1)
 }
 
+func (m *MockLeasingRepository) GetEnrichedLeasesByUserID(ctx context.Context, userID uuid.UUID) ([]leasingModels.EnrichedLease, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]leasingModels.EnrichedLease), args.Error(1)
+}
+
 func (m *MockLeasingRepository) CreateLease(ctx context.Context, lease *leasingModels.Lease) error {
 	return m.Called(ctx, lease).Error(0)
 }

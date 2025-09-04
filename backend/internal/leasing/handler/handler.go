@@ -65,8 +65,6 @@ func (h *LeasingHandler) CreateLease(w http.ResponseWriter, r *http.Request) {
 	api.RespondWithJSON(h.logger, w, lease, http.StatusCreated)
 }
 
-// GetMyLeases - обработчик для получения списка аренд пользователя.
-// Теперь он будет возвращать список универсальных моделей Lease.
 func (h *LeasingHandler) GetMyLeases(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
@@ -74,9 +72,9 @@ func (h *LeasingHandler) GetMyLeases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	leases, err := h.service.GetMyLeases(r.Context(), userID)
+	leases, err := h.service.GetMyEnrichedLeases(r.Context(), userID)
 	if err != nil {
-		h.logger.Errorf("ошибка при получении списка аренд: %v", err)
+		h.logger.Errorf("ошибка при получении обогащенного списка аренд: %v", err)
 		api.RespondWithError(w, "could not retrieve leases", http.StatusInternalServerError)
 		return
 	}

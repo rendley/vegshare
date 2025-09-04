@@ -24,6 +24,14 @@ func (m *MockLeasingRepository) CreateLease(ctx context.Context, lease *models.L
 	return args.Error(0)
 }
 
+func (m *MockLeasingRepository) GetEnrichedLeasesByUserID(ctx context.Context, userID uuid.UUID) ([]models.EnrichedLease, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.EnrichedLease), args.Error(1)
+}
+
 func (m *MockLeasingRepository) GetLeasesByUserID(ctx context.Context, userID uuid.UUID) ([]models.Lease, error) {
 	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
@@ -118,12 +126,12 @@ func TestLeasingService(t *testing.T) {
 		})
 	})
 
-	t.Run("GetMyLeases", func(t *testing.T) {
+	t.Run("GetMyEnrichedLeases", func(t *testing.T) {
 		userID := uuid.New()
-		expectedLeases := []models.Lease{{ID: uuid.New(), UserID: userID}}
-		mockLeasingRepo.On("GetLeasesByUserID", ctx, userID).Return(expectedLeases, nil).Once()
+		expectedLeases := []models.EnrichedLease{{Lease: models.Lease{ID: uuid.New(), UserID: userID}}}
+		mockLeasingRepo.On("GetEnrichedLeasesByUserID", ctx, userID).Return(expectedLeases, nil).Once()
 
-		leases, err := leasingSvc.GetMyLeases(ctx, userID)
+		leases, err := leasingSvc.GetMyEnrichedLeases(ctx, userID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedLeases, leases)

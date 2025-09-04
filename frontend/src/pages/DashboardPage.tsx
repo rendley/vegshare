@@ -1,6 +1,6 @@
-import { useGetMyLeasesQuery } from '../features/api/apiSlice';
-import PlantingControl from '../features/plantings/PlantingControl';
-import { Box, Typography, CircularProgress, Grid, Card, CardContent } from '@mui/material';
+import { useGetMyLeasesQuery, type EnrichedLease } from '../features/api/apiSlice';
+import PlotCard from '../components/PlotCard';
+import { Box, Typography, CircularProgress, Grid, Alert } from '@mui/material';
 
 export const DashboardPage = () => {
     const { data: leases, isLoading, error } = useGetMyLeasesQuery();
@@ -10,26 +10,25 @@ export const DashboardPage = () => {
     }
 
     if (error) {
-        return <Typography color="error">Ошибка при загрузке данных.</Typography>;
+        return <Alert severity="error">Ошибка при загрузке данных.</Alert>;
     }
-
-    const plotLeases = leases?.filter(lease => lease.unit_type === 'plot');
 
     return (
         <Box sx={{ p: 3 }}>
             <Typography variant="h4" gutterBottom>Моя ферма</Typography>
-            {plotLeases && plotLeases.length > 0 ? (
+            {leases && leases.length > 0 ? (
                 <Grid container spacing={3}>
-                    {plotLeases.map(lease => (
-                        <Grid key={lease.id} size={{ xs: 12, md: 6 }}>
-                            <Card>
-                                <CardContent>
-                                    <Typography variant="h6">Грядка ID: {lease.unit_id}</Typography>
-                                    <Typography color="text.secondary">Статус аренды: {lease.status}</Typography>
-                                    <hr />
-                                    <PlantingControl plotId={lease.unit_id} />
-                                </CardContent>
-                            </Card>
+                    {leases.map((lease: EnrichedLease) => (
+                        <Grid size={{ xs: 12, md: 6 }} key={lease.id}>
+                            {lease.unit_type === 'plot' && lease.plot && (
+                                <PlotCard lease={lease} />
+                            )}
+                            {/* 
+                                В будущем здесь будут другие типы юнитов:
+                                {lease.unit_type === 'coop' && lease.coop && (
+                                    <CoopCard lease={lease} />
+                                )}
+                            */}
                         </Grid>
                     ))}
                 </Grid>
