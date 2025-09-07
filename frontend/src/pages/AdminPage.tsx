@@ -176,7 +176,7 @@ const CreateCameraForm = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (name.trim() && plotId && rtspPath.trim()) {
-            createCamera({ plotId, name, rtsp_path_name: rtspPath }).unwrap().then(() => { 
+            createCamera({ unit_id: plotId, unit_type: 'plot', name, rtsp_path_name: rtspPath }).unwrap().then(() => { 
                 setName(''); setRtspPath(''); setPlotId(''); setStructureId(''); setLandParcelId(''); setRegionId(''); 
             });
         }

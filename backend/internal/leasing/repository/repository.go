@@ -56,13 +56,15 @@ func (r *repository) GetEnrichedLeasesByUserID(ctx context.Context, userID uuid.
             p.status AS "plot.status",
             c.id AS "plot.cameras.id",
             c.name AS "plot.cameras.name",
-            c.rtsp_path_name AS "plot.cameras.rtsp_path_name"
+            c.rtsp_path_name AS "plot.cameras.rtsp_path_name",
+			c.unit_id AS "plot.cameras.unit_id",
+			c.unit_type AS "plot.cameras.unit_type"
         FROM
             leases l
         JOIN
             plots p ON l.unit_id = p.id AND l.unit_type = 'plot'
         LEFT JOIN
-            cameras c ON p.id = c.plot_id
+            cameras c ON p.id = c.unit_id AND c.unit_type = 'plot'
         WHERE
             l.user_id = $1 AND l.status = 'active'
         ORDER BY
@@ -84,6 +86,8 @@ func (r *repository) GetEnrichedLeasesByUserID(ctx context.Context, userID uuid.
 		CameraID         uuid.NullUUID  `db:"plot.cameras.id"`
 		CameraName       sql.NullString `db:"plot.cameras.name"`
 		CameraRTSPPath   sql.NullString `db:"plot.cameras.rtsp_path_name"`
+		CameraUnitID     uuid.NullUUID  `db:"plot.cameras.unit_id"`
+		CameraUnitType   sql.NullString `db:"plot.cameras.unit_type"`
 	}
 
 	var flatData []flatLeaseData
@@ -124,7 +128,8 @@ func (r *repository) GetEnrichedLeasesByUserID(ctx context.Context, userID uuid.
 			lease := leasesMap[row.ID]
 			lease.Plot.Cameras = append(lease.Plot.Cameras, cameraModels.Camera{
 				ID:           row.CameraID.UUID,
-				PlotID:       row.PlotID,
+				UnitID:       row.CameraUnitID.UUID,
+				UnitType:     row.CameraUnitType.String,
 				Name:         row.CameraName.String,
 				RTSPPathName: row.CameraRTSPPath.String,
 			})

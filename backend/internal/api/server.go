@@ -8,11 +8,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	chi_middleware "github.com/go-chi/chi/v5/middleware"
 	authhandler "github.com/rendley/vegshare/backend/internal/auth/handler"
+	camerahandler "github.com/rendley/vegshare/backend/internal/camera/handler"
 	cataloghandler "github.com/rendley/vegshare/backend/internal/catalog/handler"
 	farmhandler "github.com/rendley/vegshare/backend/internal/farm/handler"
 	leasinghandler "github.com/rendley/vegshare/backend/internal/leasing/handler"
 	operationshandler "github.com/rendley/vegshare/backend/internal/operations/handler"
-	camerahandler "github.com/rendley/vegshare/backend/internal/camera/handler"
 	plothandler "github.com/rendley/vegshare/backend/internal/plot/handler"
 	streaminghandler "github.com/rendley/vegshare/backend/internal/streaming/handler"
 	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
@@ -144,15 +144,18 @@ func (s *Server) Start() error {
 				// Группа для конкретной грядки: /plots/{plotID}
 				r.Route("/{plotID}", func(r chi.Router) {
 					r.Get("/", s.PlotHandler.GetPlotByID)
-					r.Get("/cameras", s.CameraHandler.GetCamerasByPlotID)
 					r.With(s.mw.AdminMiddleware).Put("/", s.PlotHandler.UpdatePlot)
 					r.With(s.mw.AdminMiddleware).Delete("/", s.PlotHandler.DeletePlot)
-					r.With(s.mw.AdminMiddleware).Post("/cameras", s.CameraHandler.CreateCamera)
 				})
 			})
 
-			// --- КАМЕРЫ (только удаление по ID) ---
+			// --- КАМЕРЫ (НОВЫЕ ПОЛИМОРФНЫЕ РОУТЫ) ---
 			r.Route("/cameras", func(r chi.Router) {
+				// GET /cameras?unit_id=...&unit_type=... - получить камеры для любого юнита
+				r.Get("/", s.CameraHandler.GetCameras)
+				// POST /cameras - создать камеру для любого юнита (только админ)
+				r.With(s.mw.AdminMiddleware).Post("/", s.CameraHandler.CreateCamera)
+				// DELETE /cameras/{cameraID} - удалить камеру по ID (только админ)
 				r.With(s.mw.AdminMiddleware).Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
 			})
 
@@ -165,10 +168,10 @@ func (s *Server) Start() error {
 		})
 
 		// Streaming routes (HLS and WebSocket) with query param auth
-		r.Group(func(r chi.Router) {
-			r.Use(s.mw.QueryParamAuthMiddleware)
-			r.Mount("/stream", s.StreamingHandler.Routes())
-		})
+			r.Group(func(r chi.Router) {
+				r.Use(s.mw.QueryParamAuthMiddleware)
+				r.Mount("/stream", s.StreamingHandler.Routes())
+			})
 	})
 
 	return http.ListenAndServe(addr, r)

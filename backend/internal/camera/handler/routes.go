@@ -6,11 +6,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// Routes returns a new router for the camera handler.
+// Routes returns an empty router for the camera handler.
+// The routes are currently defined in the central server.go file to handle nested routing.
 func (h *CameraHandler) Routes() http.Handler {
 	r := chi.NewRouter()
-
-	// The main routing logic is now in api/server.go.
-
 	return r
 }

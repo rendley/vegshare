@@ -5,7 +5,7 @@ import {
     useGetLandParcelsByRegionQuery,
     useGetStructuresByLandParcelQuery,
     useGetPlotsByStructureQuery,
-    useGetCamerasByPlotQuery,
+    useGetCamerasByUnitQuery,
     useCreateCameraMutation,
     useUpdateCameraMutation,
     useDeleteCameraMutation
@@ -33,19 +33,25 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem
+    MenuItem,
+    Grid
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+
+const unitTypes = ['plot', 'coop', 'beehive']; // В будущем можно получать с бэкенда
 
 // --- Форма создания ---
 const CreateCameraForm = () => {
     const [name, setName] = useState('');
     const [rtspPath, setRtspPath] = useState('');
-    const [plotId, setPlotId] = useState('');
-    const [structureId, setStructureId] = useState('');
-    const [landParcelId, setLandParcelId] = useState('');
+    const [unitId, setUnitId] = useState('');
+    const [unitType, setUnitType] = useState('plot');
+    
+    // Состояния для каскадных селектов (только для plot)
     const [regionId, setRegionId] = useState('');
+    const [landParcelId, setLandParcelId] = useState('');
+    const [structureId, setStructureId] = useState('');
 
     const { data: regions, isLoading: isLoadingRegions } = useGetRegionsQuery();
     const { data: landParcels, isLoading: isLoadingParcels } = useGetLandParcelsByRegionQuery(regionId, { skip: !regionId });
@@ -53,17 +59,18 @@ const CreateCameraForm = () => {
     const { data: plots, isLoading: isLoadingPlots } = useGetPlotsByStructureQuery(structureId, { skip: !structureId });
     const [createCamera, { isLoading }] = useCreateCameraMutation();
 
-    useEffect(() => { setLandParcelId(''); setStructureId(''); setPlotId(''); }, [regionId]);
-    useEffect(() => { setStructureId(''); setPlotId(''); }, [landParcelId]);
-    useEffect(() => { setPlotId(''); }, [structureId]);
+    useEffect(() => { setLandParcelId(''); setStructureId(''); setUnitId(''); }, [regionId]);
+    useEffect(() => { setStructureId(''); setUnitId(''); }, [landParcelId]);
+    useEffect(() => { setUnitId(''); }, [structureId]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (name.trim() && plotId && rtspPath.trim()) {
-            createCamera({ plotId, name, rtsp_path_name: rtspPath }).unwrap().then(() => {
+        if (name.trim() && unitId && rtspPath.trim()) {
+            createCamera({ unit_id: unitId, unit_type: unitType, name, rtsp_path_name: rtspPath }).unwrap().then(() => {
                 setName('');
                 setRtspPath('');
-                setPlotId('');
+                setUnitId('');
+                setUnitType('plot');
                 setStructureId('');
                 setLandParcelId('');
                 setRegionId('');
@@ -74,29 +81,40 @@ const CreateCameraForm = () => {
     return (
         <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
             <Typography variant="h6">Создать новую камеру</Typography>
-            <FormControl fullWidth margin="normal" required><InputLabel>Регион</InputLabel><Select value={regionId} label="Регион" onChange={(e) => setRegionId(e.target.value)} disabled={isLoadingRegions}>{regions?.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" required disabled={!regionId || isLoadingParcels}><InputLabel>Участок</InputLabel><Select value={landParcelId} label="Участок" onChange={(e) => setLandParcelId(e.target.value)}>{landParcels?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" required disabled={!landParcelId || isLoadingStructures}><InputLabel>Сооружение</InputLabel><Select value={structureId} label="Сооружение" onChange={(e) => setStructureId(e.target.value)}>{structures?.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" required disabled={!structureId || isLoadingPlots}><InputLabel>Грядка</InputLabel><Select value={plotId} label="Грядка" onChange={(e) => setPlotId(e.target.value)}>{plots?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
+            <FormControl fullWidth margin="normal" required>
+                <InputLabel>Тип Юнита</InputLabel>
+                <Select value={unitType} label="Тип Юнита" onChange={(e) => setUnitType(e.target.value)}>
+                    {unitTypes.map(type => <MenuItem key={type} value={type}>{type}</MenuItem>)}
+                </Select>
+            </FormControl>
+
+            {unitType === 'plot' ? (
+                <>
+                    <FormControl fullWidth margin="normal" required><InputLabel>Регион</InputLabel><Select value={regionId} label="Регион" onChange={(e) => setRegionId(e.target.value)} disabled={isLoadingRegions}>{regions?.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}</Select></FormControl>
+                    <FormControl fullWidth margin="normal" required disabled={!regionId || isLoadingParcels}><InputLabel>Участок</InputLabel><Select value={landParcelId} label="Участок" onChange={(e) => setLandParcelId(e.target.value)}>{landParcels?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
+                    <FormControl fullWidth margin="normal" required disabled={!landParcelId || isLoadingStructures}><InputLabel>Сооружение</InputLabel><Select value={structureId} label="Сооружение" onChange={(e) => setStructureId(e.target.value)}>{structures?.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select></FormControl>
+                    <FormControl fullWidth margin="normal" required disabled={!structureId || isLoadingPlots}><InputLabel>Грядка (Юнит)</InputLabel><Select value={unitId} label="Грядка (Юнит)" onChange={(e) => setUnitId(e.target.value)}>{plots?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
+                </>
+            ) : (
+                <TextField label="Unit ID" value={unitId} onChange={(e) => setUnitId(e.target.value)} fullWidth margin="normal" required />
+            )}
+
             <TextField label="Название камеры" value={name} onChange={(e) => setName(e.target.value)} fullWidth margin="normal" required />
             <TextField label="Путь RTSP" value={rtspPath} onChange={(e) => setRtspPath(e.target.value)} fullWidth margin="normal" required />
-            <Button type="submit" variant="contained" disabled={isLoading || !plotId}>{isLoading ? <CircularProgress size={24} /> : 'Создать'}</Button>
+            <Button type="submit" variant="contained" disabled={isLoading || !unitId}>{isLoading ? <CircularProgress size={24} /> : 'Создать'}</Button>
         </Box>
     );
 }
 
 // --- Таблица управления ---
 const CameraManagementPage = () => {
-    const [selectedRegion, setSelectedRegion] = useState('');
-    const [selectedParcel, setSelectedParcel] = useState('');
-    const [selectedStructure, setSelectedStructure] = useState('');
-    const [selectedPlot, setSelectedPlot] = useState('');
+    const [filterUnitType, setFilterUnitType] = useState('plot');
+    const [filterUnitId, setFilterUnitId] = useState('');
 
-    const { data: regions, isLoading: isLoadingRegions } = useGetRegionsQuery();
-    const { data: parcels, isLoading: isLoadingParcels } = useGetLandParcelsByRegionQuery(selectedRegion, { skip: !selectedRegion });
-    const { data: structures, isLoading: isLoadingStructures } = useGetStructuresByLandParcelQuery(selectedParcel, { skip: !selectedParcel });
-    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsByStructureQuery(selectedStructure, { skip: !selectedStructure });
-    const { data: cameras, isLoading: isLoadingCameras } = useGetCamerasByPlotQuery(selectedPlot, { skip: !selectedPlot });
+    const { data: cameras, isLoading: isLoadingCameras } = useGetCamerasByUnitQuery(
+        { unitId: filterUnitId, unitType: filterUnitType },
+        { skip: !filterUnitId }
+    );
 
     const [deleteCamera] = useDeleteCameraMutation();
     const [updateCamera] = useUpdateCameraMutation();
@@ -106,10 +124,6 @@ const CameraManagementPage = () => {
     const [selectedCamera, setSelectedCamera] = useState<Camera | null>(null);
     const [editedName, setEditedName] = useState('');
     const [editedRtspPath, setEditedRtspPath] = useState('');
-
-    useEffect(() => { setSelectedParcel(''); setSelectedStructure(''); setSelectedPlot(''); }, [selectedRegion]);
-    useEffect(() => { setSelectedStructure(''); setSelectedPlot(''); }, [selectedParcel]);
-    useEffect(() => { setSelectedPlot(''); }, [selectedStructure]);
 
     const handleOpenEditModal = (camera: Camera) => {
         setSelectedCamera(camera);
@@ -147,14 +161,23 @@ const CameraManagementPage = () => {
         <Box>
             <CreateCameraForm />
             <Typography variant="h6" sx={{ mb: 2 }}>Список камер</Typography>
-            <FormControl fullWidth margin="normal"><InputLabel>Фильтр по региону</InputLabel><Select value={selectedRegion} label="Фильтр по региону" onChange={(e) => setSelectedRegion(e.target.value)} disabled={isLoadingRegions}>{regions?.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" disabled={!selectedRegion || isLoadingParcels}><InputLabel>Фильтр по участку</InputLabel><Select value={selectedParcel} label="Фильтр по участку" onChange={(e) => setSelectedParcel(e.target.value)}>{parcels?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" disabled={!selectedParcel || isLoadingStructures}><InputLabel>Фильтр по сооружению</InputLabel><Select value={selectedStructure} label="Фильтр по сооружению" onChange={(e) => setSelectedStructure(e.target.value)}>{structures?.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" disabled={!selectedStructure || isLoadingPlots}><InputLabel>Фильтр по грядке</InputLabel><Select value={selectedPlot} label="Фильтр по грядке" onChange={(e) => setSelectedPlot(e.target.value)}>{plots?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
+            <Grid container spacing={2} sx={{mb: 2}}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormControl fullWidth>
+                        <InputLabel>Тип Юнита</InputLabel>
+                        <Select value={filterUnitType} label="Тип Юнита" onChange={e => setFilterUnitType(e.target.value)}>
+                            {unitTypes.map(type => <MenuItem key={type} value={type}>{type}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                     <TextField label="Фильтр по Unit ID" value={filterUnitId} onChange={(e) => setFilterUnitId(e.target.value)} fullWidth />
+                </Grid>
+            </Grid>
 
             {isLoadingCameras && <CircularProgress />}
 
-            {selectedPlot && cameras && (
+            {filterUnitId && cameras && (
                 <TableContainer component={Paper} sx={{mt: 2}}>
                     <Table>
                         <TableHead>
@@ -162,6 +185,7 @@ const CameraManagementPage = () => {
                                 <TableCell>ID</TableCell>
                                 <TableCell>Название</TableCell>
                                 <TableCell>Путь RTSP</TableCell>
+                                <TableCell>Unit ID</TableCell>
                                 <TableCell align="right">Действия</TableCell>
                             </TableRow>
                         </TableHead>
@@ -171,6 +195,7 @@ const CameraManagementPage = () => {
                                     <TableCell>{camera.id}</TableCell>
                                     <TableCell>{camera.name}</TableCell>
                                     <TableCell>{camera.rtsp_path_name}</TableCell>
+                                    <TableCell>{camera.unit_id}</TableCell>
                                     <TableCell align="right">
                                         <IconButton onClick={() => handleOpenEditModal(camera)}><EditIcon /></IconButton>
                                         <IconButton onClick={() => handleOpenDeleteDialog(camera)}><DeleteIcon /></IconButton>

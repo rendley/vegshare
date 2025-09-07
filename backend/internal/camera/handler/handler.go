@@ -13,9 +13,12 @@ import (
 )
 
 // --- DTOs ---
+// CreateCameraRequest определяет тело запроса для создания новой камеры.
 type CreateCameraRequest struct {
-	Name    string `json:"name" validate:"required,min=2,max=100"`
-	RTSPPathName string `json:"rtsp_path_name" validate:"required,min=1,max=100"`
+	Name         string    `json:"name" validate:"required,min=2,max=100"`
+	RTSPPathName string    `json:"rtsp_path_name" validate:"required,min=1,max=100"`
+	UnitID       uuid.UUID `json:"unit_id" validate:"required"`
+	UnitType     string    `json:"unit_type" validate:"required"`
 }
 
 // --- Handler ---
@@ -34,14 +37,8 @@ func NewCameraHandler(s service.Service, l *logrus.Logger) *CameraHandler {
 	}
 }
 
+// CreateCamera обрабатывает POST-запросы для создания камеры для юнита.
 func (h *CameraHandler) CreateCamera(w http.ResponseWriter, r *http.Request) {
-	plotIDStr := chi.URLParam(r, "plotID")
-	plotID, err := uuid.Parse(plotIDStr)
-	if err != nil {
-		api.RespondWithError(w, "invalid plot ID in URL", http.StatusBadRequest)
-		return
-	}
-
 	var req CreateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		api.RespondWithError(w, "invalid request body", http.StatusBadRequest)
@@ -53,7 +50,7 @@ func (h *CameraHandler) CreateCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	camera, err := h.service.CreateCamera(r.Context(), req.Name, req.RTSPPathName, plotID)
+	camera, err := h.service.CreateCamera(r.Context(), req.Name, req.RTSPPathName, req.UnitID, req.UnitType)
 	if err != nil {
 		h.logger.Errorf("ошибка при создании камеры: %v", err)
 		api.RespondWithError(w, "could not create camera", http.StatusInternalServerError)
@@ -63,15 +60,23 @@ func (h *CameraHandler) CreateCamera(w http.ResponseWriter, r *http.Request) {
 	api.RespondWithJSON(h.logger, w, camera, http.StatusCreated)
 }
 
-func (h *CameraHandler) GetCamerasByPlotID(w http.ResponseWriter, r *http.Request) {
-	plotIDStr := chi.URLParam(r, "plotID")
-	plotID, err := uuid.Parse(plotIDStr)
-	if err != nil {
-		api.RespondWithError(w, "invalid plot ID in URL", http.StatusBadRequest)
+// GetCameras обрабатывает GET-запросы для получения списка камер по ID и типу юнита.
+func (h *CameraHandler) GetCameras(w http.ResponseWriter, r *http.Request) {
+	unitIDStr := r.URL.Query().Get("unit_id")
+	unitType := r.URL.Query().Get("unit_type")
+
+	if unitIDStr == "" || unitType == "" {
+		api.RespondWithError(w, "query parameters 'unit_id' and 'unit_type' are required", http.StatusBadRequest)
 		return
 	}
 
-	cameras, err := h.service.GetCamerasByPlotID(r.Context(), plotID)
+	unitID, err := uuid.Parse(unitIDStr)
+	if err != nil {
+		api.RespondWithError(w, "invalid unit_id format", http.StatusBadRequest)
+		return
+	}
+
+	cameras, err := h.service.GetCamerasByUnitID(r.Context(), unitID, unitType)
 	if err != nil {
 		h.logger.Errorf("ошибка при получении списка камер: %v", err)
 		api.RespondWithError(w, "could not retrieve cameras", http.StatusInternalServerError)
@@ -81,6 +86,7 @@ func (h *CameraHandler) GetCamerasByPlotID(w http.ResponseWriter, r *http.Reques
 	api.RespondWithJSON(h.logger, w, cameras, http.StatusOK)
 }
 
+// DeleteCamera обрабатывает DELETE-запросы для удаления камеры по ее ID.
 func (h *CameraHandler) DeleteCamera(w http.ResponseWriter, r *http.Request) {
 	cameraIDStr := chi.URLParam(r, "cameraID")
 	cameraID, err := uuid.Parse(cameraIDStr)

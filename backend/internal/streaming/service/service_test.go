@@ -13,16 +13,25 @@ import (
 
 // --- Mocks ---
 
+// MockCameraService is a mock for the camera service, implementing the new interface.
 type MockCameraService struct {
 	mock.Mock
 }
 
-func (m *MockCameraService) CreateCamera(ctx context.Context, name, rtspPathName string, plotID uuid.UUID) (*cameraModels.Camera, error) {
-	panic("implement me")
+func (m *MockCameraService) CreateCamera(ctx context.Context, name, rtspPathName string, unitID uuid.UUID, unitType string) (*cameraModels.Camera, error) {
+	args := m.Called(ctx, name, rtspPathName, unitID, unitType)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*cameraModels.Camera), args.Error(1)
 }
 
-func (m *MockCameraService) GetCamerasByPlotID(ctx context.Context, plotID uuid.UUID) ([]cameraModels.Camera, error) {
-	panic("implement me")
+func (m *MockCameraService) GetCamerasByUnitID(ctx context.Context, unitID uuid.UUID, unitType string) ([]cameraModels.Camera, error) {
+	args := m.Called(ctx, unitID, unitType)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]cameraModels.Camera), args.Error(1)
 }
 
 func (m *MockCameraService) GetCameraByID(ctx context.Context, cameraID uuid.UUID) (*cameraModels.Camera, error) {
@@ -34,7 +43,8 @@ func (m *MockCameraService) GetCameraByID(ctx context.Context, cameraID uuid.UUI
 }
 
 func (m *MockCameraService) DeleteCamera(ctx context.Context, cameraID uuid.UUID) error {
-	panic("implement me")
+	args := m.Called(ctx, cameraID)
+	return args.Error(0)
 }
 
 // --- Tests ---

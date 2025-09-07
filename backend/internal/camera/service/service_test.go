@@ -2,14 +2,10 @@ package service
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
 	"github.com/rendley/vegshare/backend/internal/camera/models"
-	leasingDomain "github.com/rendley/vegshare/backend/internal/leasing/domain"
-	plotModels "github.com/rendley/vegshare/backend/internal/plot/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -25,8 +21,8 @@ func (m *MockCameraRepository) CreateCamera(ctx context.Context, camera *models.
 	return args.Error(0)
 }
 
-func (m *MockCameraRepository) GetCamerasByPlotID(ctx context.Context, plotID uuid.UUID) ([]models.Camera, error) {
-	args := m.Called(ctx, plotID)
+func (m *MockCameraRepository) GetCamerasByUnitID(ctx context.Context, unitID uuid.UUID, unitType string) ([]models.Camera, error) {
+	args := m.Called(ctx, unitID, unitType)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -46,84 +42,38 @@ func (m *MockCameraRepository) GetCameraByID(ctx context.Context, cameraID uuid.
 	return args.Get(0).(*models.Camera), args.Error(1)
 }
 
-// MockPlotService is a mock for the plot service
-type MockPlotService struct {
-	mock.Mock
-}
-
-func (m *MockPlotService) GetPlotByID(ctx context.Context, id uuid.UUID) (*plotModels.Plot, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*plotModels.Plot), args.Error(1)
-}
-
-// Dummy implementations for other plot service methods to satisfy the interface
-func (m *MockPlotService) CreatePlot(ctx context.Context, name, size string, structureID uuid.UUID) (*plotModels.Plot, error) {
-	return nil, nil
-}
-func (m *MockPlotService) GetPlotsByStructure(ctx context.Context, structureID uuid.UUID) ([]plotModels.Plot, error) {
-	return nil, nil
-}
-func (m *MockPlotService) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*plotModels.Plot, error) {
-	return nil, nil
-}
-func (m *MockPlotService) DeletePlot(ctx context.Context, id uuid.UUID) error { return nil }
-func (m *MockPlotService) WithTx(tx *sqlx.Tx) leasingDomain.UnitManager       { return m }
-
-// Добавляем недостающие методы для соответствия интерфейсу plot.Service
-func (m *MockPlotService) GetLeasableUnit(ctx context.Context, unitID uuid.UUID) (leasingDomain.LeasableUnit, error) {
-	return nil, nil
-}
-func (m *MockPlotService) UpdateUnitStatus(ctx context.Context, unitID uuid.UUID, status string) error {
-	return nil
-}
-
 // --- Tests ---
 
 func TestCameraService(t *testing.T) {
 	ctx := context.Background()
 	mockCameraRepo := new(MockCameraRepository)
-	mockPlotSvc := new(MockPlotService)
-	cameraSvc := NewService(mockCameraRepo, mockPlotSvc)
+	cameraSvc := NewService(mockCameraRepo)
 
 	t.Run("CreateCamera - Success", func(t *testing.T) {
-		plotID := uuid.New()
-		mockPlotSvc.On("GetPlotByID", ctx, plotID).Return(&plotModels.Plot{}, nil).Once()
+		unitID := uuid.New()
+		unitType := "plot"
 		mockCameraRepo.On("CreateCamera", ctx, mock.AnythingOfType("*models.Camera")).Return(nil).Once()
 
-		camera, err := cameraSvc.CreateCamera(ctx, "Test Cam", "test_cam", plotID)
+		camera, err := cameraSvc.CreateCamera(ctx, "Test Cam", "test_cam", unitID, unitType)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, camera)
 		assert.Equal(t, "Test Cam", camera.Name)
-		mockPlotSvc.AssertExpectations(t)
+		assert.Equal(t, unitID, camera.UnitID)
+		assert.Equal(t, unitType, camera.UnitType)
 		mockCameraRepo.AssertExpectations(t)
 	})
 
-	t.Run("CreateCamera - Plot Not Found", func(t *testing.T) {
-		plotID := uuid.New()
-		mockPlotSvc.On("GetPlotByID", ctx, plotID).Return(nil, errors.New("not found")).Once()
-
-		camera, err := cameraSvc.CreateCamera(ctx, "Test Cam", "test_cam", plotID)
-
-		assert.Error(t, err)
-		assert.Nil(t, camera)
-		mockPlotSvc.AssertExpectations(t)
-	})
-
-	t.Run("GetCamerasByPlotID - Success", func(t *testing.T) {
-		plotID := uuid.New()
+	t.Run("GetCamerasByUnitID - Success", func(t *testing.T) {
+		unitID := uuid.New()
+		unitType := "plot"
 		expectedCameras := []models.Camera{{ID: uuid.New()}, {ID: uuid.New()}}
-		mockPlotSvc.On("GetPlotByID", ctx, plotID).Return(&plotModels.Plot{}, nil).Once()
-		mockCameraRepo.On("GetCamerasByPlotID", ctx, plotID).Return(expectedCameras, nil).Once()
+		mockCameraRepo.On("GetCamerasByUnitID", ctx, unitID, unitType).Return(expectedCameras, nil).Once()
 
-		cameras, err := cameraSvc.GetCamerasByPlotID(ctx, plotID)
+		cameras, err := cameraSvc.GetCamerasByUnitID(ctx, unitID, unitType)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedCameras, cameras)
-		mockPlotSvc.AssertExpectations(t)
 		mockCameraRepo.AssertExpectations(t)
 	})
 

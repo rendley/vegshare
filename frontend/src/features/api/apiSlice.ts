@@ -48,7 +48,8 @@ export interface Plot {
 export interface Camera {
   id: string;
   name: string;
-  plot_id: string;
+  unit_id: string;
+  unit_type: string;
   rtsp_path_name: string;
 }
 
@@ -133,8 +134,8 @@ export const apiSlice = createApi({
       query: (structureId) => `plots?structure_id=${structureId}`,
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Plot' as const, id })), { type: 'Plot', id: 'LIST' }] : [{ type: 'Plot', id: 'LIST' }],
     }),
-    getCamerasByPlot: builder.query<Camera[], string>({
-      query: (plotId) => `plots/${plotId}/cameras`,
+    getCamerasByUnit: builder.query<Camera[], { unitId: string; unitType: string }>({
+      query: ({ unitId, unitType }) => `cameras?unit_id=${unitId}&unit_type=${unitType}`,
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Camera' as const, id })), { type: 'Camera', id: 'LIST' }] : [{ type: 'Camera', id: 'LIST' }],
     }),
     getMyLeases: builder.query<EnrichedLease[], void>({
@@ -236,9 +237,9 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: 'Plot', id: 'LIST' }],
     }),
-    createCamera: builder.mutation<Camera, { plotId: string; name: string; rtsp_path_name: string }>({
-      query: ({ plotId, ...body }) => ({
-        url: `plots/${plotId}/cameras`,
+    createCamera: builder.mutation<Camera, { unit_id: string; unit_type: string; name: string; rtsp_path_name: string }>({
+      query: (body) => ({
+        url: 'cameras',
         method: 'POST',
         body,
       }),
@@ -361,7 +362,7 @@ export const {
   useGetStructuresByLandParcelQuery,
   useGetStructureTypesQuery,
   useGetPlotsByStructureQuery,
-  useGetCamerasByPlotQuery,
+  useGetCamerasByUnitQuery,
   useGetMyLeasesQuery,
   useGetCatalogItemsQuery,
   useGetActionsForUnitQuery,
