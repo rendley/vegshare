@@ -108,3 +108,34 @@ func (h *FarmHandler) DeleteRegion(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// --- Admin Handlers for Regions ---
+
+func (h *FarmHandler) GetAllRegionsIncludingDeleted(w http.ResponseWriter, r *http.Request) {
+	regions, err := h.service.GetAllRegionsIncludingDeleted(r.Context())
+	if err != nil {
+		h.logger.Errorf("ошибка при получении полного списка регионов: %v", err)
+		api.RespondWithError(w, "could not retrieve regions", http.StatusInternalServerError)
+		return
+	}
+
+	api.RespondWithJSON(h.logger, w, regions, http.StatusOK)
+}
+
+func (h *FarmHandler) RestoreRegion(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "regionID")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		api.RespondWithError(w, "invalid region ID", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.RestoreRegion(r.Context(), id)
+	if err != nil {
+		h.logger.Errorf("ошибка при восстановлении региона: %v", err)
+		api.RespondWithError(w, "could not restore region", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

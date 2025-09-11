@@ -54,6 +54,19 @@ func (m *MockFarmRepository) DeleteRegion(ctx context.Context, id uuid.UUID) err
 	return args.Error(0)
 }
 
+func (m *MockFarmRepository) RestoreRegion(ctx context.Context, id uuid.UUID) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockFarmRepository) GetAllRegionsIncludingDeleted(ctx context.Context) ([]models.Region, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Region), args.Error(1)
+}
+
 func (m *MockFarmRepository) CreateLandParcel(ctx context.Context, parcel *models.LandParcel) error {
 	args := m.Called(ctx, parcel)
 	return args.Error(0)

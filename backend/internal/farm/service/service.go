@@ -17,6 +17,8 @@ type Service interface {
 	GetAllRegions(ctx context.Context) ([]models.Region, error)
 	UpdateRegion(ctx context.Context, id uuid.UUID, name string) (*models.Region, error)
 	DeleteRegion(ctx context.Context, id uuid.UUID) error
+	RestoreRegion(ctx context.Context, id uuid.UUID) error
+	GetAllRegionsIncludingDeleted(ctx context.Context) ([]models.Region, error)
 
 	// LandParcel methods
 	CreateLandParcel(ctx context.Context, name string, regionID uuid.UUID) (*models.LandParcel, error)

@@ -17,6 +17,8 @@ type Repository interface {
 	GetAllRegions(ctx context.Context) ([]models.Region, error)
 	UpdateRegion(ctx context.Context, region *models.Region) error
 	DeleteRegion(ctx context.Context, id uuid.UUID) error
+	RestoreRegion(ctx context.Context, id uuid.UUID) error
+	GetAllRegionsIncludingDeleted(ctx context.Context) ([]models.Region, error)
 
 	// LandParcel methods
 	CreateLandParcel(ctx context.Context, parcel *models.LandParcel) error

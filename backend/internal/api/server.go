@@ -166,6 +166,12 @@ func (s *Server) Start() error {
 			r.Route("/admin", func(r chi.Router) {
 				r.Use(s.mw.AdminMiddleware) // Защищаем все роуты в этой группе
 
+				// Управление фермой (админ)
+				r.Route("/farm/regions", func(r chi.Router) {
+					r.Get("/all", s.FarmHandler.GetAllRegionsIncludingDeleted)
+					r.Post("/{regionID}/restore", s.FarmHandler.RestoreRegion)
+				})
+
 				// Управление пользователями
 				r.Route("/users", func(r chi.Router) {
 					r.Get("/", s.UserHandler.GetAllUsers)

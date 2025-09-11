@@ -22,6 +22,7 @@ export interface User {
 export interface Region {
   id: string;
   name: string;
+  deleted_at?: string; // Добавлено для мягкого удаления
 }
 
 export interface LandParcel {
@@ -217,8 +218,19 @@ export const apiSlice = createApi({
       query: () => 'admin/tasks',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Task' as const, id })), { type: 'Task', id: 'LIST' }] : [{ type: 'Task', id: 'LIST' }],
     }),
+    getRegionsForAdmin: builder.query<Region[], void>({
+      query: () => 'admin/farm/regions/all',
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Region' as const, id })), { type: 'Region', id: 'LIST' }] : [{ type: 'Region', id: 'LIST' }],
+    }),
 
     // Admin Mutations
+    restoreRegion: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `admin/farm/regions/${id}/restore`,
+        method: 'POST',
+      }),
+      invalidatesTags: [{ type: 'Region', id: 'LIST' }],
+    }),
     updateUserRole: builder.mutation<User, { userId: string; role: string }>({
       query: ({ userId, role }) => ({
         url: `admin/users/${userId}/role`,
@@ -438,4 +450,6 @@ export const {
   useDeletePlotMutation,
   useUpdateCameraMutation,
   useDeleteCameraMutation,
+  useGetRegionsForAdminQuery,
+  useRestoreRegionMutation,
 } = apiSlice;

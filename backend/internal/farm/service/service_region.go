@@ -56,3 +56,11 @@ func (s *service) UpdateRegion(ctx context.Context, id uuid.UUID, name string) (
 func (s *service) DeleteRegion(ctx context.Context, id uuid.UUID) error {
 	return s.repo.DeleteRegion(ctx, id)
 }
+
+func (s *service) RestoreRegion(ctx context.Context, id uuid.UUID) error {
+	return s.repo.RestoreRegion(ctx, id)
+}
+
+func (s *service) GetAllRegionsIncludingDeleted(ctx context.Context) ([]models.Region, error) {
+	return s.repo.GetAllRegionsIncludingDeleted(ctx)
+}
