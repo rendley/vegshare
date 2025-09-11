@@ -1,11 +1,13 @@
 import { combineReducers, configureStore, type PayloadAction } from '@reduxjs/toolkit';
 import { apiSlice } from '../features/api/apiSlice';
 import authReducer, { logout } from '../features/auth/authSlice';
+import notificationReducer from './notificationSlice';
 
 // Комбинируем все редьюсеры в один корневой редьюсер
 const rootReducer = combineReducers({
   [apiSlice.reducerPath]: apiSlice.reducer,
   auth: authReducer,
+  notification: notificationReducer,
 });
 
 // Создаем обертку над корневым редьюсером, которая будет сбрасывать состояние при выходе

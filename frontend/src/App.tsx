@@ -15,6 +15,7 @@ import StructureManagementPage from './pages/admin/StructureManagementPage';
 import PlotManagementPage from './pages/admin/PlotManagementPage';
 import CameraManagementPage from './pages/admin/CameraManagementPage';
 import CatalogManagementPage from './pages/admin/CatalogManagementPage';
+import TaskManagementPage from './pages/admin/TaskManagementPage';
 
 // Компонент для защиты роутов, который перенаправляет на указанный путь
 const ProtectedRoute = ({ isAllowed, redirectTo = "/", children }: { isAllowed: boolean, redirectTo?: string, children: React.ReactNode }) => {
@@ -64,6 +65,7 @@ function App() {
             <Route path="plots" element={<PlotManagementPage />} />
             <Route path="cameras" element={<CameraManagementPage />} />
             <Route path="catalog" element={<CatalogManagementPage />} />
+            <Route path="tasks" element={<TaskManagementPage />} />
           </Route>
           
           {/* Fallback for any other route */}

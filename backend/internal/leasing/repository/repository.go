@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	cameraModels "github.com/rendley/vegshare/backend/internal/camera/models"
+	catalogModels "github.com/rendley/vegshare/backend/internal/catalog/models"
 	leaseModels "github.com/rendley/vegshare/backend/internal/leasing/models"
 	plotModels "github.com/rendley/vegshare/backend/internal/plot/models"
 	"github.com/rendley/vegshare/backend/pkg/database"
@@ -48,46 +49,54 @@ func (r *repository) GetEnrichedLeasesByUserID(ctx context.Context, userID uuid.
             l.start_date AS "start_date",
             l.end_date AS "end_date",
             l.status AS "status",
-            l.created_at AS "created_at",
-            l.updated_at AS "updated_at",
             p.id AS "plot.id",
             p.name AS "plot.name",
             p.size AS "plot.size",
             p.status AS "plot.status",
-            c.id AS "plot.cameras.id",
-            c.name AS "plot.cameras.name",
-            c.rtsp_path_name AS "plot.cameras.rtsp_path_name",
-			c.unit_id AS "plot.cameras.unit_id",
-			c.unit_type AS "plot.cameras.unit_type"
+            cam.id AS "plot.cameras.id",
+            cam.name AS "plot.cameras.name",
+            cam.rtsp_path_name AS "plot.cameras.rtsp_path_name",
+            uc.id AS "plot.content.id",
+            uc.quantity AS "plot.content.quantity",
+            ci.id AS "plot.content.item.id",
+            ci.name AS "plot.content.item.name",
+            ci.item_type AS "plot.content.item.item_type",
+            ci.description AS "plot.content.item.description"
         FROM
             leases l
         JOIN
             plots p ON l.unit_id = p.id AND l.unit_type = 'plot'
         LEFT JOIN
-            cameras c ON p.id = c.unit_id AND c.unit_type = 'plot'
+            cameras cam ON p.id = cam.unit_id AND cam.unit_type = 'plot'
+        LEFT JOIN
+            unit_contents uc ON p.id = uc.unit_id AND uc.unit_type = 'plot'
+        LEFT JOIN
+            catalog_items ci ON uc.item_id = ci.id
         WHERE
             l.user_id = $1 AND l.status = 'active'
         ORDER BY
-            l.created_at DESC, c.created_at ASC;
+            l.created_at DESC, cam.created_at ASC;
     `
 
 	type flatLeaseData struct {
-		ID               uuid.UUID      `db:"id"`
-		UserID           uuid.UUID      `db:"user_id"`
-		StartDate        time.Time      `db:"start_date"`
-		EndDate          time.Time      `db:"end_date"`
-		Status           string         `db:"status"`
-		CreatedAt        time.Time      `db:"created_at"`
-		UpdatedAt        time.Time      `db:"updated_at"`
-		PlotID           uuid.UUID      `db:"plot.id"`
-		PlotName         string         `db:"plot.name"`
-		PlotSize         string         `db:"plot.size"`
-		PlotStatus       string         `db:"plot.status"`
-		CameraID         uuid.NullUUID  `db:"plot.cameras.id"`
-		CameraName       sql.NullString `db:"plot.cameras.name"`
-		CameraRTSPPath   sql.NullString `db:"plot.cameras.rtsp_path_name"`
-		CameraUnitID     uuid.NullUUID  `db:"plot.cameras.unit_id"`
-		CameraUnitType   sql.NullString `db:"plot.cameras.unit_type"`
+		ID                  uuid.UUID      `db:"id"`
+		UserID              uuid.UUID      `db:"user_id"`
+		StartDate           time.Time      `db:"start_date"`
+		EndDate             time.Time      `db:"end_date"`
+		Status              string         `db:"status"`
+		PlotID              uuid.UUID      `db:"plot.id"`
+		PlotName            string         `db:"plot.name"`
+		PlotSize            string         `db:"plot.size"`
+		PlotStatus          string         `db:"plot.status"`
+		CameraID            uuid.NullUUID  `db:"plot.cameras.id"`
+		CameraName          sql.NullString `db:"plot.cameras.name"`
+		CameraRTSPPath      sql.NullString `db:"plot.cameras.rtsp_path_name"`
+		ContentID           uuid.NullUUID  `db:"plot.content.id"`
+		ContentQuantity     sql.NullInt64  `db:"plot.content.quantity"`
+		ContentItemID       uuid.NullUUID  `db:"plot.content.item.id"`
+		ContentItemName     sql.NullString `db:"plot.content.item.name"`
+		ContentItemType     sql.NullString `db:"plot.content.item.item_type"`
+		ContentItemDesc     sql.NullString `db:"plot.content.item.description"`
 	}
 
 	var flatData []flatLeaseData
@@ -95,7 +104,6 @@ func (r *repository) GetEnrichedLeasesByUserID(ctx context.Context, userID uuid.
 		return nil, fmt.Errorf("не удалось получить обогащенный список аренд: %w", err)
 	}
 
-	// Группируем плоские данные в иерархическую структуру
 	leasesMap := make(map[uuid.UUID]*leaseModels.EnrichedLease)
 	for _, row := range flatData {
 		if _, ok := leasesMap[row.ID]; !ok {
@@ -103,13 +111,11 @@ func (r *repository) GetEnrichedLeasesByUserID(ctx context.Context, userID uuid.
 				Lease: leaseModels.Lease{
 					ID:        row.ID,
 					UserID:    row.UserID,
-					UnitID:    row.PlotID, // Важно: UnitID теперь PlotID
+					UnitID:    row.PlotID,
 					UnitType:  "plot",
 					StartDate: row.StartDate,
 					EndDate:   row.EndDate,
 					Status:    row.Status,
-					CreatedAt: row.CreatedAt,
-					UpdatedAt: row.UpdatedAt,
 				},
 				Plot: &leaseModels.EnrichedPlot{
 					Plot: plotModels.Plot{
@@ -119,24 +125,37 @@ func (r *repository) GetEnrichedLeasesByUserID(ctx context.Context, userID uuid.
 						Status: row.PlotStatus,
 					},
 					Cameras: []cameraModels.Camera{},
+					Contents: []leaseModels.EnrichedContent{},
 				},
 			}
 		}
 
-		// Добавляем камеру, если она есть
-		if row.CameraID.Valid {
-			lease := leasesMap[row.ID]
+		lease := leasesMap[row.ID]
+
+		// Добавляем камеру, если она есть и еще не была добавлена
+		if row.CameraID.Valid && !isCameraInSlice(lease.Plot.Cameras, row.CameraID.UUID) {
 			lease.Plot.Cameras = append(lease.Plot.Cameras, cameraModels.Camera{
 				ID:           row.CameraID.UUID,
-				UnitID:       row.CameraUnitID.UUID,
-				UnitType:     row.CameraUnitType.String,
 				Name:         row.CameraName.String,
 				RTSPPathName: row.CameraRTSPPath.String,
 			})
 		}
+
+		// Добавляем содержимое, если оно есть и еще не было добавлено
+		if row.ContentID.Valid && !isContentInSlice(lease.Plot.Contents, row.ContentID.UUID) {
+			lease.Plot.Contents = append(lease.Plot.Contents, leaseModels.EnrichedContent{
+				ID:       row.ContentID.UUID,
+				Quantity: int(row.ContentQuantity.Int64),
+				Item: catalogModels.CatalogItem{
+					ID:          row.ContentItemID.UUID,
+					Name:        row.ContentItemName.String,
+					ItemType:    row.ContentItemType.String,
+					Description: row.ContentItemDesc.String,
+				},
+			})
+		}
 	}
 
-	// Преобразуем карту в срез
 	enrichedLeases := make([]leaseModels.EnrichedLease, 0, len(leasesMap))
 	for _, lease := range leasesMap {
 		enrichedLeases = append(enrichedLeases, *lease)
@@ -144,6 +163,7 @@ func (r *repository) GetEnrichedLeasesByUserID(ctx context.Context, userID uuid.
 
 	return enrichedLeases, nil
 }
+
 func (r *repository) GetLeasesByUserID(ctx context.Context, userID uuid.UUID) ([]leaseModels.Lease, error) {
 	var leases []leaseModels.Lease
 	query := `SELECT * FROM leases WHERE user_id = $1 AND status = 'active'`
@@ -151,4 +171,23 @@ func (r *repository) GetLeasesByUserID(ctx context.Context, userID uuid.UUID) ([
 		return nil, fmt.Errorf("не удалось получить список аренд для пользователя: %w", err)
 	}
 	return leases, nil
+}
+
+// Вспомогательные функции для дедупликации
+func isCameraInSlice(cameras []cameraModels.Camera, id uuid.UUID) bool {
+	for _, c := range cameras {
+		if c.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func isContentInSlice(contents []leaseModels.EnrichedContent, id uuid.UUID) bool {
+	for _, c := range contents {
+		if c.ID == id {
+			return true
+		}
+	}
+	return false
 }

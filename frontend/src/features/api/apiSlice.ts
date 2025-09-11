@@ -65,19 +65,26 @@ export interface Lease {
   updated_at: string;
 }
 
-export interface EnrichedLease extends Lease {
-  plot?: Plot & { // plot is optional, for plot leases
-    cameras: Camera[];
-  };
-  // coop?: Coop & { ... } // Future enhancement
-}
-
 export interface CatalogItem {
   id: string;
   item_type: string;
   name: string;
   description?: string;
   attributes: Record<string, any>;
+}
+
+export interface EnrichedContent {
+  id: string;
+  quantity: number;
+  item: CatalogItem;
+}
+
+export interface EnrichedLease extends Lease {
+  plot?: Plot & { // plot is optional, for plot leases
+    cameras: Camera[];
+    contents: EnrichedContent[];
+  };
+  // coop?: Coop & { ... } // Future enhancement
 }
 
 export interface OperationLog {
@@ -89,6 +96,17 @@ export interface OperationLog {
     parameters: any; // Can be more specific, e.g., { crop_id: string } | { volume_liters: number }
     status: string;
     executed_at: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Task {
+    id: string;
+    operation_id: string;
+    assignee_id?: string;
+    status: string;
+    title: string;
+    description?: string;
     created_at: string;
     updated_at: string;
 }
@@ -111,7 +129,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Region', 'LandParcel', 'Structure', 'Plot', 'Lease', 'OperationLog', 'Camera', 'CatalogItem', 'User', 'StructureType'],
+  tagTypes: ['Region', 'LandParcel', 'Structure', 'Plot', 'Lease', 'OperationLog', 'Camera', 'CatalogItem', 'User', 'StructureType', 'Task'],
   endpoints: (builder) => ({
     // QUERIES
     getRegions: builder.query<Region[], void>({
@@ -195,6 +213,10 @@ export const apiSlice = createApi({
       query: () => 'admin/users',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'User', id: 'LIST' }] : [{ type: 'User', id: 'LIST' }],
     }),
+    getTasks: builder.query<Task[], void>({
+      query: () => 'admin/tasks',
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Task' as const, id })), { type: 'Task', id: 'LIST' }] : [{ type: 'Task', id: 'LIST' }],
+    }),
 
     // Admin Mutations
     updateUserRole: builder.mutation<User, { userId: string; role: string }>({
@@ -204,6 +226,27 @@ export const apiSlice = createApi({
         body: { role },
       }),
       invalidatesTags: (_, __, { userId }) => [{ type: 'User', id: userId }, { type: 'User', id: 'LIST' }],
+    }),
+    acceptTask: builder.mutation<Task, string>({
+      query: (taskId) => ({
+        url: `admin/tasks/${taskId}/accept`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_, __, taskId) => [{ type: 'Task', id: taskId }, { type: 'Task', id: 'LIST' }],
+    }),
+    completeTask: builder.mutation<Task, string>({
+      query: (taskId) => ({
+        url: `admin/tasks/${taskId}/complete`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_, __, taskId) => [{ type: 'Task', id: taskId }, { type: 'Task', id: 'LIST' }],
+    }),
+    failTask: builder.mutation<Task, string>({
+      query: (taskId) => ({
+        url: `admin/tasks/${taskId}/fail`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_, __, taskId) => [{ type: 'Task', id: taskId }, { type: 'Task', id: 'LIST' }],
     }),
     createRegion: builder.mutation<Region, { name: string }>({
       query: (body) => ({
@@ -373,6 +416,10 @@ export const {
   useCancelActionMutation,
   useGetUsersQuery,
   useUpdateUserRoleMutation,
+  useGetTasksQuery,
+  useAcceptTaskMutation,
+  useCompleteTaskMutation,
+  useFailTaskMutation,
   useCreateRegionMutation,
   useCreateLandParcelMutation,
   useCreateStructureMutation,

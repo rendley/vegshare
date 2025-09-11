@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link as RouterLink, Outlet, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectCurrentUserRole, selectIsLoggedIn } from '../features/auth/authSlice';
+import GlobalSnackbar from './GlobalSnackbar'; // Импортируем
 
 import {
   AppBar,
@@ -143,6 +144,7 @@ export const Layout = () => {
       >
         <Toolbar />
         <Outlet />
+        <GlobalSnackbar />
       </Box>
     </Box>
   );

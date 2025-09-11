@@ -29,6 +29,11 @@ import (
 	plotService "github.com/rendley/vegshare/backend/internal/plot/service"
 	streamingHandler "github.com/rendley/vegshare/backend/internal/streaming/handler"
 	streamingService "github.com/rendley/vegshare/backend/internal/streaming/service"
+	taskHandler "github.com/rendley/vegshare/backend/internal/task/handler"
+	taskRepository "github.com/rendley/vegshare/backend/internal/task/repository"
+	taskService "github.com/rendley/vegshare/backend/internal/task/service"
+	unitcontentRepository "github.com/rendley/vegshare/backend/internal/unitcontent/repository"
+	unitcontentService "github.com/rendley/vegshare/backend/internal/unitcontent/service"
 	userHandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	userRepository "github.com/rendley/vegshare/backend/internal/user/repository"
 	userService "github.com/rendley/vegshare/backend/internal/user/service"
@@ -75,6 +80,8 @@ func main() {
 	catalogRepo := catalogRepository.NewRepository(db)
 	cameraRepo := cameraRepository.NewRepository(db)
 	plotRepo := plotRepository.NewRepository(db)
+	taskRepo := taskRepository.NewRepository(db)
+	unitContentRepo := unitcontentRepository.NewRepository(db)
 
 	// Services
 	authSvc := authService.NewAuthService(authRepo, hasher, jwtGen)
@@ -82,6 +89,9 @@ func main() {
 	farmSvc := farmService.NewFarmService(farmRepo)
 	plotSvc := plotService.NewService(plotRepo, farmSvc)
 	leasingSvc := leasingService.NewLeasingService(db, leasingRepo)
+	unitContentSvc := unitcontentService.NewService(unitContentRepo)
+	catalogSvc := catalogService.NewService(catalogRepo)
+	taskSvc := taskService.NewService(db, taskRepo, operationsRepo, unitContentSvc, plotSvc, catalogSvc)
 
 	// --- Регистрация UnitManager ---
 	unitManager, ok := plotSvc.(domain.UnitManager)
@@ -90,7 +100,6 @@ func main() {
 	}
 	leasingSvc.RegisterUnitManager(leasingModels.UnitTypePlot, unitManager)
 
-	catalogSvc := catalogService.NewService(catalogRepo)
 	operationsSvc := operationsService.NewOperationsService(operationsRepo, leasingRepo, rabbitMQClient, cfg)
 	cameraSvc := cameraService.NewService(cameraRepo)
 	streamingSvc := streamingService.NewService(cfg, log, cameraSvc)
@@ -108,9 +117,10 @@ func main() {
 	operationsHandler := operationsHandler.NewOperationsHandler(operationsSvc, log)
 	catalogHandler := catalogHandler.NewCatalogHandler(catalogSvc, log)
 	streamingHandler := streamingHandler.NewStreamingHandler(streamingSvc, log)
+	taskHandler := taskHandler.NewTaskHandler(taskSvc, log)
 
 	// Создаем и запускаем сервер
-	srv := api.New(cfg, mw, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler, catalogHandler, cameraHandler, plotHandler, streamingHandler)
+	srv := api.New(cfg, mw, authHandler, userHandler, farmHandler, leasingHandler, operationsHandler, catalogHandler, cameraHandler, plotHandler, streamingHandler, taskHandler)
 
 	if err := srv.Start(); err != nil {
 		log.Fatalf("Server failed: %v", err)

@@ -1,90 +1,97 @@
 import React, { useState } from 'react';
-import { type CatalogItem, useGetCatalogItemsQuery, useGetActionsForUnitQuery, useCreateActionMutation, useCancelActionMutation } from '../api/apiSlice';
+import { useGetCatalogItemsQuery, useCreateActionMutation } from '../api/apiSlice';
+import {
+    Box,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Button,
+    CircularProgress,
+    TextField,
+    ButtonGroup
+} from '@mui/material';
 
 interface PlantingControlProps {
-  plotId: string;
+    plotId: string;
 }
 
 const PlantingControl: React.FC<PlantingControlProps> = ({ plotId }) => {
-  const { data: availableCrops, isLoading: isLoadingCrops } = useGetCatalogItemsQuery('crop');
-  const { data: actions, isLoading: isLoadingActions } = useGetActionsForUnitQuery(plotId);
-  const [createAction, { isLoading: isCreatingAction }] = useCreateActionMutation();
-  const [cancelAction, { isLoading: isCancellingAction }] = useCancelActionMutation();
-  const [selectedCrop, setSelectedCrop] = useState<string>('');
+    const { data: availableCrops, isLoading: isLoadingCrops } = useGetCatalogItemsQuery('crop');
+    const [createAction, { isLoading: isCreatingAction }] = useCreateActionMutation();
 
-  const handlePlant = async () => {
-    if (selectedCrop) {
-      try {
-        await createAction({
-          unit_id: plotId,
-          unit_type: 'plot',
-          action_type: 'plant',
-          parameters: { crop_id: selectedCrop },
-        }).unwrap();
-      } catch (error) {
-        console.error('Failed to plant crop: ', error);
-      }
+    const [selectedCrop, setSelectedCrop] = useState<string>('');
+    const [quantity, setQuantity] = useState(1);
+
+    const handleCreateAction = async (actionType: string, parameters: any) => {
+        try {
+            await createAction({
+                unit_id: plotId,
+                unit_type: 'plot',
+                action_type: actionType,
+                parameters: parameters,
+            }).unwrap();
+        } catch (error) {
+            console.error(`Failed to create ${actionType} action`, error);
+        }
+    };
+
+    const handlePlant = () => {
+        if (selectedCrop && quantity > 0) {
+            handleCreateAction('plant', { item_id: selectedCrop, quantity });
+        }
+    };
+
+    const handleWater = () => {
+        handleCreateAction('water', { volume_liters: 5 });
+    };
+
+    if (isLoadingCrops) {
+        return <CircularProgress size={24} />;
     }
-  };
 
-  const handleCancel = async (actionId: string) => {
-    try {
-      await cancelAction(actionId).unwrap();
-    } catch (error) {
-      console.error('Failed to cancel action: ', error);
-    }
-  };
-
-  const handleWater = async () => {
-    try {
-      await createAction({
-        unit_id: plotId,
-        unit_type: 'plot',
-        action_type: 'water',
-        parameters: { volume_liters: 5 },
-      }).unwrap();
-    } catch (error) {
-      console.error('Failed to water crop: ', error);
-    }
-  };
-
-  if (isLoadingCrops || isLoadingActions) {
-    return <p>Loading...</p>;
-  }
-
-  const plantAction = actions?.find(a => a.action_type === 'plant' && a.status === 'completed');
-
-  if (plantAction) {
-    const plantedCrop = availableCrops?.find((c: CatalogItem) => c.id === plantAction.parameters.crop_id);
     return (
-      <div>
-        <p>Planted: {plantedCrop ? plantedCrop.name : 'Unknown Crop'}</p>
-        <p>Harvest in: {plantedCrop?.attributes.harvest_time_days || 'N/A'} days</p>
-        <button onClick={() => handleCancel(plantAction.id)} disabled={isCancellingAction}>
-          {isCancellingAction ? 'Removing...' : 'Remove'}
-        </button>
-        <button onClick={handleWater} disabled={isCreatingAction}>
-          {isCreatingAction ? 'Watering...' : 'Water'}
-        </button>
-      </div>
+        <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <FormControl fullWidth size="small">
+                    <InputLabel>Выбрать культуру</InputLabel>
+                    <Select
+                        value={selectedCrop}
+                        label="Выбрать культуру"
+                        onChange={(e) => setSelectedCrop(e.target.value)}
+                    >
+                        {availableCrops?.map((crop) => (
+                            <MenuItem key={crop.id} value={crop.id}>
+                                {crop.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <TextField
+                    type="number"
+                    label="Кол-во"
+                    size="small"
+                    value={quantity}
+                    onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
+                    sx={{ width: 150 }}
+                />
+                <Button
+                    variant="contained"
+                    onClick={handlePlant}
+                    disabled={!selectedCrop || isCreatingAction}
+                    sx={{ flexShrink: 0 }}
+                >
+                    Посадить
+                </Button>
+            </Box>
+            <ButtonGroup variant="outlined" size="small">
+                 <Button onClick={handleWater} disabled={isCreatingAction}>
+                    Полить
+                </Button>
+                {/* Другие общие действия можно добавить сюда */}
+            </ButtonGroup>
+        </Box>
     );
-  }
-
-  return (
-    <div>
-      <select value={selectedCrop} onChange={(e) => setSelectedCrop(e.target.value)}>
-        <option value="" disabled>Select a crop</option>
-        {availableCrops?.map((crop: CatalogItem) => (
-          <option key={crop.id} value={crop.id}>
-            {crop.name}
-          </option>
-        ))}
-      </select>
-      <button onClick={handlePlant} disabled={!selectedCrop || isCreatingAction}>
-        {isCreatingAction ? 'Planting...' : 'Plant'}
-      </button>
-    </div>
-  );
 };
 
 export default PlantingControl;

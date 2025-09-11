@@ -15,6 +15,7 @@ import (
 	operationshandler "github.com/rendley/vegshare/backend/internal/operations/handler"
 	plothandler "github.com/rendley/vegshare/backend/internal/plot/handler"
 	streaminghandler "github.com/rendley/vegshare/backend/internal/streaming/handler"
+	taskhandler "github.com/rendley/vegshare/backend/internal/task/handler"
 	userhandler "github.com/rendley/vegshare/backend/internal/user/handler"
 	"github.com/rendley/vegshare/backend/pkg/config"
 	"github.com/rendley/vegshare/backend/pkg/middleware"
@@ -33,10 +34,11 @@ type Server struct {
 	CameraHandler     *camerahandler.CameraHandler
 	PlotHandler       *plothandler.PlotHandler
 	StreamingHandler  *streaminghandler.StreamingHandler
+	TaskHandler       *taskhandler.TaskHandler
 }
 
 // New - это конструктор для `Server`.
-func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler, ops *operationshandler.OperationsHandler, catalog *cataloghandler.CatalogHandler, camera *camerahandler.CameraHandler, plot *plothandler.PlotHandler, stream *streaminghandler.StreamingHandler) *Server {
+func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHandler, user *userhandler.UserHandler, farm *farmhandler.FarmHandler, leasing *leasinghandler.LeasingHandler, ops *operationshandler.OperationsHandler, catalog *cataloghandler.CatalogHandler, camera *camerahandler.CameraHandler, plot *plothandler.PlotHandler, stream *streaminghandler.StreamingHandler, task *taskhandler.TaskHandler) *Server {
 	return &Server{
 		cfg:               cfg,
 		mw:                mw,
@@ -49,6 +51,7 @@ func New(cfg *config.Config, mw *middleware.Middleware, auth *authhandler.AuthHa
 		CameraHandler:     camera,
 		PlotHandler:       plot,
 		StreamingHandler:  stream,
+		TaskHandler:       task,
 	}
 }
 
@@ -159,19 +162,26 @@ func (s *Server) Start() error {
 				r.With(s.mw.AdminMiddleware).Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
 			})
 
-			// --- Админ-панель: Управление пользователями ---
-			r.Route("/admin/users", func(r chi.Router) {
+			// --- Админ-панель ---
+			r.Route("/admin", func(r chi.Router) {
 				r.Use(s.mw.AdminMiddleware) // Защищаем все роуты в этой группе
-				r.Get("/", s.UserHandler.GetAllUsers)
-				r.Put("/{userID}/role", s.UserHandler.UpdateUserRole)
+
+				// Управление пользователями
+				r.Route("/users", func(r chi.Router) {
+					r.Get("/", s.UserHandler.GetAllUsers)
+					r.Put("/{userID}/role", s.UserHandler.UpdateUserRole)
+				})
+
+				// Управление задачами
+				r.Mount("/tasks", s.TaskHandler.Routes())
 			})
 		})
 
 		// Streaming routes (HLS and WebSocket) with query param auth
-			r.Group(func(r chi.Router) {
-				r.Use(s.mw.QueryParamAuthMiddleware)
-				r.Mount("/stream", s.StreamingHandler.Routes())
-			})
+		r.Group(func(r chi.Router) {
+			r.Use(s.mw.QueryParamAuthMiddleware)
+			r.Mount("/stream", s.StreamingHandler.Routes())
+		})
 	})
 
 	return http.ListenAndServe(addr, r)

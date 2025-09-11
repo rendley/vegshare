@@ -52,6 +52,11 @@ const AdminLayout = () => {
                 <ListItemText primary="Каталог" />
               </ListItemButton>
             </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton component={NavLink} to="/admin/tasks">
+                <ListItemText primary="Задачи" />
+              </ListItemButton>
+            </ListItem>
             {/* Ссылки на другие разделы будут здесь */}
           </List>
         </Box>

@@ -41,6 +41,14 @@ func (m *MockOperationsRepository) DeleteOperationLog(ctx context.Context, logID
 	return args.Error(0)
 }
 
+func (m *MockOperationsRepository) GetOperationLogByID(ctx context.Context, logID uuid.UUID) (*operationsModels.OperationLog, error) {
+	args := m.Called(ctx, logID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*operationsModels.OperationLog), args.Error(1)
+}
+
 func (m *MockOperationsRepository) UpdateOperationLogStatus(ctx context.Context, logID uuid.UUID, status string) error {
 	args := m.Called(ctx, logID, status)
 	return args.Error(0)
