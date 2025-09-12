@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useGetTasksQuery, useAcceptTaskMutation, useCompleteTaskMutation, useFailTaskMutation } from '../../features/api/apiSlice';
 import type { Task } from '../../features/api/apiSlice';
 import {
@@ -23,6 +24,11 @@ const TaskManagementPage = () => {
 
     const isMutating = isAccepting || isCompleting || isFailing;
 
+    const sortedTasks = useMemo(() => {
+        if (!tasks) return [];
+        return [...tasks].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }, [tasks]);
+
     if (isLoading) return <CircularProgress />;
     if (isError) return <Typography color="error">Не удалось загрузить задачи.</Typography>;
 
@@ -36,17 +42,19 @@ const TaskManagementPage = () => {
                             <TableCell>ID</TableCell>
                             <TableCell>Название</TableCell>
                             <TableCell>Статус</TableCell>
+                            <TableCell>Время создания</TableCell>
                             <TableCell>ID операции</TableCell>
                             <TableCell>Исполнитель</TableCell>
                             <TableCell>Действия</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {tasks?.map((task: Task) => (
+                        {sortedTasks.map((task: Task) => (
                             <TableRow key={task.id}>
                                 <TableCell>{task.id}</TableCell>
                                 <TableCell>{task.title}</TableCell>
                                 <TableCell>{task.status}</TableCell>
+                                <TableCell>{new Date(task.created_at).toLocaleString()}</TableCell>
                                 <TableCell>{task.operation_id}</TableCell>
                                 <TableCell>{task.assignee_id || '-'}</TableCell>
                                 <TableCell>
