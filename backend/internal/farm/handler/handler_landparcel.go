@@ -122,3 +122,32 @@ func (h *FarmHandler) DeleteLandParcel(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *FarmHandler) RestoreLandParcel(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "parcelID")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		api.RespondWithError(w, "invalid land parcel ID in URL", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.RestoreLandParcel(r.Context(), id)
+	if err != nil {
+		h.logger.Errorf("ошибка при восстановлении земельного участка: %v", err)
+		api.RespondWithError(w, "could not restore land parcel", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *FarmHandler) GetAllLandParcelsIncludingDeleted(w http.ResponseWriter, r *http.Request) {
+	parcels, err := h.service.GetAllLandParcelsIncludingDeleted(r.Context())
+	if err != nil {
+		h.logger.Errorf("ошибка при получении всех земельных участков: %v", err)
+		api.RespondWithError(w, "could not retrieve all land parcels", http.StatusInternalServerError)
+		return
+	}
+
+	api.RespondWithJSON(h.logger, w, parcels, http.StatusOK)
+}

@@ -172,6 +172,11 @@ func (s *Server) Start() error {
 					r.Post("/{regionID}/restore", s.FarmHandler.RestoreRegion)
 				})
 
+				r.Route("/farm/land-parcels", func(r chi.Router) {
+					r.Get("/all", s.FarmHandler.GetAllLandParcelsIncludingDeleted)
+					r.Post("/{parcelID}/restore", s.FarmHandler.RestoreLandParcel)
+				})
+
 				// Управление пользователями
 				r.Route("/users", func(r chi.Router) {
 					r.Get("/", s.UserHandler.GetAllUsers)

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rendley/vegshare/backend/internal/farm/models"
@@ -21,7 +22,7 @@ func (r *repository) CreateLandParcel(ctx context.Context, parcel *models.LandPa
 
 func (r *repository) GetLandParcelByID(ctx context.Context, id uuid.UUID) (*models.LandParcel, error) {
 	var parcel models.LandParcel
-	query := `SELECT * FROM land_parcels WHERE id = $1`
+	query := `SELECT * FROM land_parcels WHERE id = $1 AND deleted_at IS NULL`
 	err := r.db.GetContext(ctx, &parcel, query, id)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось получить земельный участок по ID: %w", err)
@@ -31,7 +32,7 @@ func (r *repository) GetLandParcelByID(ctx context.Context, id uuid.UUID) (*mode
 
 func (r *repository) GetLandParcelsByRegion(ctx context.Context, regionID uuid.UUID) ([]models.LandParcel, error) {
 	var parcels []models.LandParcel
-	query := `SELECT * FROM land_parcels WHERE region_id = $1`
+	query := `SELECT * FROM land_parcels WHERE region_id = $1 AND deleted_at IS NULL`
 	err := r.db.SelectContext(ctx, &parcels, query, regionID)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось получить список земельных участков для региона: %w", err)
@@ -49,10 +50,29 @@ func (r *repository) UpdateLandParcel(ctx context.Context, parcel *models.LandPa
 }
 
 func (r *repository) DeleteLandParcel(ctx context.Context, id uuid.UUID) error {
-	query := `DELETE FROM land_parcels WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, id)
+	query := `UPDATE land_parcels SET deleted_at = $1 WHERE id = $2`
+	_, err := r.db.ExecContext(ctx, query, time.Now(), id)
 	if err != nil {
 		return fmt.Errorf("не удалось удалить земельный участок: %w", err)
 	}
 	return nil
+}
+
+func (r *repository) RestoreLandParcel(ctx context.Context, id uuid.UUID) error {
+	query := `UPDATE land_parcels SET deleted_at = NULL WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("не удалось восстановить земельный участок: %w", err)
+	}
+	return nil
+}
+
+func (r *repository) GetAllLandParcelsIncludingDeleted(ctx context.Context) ([]models.LandParcel, error) {
+	var parcels []models.LandParcel
+	query := `SELECT * FROM land_parcels`
+	err := r.db.SelectContext(ctx, &parcels, query)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось получить все земельные участки: %w", err)
+	}
+	return parcels, nil
 }

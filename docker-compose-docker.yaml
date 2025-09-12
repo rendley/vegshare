@@ -1,6 +1,4 @@
 # Версия синтаксиса docker compose.
-version: '3.8'
-
 # В этом разделе мы определяем все сервисы (контейнеры),
 # которые необходимы для работы нашего приложения.
 services:
@@ -73,6 +71,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend/configs/config-docker.yaml:/app/configs/config.yaml
+      - ./backend/migrations:/app/migrations
     depends_on:
       postgres:
         condition: service_started
@@ -90,6 +89,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend/configs/config-docker.yaml:/app/configs/config.yaml
+      - ./backend/migrations:/app/migrations
     depends_on:
       postgres:
         condition: service_started

@@ -63,3 +63,11 @@ func (s *service) UpdateLandParcel(ctx context.Context, id uuid.UUID, name strin
 func (s *service) DeleteLandParcel(ctx context.Context, id uuid.UUID) error {
 	return s.repo.DeleteLandParcel(ctx, id)
 }
+
+func (s *service) RestoreLandParcel(ctx context.Context, id uuid.UUID) error {
+	return s.repo.RestoreLandParcel(ctx, id)
+}
+
+func (s *service) GetAllLandParcelsIncludingDeleted(ctx context.Context) ([]models.LandParcel, error) {
+	return s.repo.GetAllLandParcelsIncludingDeleted(ctx)
+}

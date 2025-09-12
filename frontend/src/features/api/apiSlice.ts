@@ -29,6 +29,7 @@ export interface LandParcel {
   id: string;
   name: string;
   region_id: string;
+  deleted_at?: string; // Добавлено для мягкого удаления
 }
 
 export interface Structure {
@@ -222,6 +223,10 @@ export const apiSlice = createApi({
       query: () => 'admin/farm/regions/all',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Region' as const, id })), { type: 'Region', id: 'LIST' }] : [{ type: 'Region', id: 'LIST' }],
     }),
+    getLandParcelsForAdmin: builder.query<LandParcel[], void>({
+      query: () => 'admin/farm/land-parcels/all',
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'LandParcel' as const, id })), { type: 'LandParcel', id: 'LIST' }] : [{ type: 'LandParcel', id: 'LIST' }],
+    }),
 
     // Admin Mutations
     restoreRegion: builder.mutation<void, string>({
@@ -230,6 +235,13 @@ export const apiSlice = createApi({
         method: 'POST',
       }),
       invalidatesTags: [{ type: 'Region', id: 'LIST' }],
+    }),
+    restoreLandParcel: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `admin/farm/land-parcels/${id}/restore`,
+        method: 'POST',
+      }),
+      invalidatesTags: [{ type: 'LandParcel', id: 'LIST' }],
     }),
     updateUserRole: builder.mutation<User, { userId: string; role: string }>({
       query: ({ userId, role }) => ({
@@ -452,4 +464,6 @@ export const {
   useDeleteCameraMutation,
   useGetRegionsForAdminQuery,
   useRestoreRegionMutation,
+  useGetLandParcelsForAdminQuery,
+  useRestoreLandParcelMutation,
 } = apiSlice;

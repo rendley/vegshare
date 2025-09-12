@@ -26,6 +26,8 @@ type Service interface {
 	GetLandParcelsByRegion(ctx context.Context, regionID uuid.UUID) ([]models.LandParcel, error)
 	UpdateLandParcel(ctx context.Context, id uuid.UUID, name string) (*models.LandParcel, error)
 	DeleteLandParcel(ctx context.Context, id uuid.UUID) error
+	RestoreLandParcel(ctx context.Context, id uuid.UUID) error
+	GetAllLandParcelsIncludingDeleted(ctx context.Context) ([]models.LandParcel, error)
 
 	// Structure methods
 	CreateStructure(ctx context.Context, name, typeName string, landParcelID uuid.UUID) (*models.Structure, error)

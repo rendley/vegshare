@@ -1,0 +1,1 @@
+ALTER TABLE land_parcels ADD COLUMN deleted_at TIMESTAMPTZ NULL;

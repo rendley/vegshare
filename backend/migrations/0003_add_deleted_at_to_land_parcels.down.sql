@@ -1,0 +1,1 @@
+ALTER TABLE land_parcels DROP COLUMN deleted_at;
