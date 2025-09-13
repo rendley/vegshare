@@ -1,0 +1,1 @@
+ALTER TABLE structures DROP COLUMN deleted_at;

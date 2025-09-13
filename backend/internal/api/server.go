@@ -129,6 +129,7 @@ func (s *Server) Start() error {
 
 			// --- Иерархия фермы: СТРОЕНИЯ ---
 			r.Route("/farm/structures", func(r chi.Router) {
+				r.Get("/", s.FarmHandler.GetAllStructures)
 				r.Get("/types", s.FarmHandler.GetStructureTypes)
 				r.Route("/{structureID}", func(r chi.Router) {
 					r.Get("/", s.FarmHandler.GetStructureByID)
@@ -175,6 +176,11 @@ func (s *Server) Start() error {
 				r.Route("/farm/land-parcels", func(r chi.Router) {
 					r.Get("/all", s.FarmHandler.GetAllLandParcelsIncludingDeleted)
 					r.Post("/{parcelID}/restore", s.FarmHandler.RestoreLandParcel)
+				})
+
+				r.Route("/farm/structures", func(r chi.Router) {
+					r.Get("/all", s.FarmHandler.GetAllStructuresIncludingDeleted)
+					r.Post("/{structureID}/restore", s.FarmHandler.RestoreStructure)
 				})
 
 				// Управление пользователями

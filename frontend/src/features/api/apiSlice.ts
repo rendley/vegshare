@@ -37,6 +37,7 @@ export interface Structure {
   name: string;
   land_parcel_id: string;
   type?: string;
+  deleted_at?: string;
 }
 
 export interface Plot {
@@ -142,6 +143,10 @@ export const apiSlice = createApi({
       query: (regionId) => `farm/regions/${regionId}/land-parcels`,
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'LandParcel' as const, id })), { type: 'LandParcel', id: 'LIST' }] : [{ type: 'LandParcel', id: 'LIST' }],
     }),
+    getAllStructures: builder.query<Structure[], void>({
+      query: () => 'farm/structures',
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Structure' as const, id })), { type: 'Structure', id: 'LIST' }] : [{ type: 'Structure', id: 'LIST' }],
+    }),
     getStructuresByLandParcel: builder.query<Structure[], string>({
       query: (landParcelId) => `farm/land-parcels/${landParcelId}/structures`,
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Structure' as const, id })), { type: 'Structure', id: 'LIST' }] : [{ type: 'Structure', id: 'LIST' }],
@@ -194,14 +199,14 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: 'Plot', id: 'LIST' }, { type: 'Lease', id: 'LIST' }],
     }),
-    createAction: builder.mutation<OperationLog, { unit_id: string; unit_type: string; action_type: string; parameters: any }>(({
+    createAction: builder.mutation<OperationLog, { unit_id: string; unit_type: string; action_type: string; parameters: any }>({
         query: (actionRequest) => ({
             url: 'operations/actions',
             method: 'POST',
             body: actionRequest,
         }),
         invalidatesTags: (_result, _error, arg) => [{ type: 'OperationLog', id: arg.unit_id }],
-    })),
+    }),
     cancelAction: builder.mutation<void, string>({
         query: (actionId) => ({
             url: `operations/actions/${actionId}`,
@@ -227,6 +232,10 @@ export const apiSlice = createApi({
       query: () => 'admin/farm/land-parcels/all',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'LandParcel' as const, id })), { type: 'LandParcel', id: 'LIST' }] : [{ type: 'LandParcel', id: 'LIST' }],
     }),
+    getStructuresForAdmin: builder.query<Structure[], void>({
+      query: () => 'admin/farm/structures/all',
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Structure' as const, id })), { type: 'Structure', id: 'LIST' }] : [{ type: 'Structure', id: 'LIST' }],
+    }),
 
     // Admin Mutations
     restoreRegion: builder.mutation<void, string>({
@@ -242,6 +251,13 @@ export const apiSlice = createApi({
         method: 'POST',
       }),
       invalidatesTags: [{ type: 'LandParcel', id: 'LIST' }],
+    }),
+    restoreStructure: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `admin/farm/structures/${id}/restore`,
+        method: 'POST',
+      }),
+      invalidatesTags: [{ type: 'Structure', id: 'LIST' }],
     }),
     updateUserRole: builder.mutation<User, { userId: string; role: string }>({
       query: ({ userId, role }) => ({
@@ -427,6 +443,7 @@ export const {
   useGetRegionsQuery,
   useGetLandParcelsByRegionQuery,
   useGetStructuresByLandParcelQuery,
+  useGetAllStructuresQuery,
   useGetStructureTypesQuery,
   useGetPlotsByStructureQuery,
   useGetCamerasByUnitQuery,
@@ -466,4 +483,6 @@ export const {
   useRestoreRegionMutation,
   useGetLandParcelsForAdminQuery,
   useRestoreLandParcelMutation,
+  useGetStructuresForAdminQuery,
+  useRestoreStructureMutation,
 } = apiSlice;

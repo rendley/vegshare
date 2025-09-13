@@ -44,10 +44,14 @@ func (s *service) GetStructuresByLandParcel(ctx context.Context, landParcelID uu
 	return s.repo.GetStructuresByLandParcel(ctx, landParcelID)
 }
 
+func (s *service) GetAllStructures(ctx context.Context) ([]models.Structure, error) {
+	return s.repo.GetAllStructures(ctx)
+}
+
 func (s *service) UpdateStructure(ctx context.Context, id uuid.UUID, name, typeName string) (*models.Structure, error) {
 	structure, err := s.repo.GetStructureByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("строени для обновления не найдено: %w", err)
+		return nil, fmt.Errorf("строение для обновления не найдено: %w", err)
 	}
 
 	structure.Name = name
@@ -64,6 +68,14 @@ func (s *service) UpdateStructure(ctx context.Context, id uuid.UUID, name, typeN
 
 func (s *service) DeleteStructure(ctx context.Context, id uuid.UUID) error {
 	return s.repo.DeleteStructure(ctx, id)
+}
+
+func (s *service) RestoreStructure(ctx context.Context, id uuid.UUID) error {
+	return s.repo.RestoreStructure(ctx, id)
+}
+
+func (s *service) GetAllStructuresIncludingDeleted(ctx context.Context) ([]models.Structure, error) {
+	return s.repo.GetAllStructuresIncludingDeleted(ctx)
 }
 
 func (s *service) GetStructureTypes(ctx context.Context) ([]string, error) {

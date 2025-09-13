@@ -28,13 +28,14 @@ type LandParcel struct {
 
 // Structure представляет строение (теплицу, птичник и т.д.), расположенное на земельном участке.
 type Structure struct {
-	ID           uuid.UUID `db:"id" json:"id"`
-	LandParcelID uuid.UUID `db:"land_parcel_id" json:"land_parcel_id"`
-	Name         string    `db:"name" json:"name"`
+	ID           uuid.UUID  `db:"id" json:"id"`
+	LandParcelID uuid.UUID  `db:"land_parcel_id" json:"land_parcel_id"`
+	Name         string     `db:"name" json:"name"`
 	// Type определяет тип строения, например, "greenhouse" или "poultry_coop".
-	Type      string    `db:"type" json:"type"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	Type         string     `db:"type" json:"type"`
+	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
+	UpdatedAt    time.Time  `db:"updated_at" json:"updated_at"`
+	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at,omitempty"`
 }
 
 

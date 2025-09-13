@@ -33,8 +33,11 @@ type Repository interface {
 	CreateStructure(ctx context.Context, structure *models.Structure) error
 	GetStructureByID(ctx context.Context, id uuid.UUID) (*models.Structure, error)
 	GetStructuresByLandParcel(ctx context.Context, landParcelID uuid.UUID) ([]models.Structure, error)
+	GetAllStructures(ctx context.Context) ([]models.Structure, error)
 	UpdateStructure(ctx context.Context, structure *models.Structure) error
 	DeleteStructure(ctx context.Context, id uuid.UUID) error
+	RestoreStructure(ctx context.Context, id uuid.UUID) error
+	GetAllStructuresIncludingDeleted(ctx context.Context) ([]models.Structure, error)
 	GetStructureTypes(ctx context.Context) ([]string, error)
 }
 

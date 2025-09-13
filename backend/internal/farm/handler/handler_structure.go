@@ -133,3 +133,43 @@ func (h *FarmHandler) GetStructureTypes(w http.ResponseWriter, r *http.Request) 
 
 	api.RespondWithJSON(h.logger, w, types, http.StatusOK)
 }
+
+func (h *FarmHandler) GetAllStructures(w http.ResponseWriter, r *http.Request) {
+	structures, err := h.service.GetAllStructures(r.Context())
+	if err != nil {
+		h.logger.Errorf("ошибка при получении списка всех строений: %v", err)
+		api.RespondWithError(w, "could not retrieve all structures", http.StatusInternalServerError)
+		return
+	}
+
+	api.RespondWithJSON(h.logger, w, structures, http.StatusOK)
+}
+
+func (h *FarmHandler) RestoreStructure(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "structureID")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		api.RespondWithError(w, "invalid structure ID in URL", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.RestoreStructure(r.Context(), id)
+	if err != nil {
+		h.logger.Errorf("ошибка при восстановлении строения: %v", err)
+		api.RespondWithError(w, "could not restore structure", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *FarmHandler) GetAllStructuresIncludingDeleted(w http.ResponseWriter, r *http.Request) {
+	structures, err := h.service.GetAllStructuresIncludingDeleted(r.Context())
+	if err != nil {
+		h.logger.Errorf("ошибка при получении всех строений (включая удаленные): %v", err)
+		api.RespondWithError(w, "could not retrieve all structures (including deleted)", http.StatusInternalServerError)
+		return
+	}
+
+	api.RespondWithJSON(h.logger, w, structures, http.StatusOK)
+}

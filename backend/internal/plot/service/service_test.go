@@ -86,6 +86,9 @@ func (m *MockFarmService) GetStructuresByLandParcel(ctx context.Context, landPar
 func (m *MockFarmService) UpdateStructure(ctx context.Context, id uuid.UUID, name, typeName string) (*farmModels.Structure, error) { return nil, nil }
 func (m *MockFarmService) DeleteStructure(ctx context.Context, id uuid.UUID) error { return nil }
 func (m *MockFarmService) GetStructureTypes(ctx context.Context) ([]string, error) { return nil, nil }
+func (m *MockFarmService) GetAllStructures(ctx context.Context) ([]farmModels.Structure, error) { return nil, nil }
+func (m *MockFarmService) RestoreStructure(ctx context.Context, id uuid.UUID) error { return nil }
+func (m *MockFarmService) GetAllStructuresIncludingDeleted(ctx context.Context) ([]farmModels.Structure, error) { return nil, nil }
 
 
 func TestPlotService(t *testing.T) {

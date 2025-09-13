@@ -1,0 +1,1 @@
+ALTER TABLE structures ADD COLUMN deleted_at TIMESTAMPTZ NULL;

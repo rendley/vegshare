@@ -142,6 +142,27 @@ func (m *MockFarmRepository) GetStructureTypes(ctx context.Context) ([]string, e
 	return args.Get(0).([]string), args.Error(1)
 }
 
+func (m *MockFarmRepository) GetAllStructures(ctx context.Context) ([]models.Structure, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Structure), args.Error(1)
+}
+
+func (m *MockFarmRepository) RestoreStructure(ctx context.Context, id uuid.UUID) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockFarmRepository) GetAllStructuresIncludingDeleted(ctx context.Context) ([]models.Structure, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Structure), args.Error(1)
+}
+
 // --- Tests ---
 
 func TestFarmService_Regions(t *testing.T) {
@@ -208,5 +229,3 @@ func TestFarmService_Regions(t *testing.T) {
 		mockRepo.AssertExpectations(t)
 	})
 }
-
-

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rendley/vegshare/backend/internal/farm/models"
@@ -21,7 +22,7 @@ func (r *repository) CreateStructure(ctx context.Context, structure *models.Stru
 
 func (r *repository) GetStructureByID(ctx context.Context, id uuid.UUID) (*models.Structure, error) {
 	var structure models.Structure
-	query := `SELECT * FROM structures WHERE id = $1`
+	query := `SELECT * FROM structures WHERE id = $1 AND deleted_at IS NULL`
 	err := r.db.GetContext(ctx, &structure, query, id)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось получить строение по ID: %w", err)
@@ -31,7 +32,7 @@ func (r *repository) GetStructureByID(ctx context.Context, id uuid.UUID) (*model
 
 func (r *repository) GetStructuresByLandParcel(ctx context.Context, landParcelID uuid.UUID) ([]models.Structure, error) {
 	var structures []models.Structure
-	query := `SELECT * FROM structures WHERE land_parcel_id = $1`
+	query := `SELECT * FROM structures WHERE land_parcel_id = $1 AND deleted_at IS NULL`
 	err := r.db.SelectContext(ctx, &structures, query, landParcelID)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось получить список строений для земельного участка: %w", err)
@@ -39,8 +40,18 @@ func (r *repository) GetStructuresByLandParcel(ctx context.Context, landParcelID
 	return structures, nil
 }
 
+func (r *repository) GetAllStructures(ctx context.Context) ([]models.Structure, error) {
+	var structures []models.Structure
+	query := `SELECT * FROM structures WHERE deleted_at IS NULL`
+	err := r.db.SelectContext(ctx, &structures, query)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось получить список всех строений: %w", err)
+	}
+	return structures, nil
+}
+
 func (r *repository) UpdateStructure(ctx context.Context, structure *models.Structure) error {
-	query := `UPDATE structures SET name = :name, type = :type, updated_at = :updated_at WHERE id = :id`
+	query := `UPDATE structures SET name = :name, type = :type, updated_at = :updated_at WHERE id = :id AND deleted_at IS NULL`
 	_, err := r.db.NamedExecContext(ctx, query, structure)
 	if err != nil {
 		return fmt.Errorf("не удалось обновить строение: %w", err)
@@ -49,12 +60,31 @@ func (r *repository) UpdateStructure(ctx context.Context, structure *models.Stru
 }
 
 func (r *repository) DeleteStructure(ctx context.Context, id uuid.UUID) error {
-	query := `DELETE FROM structures WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, id)
+	query := `UPDATE structures SET deleted_at = $1 WHERE id = $2`
+	_, err := r.db.ExecContext(ctx, query, time.Now(), id)
 	if err != nil {
 		return fmt.Errorf("не удалось удалить строение: %w", err)
 	}
 	return nil
+}
+
+func (r *repository) RestoreStructure(ctx context.Context, id uuid.UUID) error {
+	query := `UPDATE structures SET deleted_at = NULL WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("не удалось восстановить строение: %w", err)
+	}
+	return nil
+}
+
+func (r *repository) GetAllStructuresIncludingDeleted(ctx context.Context) ([]models.Structure, error) {
+	var structures []models.Structure
+	query := `SELECT * FROM structures`
+	err := r.db.SelectContext(ctx, &structures, query)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось получить все строения (включая удаленные): %w", err)
+	}
+	return structures, nil
 }
 
 func (r *repository) GetStructureTypes(ctx context.Context) ([]string, error) {
