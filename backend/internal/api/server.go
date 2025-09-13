@@ -118,6 +118,11 @@ func (s *Server) Start() error {
 				})
 			})
 
+			// --- Иерархия фермы: УЧАСТКИ (общий) ---
+			r.Route("/farm/land-parcels", func(r chi.Router) {
+				r.Get("/", s.FarmHandler.GetAllLandParcels)
+			})
+
 			// --- Иерархия фермы: УЧАСТКИ ---
 			r.Route("/farm/land-parcels/{parcelID}", func(r chi.Router) {
 				r.Get("/", s.FarmHandler.GetLandParcelByID)

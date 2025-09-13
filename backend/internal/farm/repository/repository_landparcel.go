@@ -40,6 +40,16 @@ func (r *repository) GetLandParcelsByRegion(ctx context.Context, regionID uuid.U
 	return parcels, nil
 }
 
+func (r *repository) GetAllLandParcels(ctx context.Context) ([]models.LandParcel, error) {
+	var parcels []models.LandParcel
+	query := `SELECT * FROM land_parcels WHERE deleted_at IS NULL`
+	err := r.db.SelectContext(ctx, &parcels, query)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось получить список всех земельных участков: %w", err)
+	}
+	return parcels, nil
+}
+
 func (r *repository) UpdateLandParcel(ctx context.Context, parcel *models.LandParcel) error {
 	query := `UPDATE land_parcels SET name = :name, updated_at = :updated_at WHERE id = :id`
 	_, err := r.db.NamedExecContext(ctx, query, parcel)

@@ -43,6 +43,10 @@ func (s *service) GetLandParcelsByRegion(ctx context.Context, regionID uuid.UUID
 	return s.repo.GetLandParcelsByRegion(ctx, regionID)
 }
 
+func (s *service) GetAllLandParcels(ctx context.Context) ([]models.LandParcel, error) {
+	return s.repo.GetAllLandParcels(ctx)
+}
+
 func (s *service) UpdateLandParcel(ctx context.Context, id uuid.UUID, name string) (*models.LandParcel, error) {
 	parcel, err := s.repo.GetLandParcelByID(ctx, id)
 	if err != nil {

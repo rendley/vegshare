@@ -77,6 +77,7 @@ func (m *MockFarmService) GetAllRegionsIncludingDeleted(ctx context.Context) ([]
 func (m *MockFarmService) CreateLandParcel(ctx context.Context, name string, regionID uuid.UUID) (*farmModels.LandParcel, error) { return nil, nil }
 func (m *MockFarmService) GetLandParcelByID(ctx context.Context, id uuid.UUID) (*farmModels.LandParcel, error) { return nil, nil }
 func (m *MockFarmService) GetLandParcelsByRegion(ctx context.Context, regionID uuid.UUID) ([]farmModels.LandParcel, error) { return nil, nil }
+func (m *MockFarmService) GetAllLandParcels(ctx context.Context) ([]farmModels.LandParcel, error) { return nil, nil }
 func (m *MockFarmService) UpdateLandParcel(ctx context.Context, id uuid.UUID, name string) (*farmModels.LandParcel, error) { return nil, nil }
 func (m *MockFarmService) DeleteLandParcel(ctx context.Context, id uuid.UUID) error { return nil }
 func (m *MockFarmService) RestoreLandParcel(ctx context.Context, id uuid.UUID) error { return nil }

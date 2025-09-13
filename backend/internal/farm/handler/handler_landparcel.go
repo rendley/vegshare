@@ -58,6 +58,17 @@ func (h *FarmHandler) GetLandParcelsByRegion(w http.ResponseWriter, r *http.Requ
 	api.RespondWithJSON(h.logger, w, parcels, http.StatusOK)
 }
 
+func (h *FarmHandler) GetAllLandParcels(w http.ResponseWriter, r *http.Request) {
+	parcels, err := h.service.GetAllLandParcels(r.Context())
+	if err != nil {
+		h.logger.Errorf("ошибка при получении списка всех земельных участков: %v", err)
+		api.RespondWithError(w, "could not retrieve all land parcels", http.StatusInternalServerError)
+		return
+	}
+
+	api.RespondWithJSON(h.logger, w, parcels, http.StatusOK)
+}
+
 func (h *FarmHandler) GetLandParcelByID(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "parcelID")
 	id, err := uuid.Parse(idStr)

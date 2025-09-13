@@ -85,6 +85,15 @@ func (m *MockFarmRepository) GetLandParcelsByRegion(ctx context.Context, regionI
 	}
 	return args.Get(0).([]models.LandParcel), args.Error(1)
 }
+
+func (m *MockFarmRepository) GetAllLandParcels(ctx context.Context) ([]models.LandParcel, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.LandParcel), args.Error(1)
+}
+
 func (m *MockFarmRepository) UpdateLandParcel(ctx context.Context, parcel *models.LandParcel) error {
 	args := m.Called(ctx, parcel)
 	return args.Error(0)
