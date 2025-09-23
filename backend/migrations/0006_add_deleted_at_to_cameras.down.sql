@@ -1,0 +1,1 @@
+ALTER TABLE cameras DROP COLUMN deleted_at;

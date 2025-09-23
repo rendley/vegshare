@@ -55,6 +55,7 @@ export interface Camera {
   unit_id: string;
   unit_type: string;
   rtsp_path_name: string;
+  deleted_at?: string;
 }
 
 export interface Lease {
@@ -160,8 +161,13 @@ export const apiSlice = createApi({
       query: (structureId) => structureId ? `plots?structure_id=${structureId}` : 'plots',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Plot' as const, id })), { type: 'Plot', id: 'LIST' }] : [{ type: 'Plot', id: 'LIST' }],
     }),
-    getCamerasByUnit: builder.query<Camera[], { unitId: string; unitType: string }>({
-      query: ({ unitId, unitType }) => `cameras?unit_id=${unitId}&unit_type=${unitType}`,
+    getCameras: builder.query<Camera[], { unitId: string; unitType: string } | void> ({
+      query: (params) => {
+        if (params) {
+          return `cameras?unit_id=${params.unitId}&unit_type=${params.unitType}`;
+        }
+        return 'cameras';
+      },
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Camera' as const, id })), { type: 'Camera', id: 'LIST' }] : [{ type: 'Camera', id: 'LIST' }],
     }),
     getMyLeases: builder.query<EnrichedLease[], void>({
@@ -241,6 +247,10 @@ export const apiSlice = createApi({
       query: () => 'admin/plots/all',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Plot' as const, id })), { type: 'Plot', id: 'LIST' }] : [{ type: 'Plot', id: 'LIST' }],
     }),
+    getCamerasForAdmin: builder.query<Camera[], void>({
+      query: () => 'admin/cameras/all',
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Camera' as const, id })), { type: 'Camera', id: 'LIST' }] : [{ type: 'Camera', id: 'LIST' }],
+    }),
 
     // Admin Mutations
     restoreRegion: builder.mutation<void, string>({
@@ -270,6 +280,13 @@ export const apiSlice = createApi({
         method: 'POST',
       }),
       invalidatesTags: [{ type: 'Plot', id: 'LIST' }],
+    }),
+    restoreCamera: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `admin/cameras/${id}/restore`,
+        method: 'POST',
+      }),
+      invalidatesTags: [{ type: 'Camera', id: 'LIST' }],
     }),
     updateUserRole: builder.mutation<User, { userId: string; role: string }>({
       query: ({ userId, role }) => ({
@@ -458,7 +475,7 @@ export const {
   useGetAllStructuresQuery,
   useGetStructureTypesQuery,
   useGetPlotsQuery, // Renamed
-  useGetCamerasByUnitQuery,
+  useGetCamerasQuery,
   useGetMyLeasesQuery,
   useGetCatalogItemsQuery,
   useGetActionsForUnitQuery,
@@ -499,4 +516,6 @@ export const {
   useRestoreStructureMutation,
   useGetPlotsForAdminQuery, // Added
   useRestorePlotMutation, // Added
+  useGetCamerasForAdminQuery,
+  useRestoreCameraMutation,
 } = apiSlice;

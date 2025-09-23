@@ -164,8 +164,11 @@ func (s *Server) Start() error {
 				r.Get("/", s.CameraHandler.GetCameras)
 				// POST /cameras - создать камеру для любого юнита (только админ)
 				r.With(s.mw.AdminMiddleware).Post("/", s.CameraHandler.CreateCamera)
-				// DELETE /cameras/{cameraID} - удалить камеру по ID (только админ)
-				r.With(s.mw.AdminMiddleware).Delete("/{cameraID}", s.CameraHandler.DeleteCamera)
+				r.Route("/{cameraID}", func(r chi.Router) {
+					r.With(s.mw.AdminMiddleware).Put("/", s.CameraHandler.UpdateCamera)
+					// DELETE /cameras/{cameraID} - удалить камеру по ID (только админ)
+					r.With(s.mw.AdminMiddleware).Delete("/", s.CameraHandler.DeleteCamera)
+				})
 			})
 
 			// --- Админ-панель ---
@@ -192,6 +195,12 @@ func (s *Server) Start() error {
 				r.Route("/plots", func(r chi.Router) {
 					r.Get("/all", s.PlotHandler.GetAllPlotsIncludingDeleted)
 					r.Post("/{plotID}/restore", s.PlotHandler.RestorePlot)
+				})
+
+				// Управление камерами (админ)
+				r.Route("/cameras", func(r chi.Router) {
+					r.Get("/all", s.CameraHandler.GetAllCamerasIncludingDeleted)
+					r.Post("/{cameraID}/restore", s.CameraHandler.RestoreCamera)
 				})
 
 				// Управление пользователями

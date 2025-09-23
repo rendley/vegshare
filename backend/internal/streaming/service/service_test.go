@@ -42,9 +42,38 @@ func (m *MockCameraService) GetCameraByID(ctx context.Context, cameraID uuid.UUI
 	return args.Get(0).(*cameraModels.Camera), args.Error(1)
 }
 
+func (m *MockCameraService) GetAllCameras(ctx context.Context) ([]cameraModels.Camera, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]cameraModels.Camera), args.Error(1)
+}
+
+func (m *MockCameraService) UpdateCamera(ctx context.Context, cameraID uuid.UUID, name, rtspPathName string) (*cameraModels.Camera, error) {
+	args := m.Called(ctx, cameraID, name, rtspPathName)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*cameraModels.Camera), args.Error(1)
+}
+
 func (m *MockCameraService) DeleteCamera(ctx context.Context, cameraID uuid.UUID) error {
 	args := m.Called(ctx, cameraID)
 	return args.Error(0)
+}
+
+func (m *MockCameraService) RestoreCamera(ctx context.Context, cameraID uuid.UUID) error {
+	args := m.Called(ctx, cameraID)
+	return args.Error(0)
+}
+
+func (m *MockCameraService) GetAllCamerasIncludingDeleted(ctx context.Context) ([]cameraModels.Camera, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]cameraModels.Camera), args.Error(1)
 }
 
 // --- Tests ---

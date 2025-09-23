@@ -14,7 +14,11 @@ type Service interface {
 	CreateCamera(ctx context.Context, name, rtspPathName string, unitID uuid.UUID, unitType string) (*models.Camera, error)
 	GetCamerasByUnitID(ctx context.Context, unitID uuid.UUID, unitType string) ([]models.Camera, error)
 	GetCameraByID(ctx context.Context, cameraID uuid.UUID) (*models.Camera, error)
+	GetAllCameras(ctx context.Context) ([]models.Camera, error)
+	UpdateCamera(ctx context.Context, cameraID uuid.UUID, name, rtspPathName string) (*models.Camera, error)
 	DeleteCamera(ctx context.Context, cameraID uuid.UUID) error
+	RestoreCamera(ctx context.Context, cameraID uuid.UUID) error
+	GetAllCamerasIncludingDeleted(ctx context.Context) ([]models.Camera, error)
 }
 
 // service implements the Service interface.
@@ -53,10 +57,39 @@ func (s *service) GetCamerasByUnitID(ctx context.Context, unitID uuid.UUID, unit
 	return s.repo.GetCamerasByUnitID(ctx, unitID, unitType)
 }
 
+func (s *service) GetCameraByID(ctx context.Context, cameraID uuid.UUID) (*models.Camera, error) {
+	return s.repo.GetCameraByID(ctx, cameraID)
+}
+
+func (s *service) GetAllCameras(ctx context.Context) ([]models.Camera, error) {
+	return s.repo.GetAllCameras(ctx)
+}
+
+func (s *service) UpdateCamera(ctx context.Context, cameraID uuid.UUID, name, rtspPathName string) (*models.Camera, error) {
+	camera, err := s.repo.GetCameraByID(ctx, cameraID)
+	if err != nil {
+		return nil, err
+	}
+
+	camera.Name = name
+	camera.RTSPPathName = rtspPathName
+	camera.UpdatedAt = time.Now()
+
+	if err := s.repo.UpdateCamera(ctx, camera); err != nil {
+		return nil, err
+	}
+
+	return camera, nil
+}
+
 func (s *service) DeleteCamera(ctx context.Context, cameraID uuid.UUID) error {
 	return s.repo.DeleteCamera(ctx, cameraID)
 }
 
-func (s *service) GetCameraByID(ctx context.Context, cameraID uuid.UUID) (*models.Camera, error) {
-	return s.repo.GetCameraByID(ctx, cameraID)
+func (s *service) RestoreCamera(ctx context.Context, cameraID uuid.UUID) error {
+	return s.repo.RestoreCamera(ctx, cameraID)
+}
+
+func (s *service) GetAllCamerasIncludingDeleted(ctx context.Context) ([]models.Camera, error) {
+	return s.repo.GetAllCamerasIncludingDeleted(ctx)
 }

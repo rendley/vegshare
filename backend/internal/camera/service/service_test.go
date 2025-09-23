@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rendley/vegshare/backend/internal/camera/models"
+	"github.com/rendley/vegshare/backend/internal/camera/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -15,6 +16,8 @@ import (
 type MockCameraRepository struct {
 	mock.Mock
 }
+
+var _ repository.Repository = &MockCameraRepository{}
 
 func (m *MockCameraRepository) CreateCamera(ctx context.Context, camera *models.Camera) error {
 	args := m.Called(ctx, camera)
@@ -29,17 +32,43 @@ func (m *MockCameraRepository) GetCamerasByUnitID(ctx context.Context, unitID uu
 	return args.Get(0).([]models.Camera), args.Error(1)
 }
 
-func (m *MockCameraRepository) DeleteCamera(ctx context.Context, cameraID uuid.UUID) error {
-	args := m.Called(ctx, cameraID)
-	return args.Error(0)
-}
-
 func (m *MockCameraRepository) GetCameraByID(ctx context.Context, cameraID uuid.UUID) (*models.Camera, error) {
 	args := m.Called(ctx, cameraID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*models.Camera), args.Error(1)
+}
+
+func (m *MockCameraRepository) GetAllCameras(ctx context.Context) ([]models.Camera, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Camera), args.Error(1)
+}
+
+func (m *MockCameraRepository) UpdateCamera(ctx context.Context, camera *models.Camera) error {
+	args := m.Called(ctx, camera)
+	return args.Error(0)
+}
+
+func (m *MockCameraRepository) DeleteCamera(ctx context.Context, cameraID uuid.UUID) error {
+	args := m.Called(ctx, cameraID)
+	return args.Error(0)
+}
+
+func (m *MockCameraRepository) RestoreCamera(ctx context.Context, cameraID uuid.UUID) error {
+	args := m.Called(ctx, cameraID)
+	return args.Error(0)
+}
+
+func (m *MockCameraRepository) GetAllCamerasIncludingDeleted(ctx context.Context) ([]models.Camera, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Camera), args.Error(1)
 }
 
 // --- Tests ---
