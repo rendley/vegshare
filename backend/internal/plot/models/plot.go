@@ -14,9 +14,10 @@ type Plot struct {
 	Name         string    `db:"name" json:"name"`
 	Size         string    `db:"size" json:"size"`
 	// Status показывает текущее состояние грядки: 'available', 'rented', 'maintenance'.
-	Status    string    `db:"status" json:"status"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	Status    string     `db:"status" json:"status"`
+	CreatedAt time.Time  `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time  `db:"updated_at" json:"updated_at"`
+	DeletedAt *time.Time `db:"deleted_at" json:"deleted_at,omitempty"`
 }
 
 // GetID возвращает ID грядки. удовлетворяя интерфейсу LeasableUnit.

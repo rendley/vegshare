@@ -65,20 +65,27 @@ func (h *PlotHandler) CreatePlot(w http.ResponseWriter, r *http.Request) {
 
 func (h *PlotHandler) GetPlots(w http.ResponseWriter, r *http.Request) {
 	structureIDStr := r.URL.Query().Get("structure_id")
-	if structureIDStr == "" {
-		api.RespondWithError(w, "structure_id query parameter is required", http.StatusBadRequest)
+	if structureIDStr != "" {
+		structureID, err := uuid.Parse(structureIDStr)
+		if err != nil {
+			api.RespondWithError(w, "invalid structure_id query parameter", http.StatusBadRequest)
+			return
+		}
+
+		plots, err := h.service.GetPlotsByStructure(r.Context(), structureID)
+		if err != nil {
+			h.logger.Errorf("ошибка при получении списка грядок: %v", err)
+			api.RespondWithError(w, "could not retrieve plots", http.StatusInternalServerError)
+			return
+		}
+
+		api.RespondWithJSON(h.logger, w, plots, http.StatusOK)
 		return
 	}
 
-	structureID, err := uuid.Parse(structureIDStr)
+	plots, err := h.service.GetAllPlots(r.Context())
 	if err != nil {
-		api.RespondWithError(w, "invalid structure_id query parameter", http.StatusBadRequest)
-		return
-	}
-
-	plots, err := h.service.GetPlotsByStructure(r.Context(), structureID)
-	if err != nil {
-		h.logger.Errorf("ошибка при получении списка грядок: %v", err)
+		h.logger.Errorf("ошибка при получении всех грядок: %v", err)
 		api.RespondWithError(w, "could not retrieve plots", http.StatusInternalServerError)
 		return
 	}
@@ -149,4 +156,33 @@ func (h *PlotHandler) DeletePlot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *PlotHandler) RestorePlot(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "plotID")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		api.RespondWithError(w, "invalid plot ID in URL", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.RestorePlot(r.Context(), id)
+	if err != nil {
+		h.logger.Errorf("ошибка при восстановлении грядки: %v", err)
+		api.RespondWithError(w, "could not restore plot", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *PlotHandler) GetAllPlotsIncludingDeleted(w http.ResponseWriter, r *http.Request) {
+	plots, err := h.service.GetAllPlotsIncludingDeleted(r.Context())
+	if err != nil {
+		h.logger.Errorf("ошибка при получении всех грядок: %v", err)
+		api.RespondWithError(w, "could not retrieve plots", http.StatusInternalServerError)
+		return
+	}
+
+	api.RespondWithJSON(h.logger, w, plots, http.StatusOK)
 }

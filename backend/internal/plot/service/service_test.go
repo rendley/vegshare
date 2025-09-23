@@ -42,6 +42,14 @@ func (m *MockPlotRepository) GetPlotsByStructure(ctx context.Context, structureI
 	return args.Get(0).([]models.Plot), args.Error(1)
 }
 
+func (m *MockPlotRepository) GetAllPlots(ctx context.Context) ([]models.Plot, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Plot), args.Error(1)
+}
+
 func (m *MockPlotRepository) UpdatePlot(ctx context.Context, plot *models.Plot) error {
 	args := m.Called(ctx, plot)
 	return args.Error(0)
@@ -50,6 +58,19 @@ func (m *MockPlotRepository) UpdatePlot(ctx context.Context, plot *models.Plot) 
 func (m *MockPlotRepository) DeletePlot(ctx context.Context, id uuid.UUID) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
+}
+
+func (m *MockPlotRepository) RestorePlot(ctx context.Context, id uuid.UUID) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockPlotRepository) GetAllPlotsIncludingDeleted(ctx context.Context) ([]models.Plot, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Plot), args.Error(1)
 }
 
 type MockFarmService struct {

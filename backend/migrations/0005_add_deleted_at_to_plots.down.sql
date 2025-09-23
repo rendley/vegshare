@@ -1,0 +1,1 @@
+ALTER TABLE plots DROP COLUMN deleted_at;

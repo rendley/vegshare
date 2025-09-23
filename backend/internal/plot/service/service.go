@@ -18,8 +18,11 @@ type Service interface {
 	CreatePlot(ctx context.Context, name, size string, structureID uuid.UUID) (*models.Plot, error)
 	GetPlotByID(ctx context.Context, id uuid.UUID) (*models.Plot, error)
 	GetPlotsByStructure(ctx context.Context, structureID uuid.UUID) ([]models.Plot, error)
+	GetAllPlots(ctx context.Context) ([]models.Plot, error)
 	UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*models.Plot, error)
 	DeletePlot(ctx context.Context, id uuid.UUID) error
+	RestorePlot(ctx context.Context, id uuid.UUID) error
+	GetAllPlotsIncludingDeleted(ctx context.Context) ([]models.Plot, error)
 
 	// Методы из domain.UnitManager
 	GetLeasableUnit(ctx context.Context, unitID uuid.UUID) (domain.LeasableUnit, error)
@@ -80,6 +83,10 @@ func (s *service) GetPlotsByStructure(ctx context.Context, structureID uuid.UUID
 	return s.repo.GetPlotsByStructure(ctx, structureID)
 }
 
+func (s *service) GetAllPlots(ctx context.Context) ([]models.Plot, error) {
+	return s.repo.GetAllPlots(ctx)
+}
+
 func (s *service) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, status string) (*models.Plot, error) {
 	plot, err := s.repo.GetPlotByID(ctx, id)
 	if err != nil {
@@ -101,6 +108,14 @@ func (s *service) UpdatePlot(ctx context.Context, id uuid.UUID, name, size, stat
 
 func (s *service) DeletePlot(ctx context.Context, id uuid.UUID) error {
 	return s.repo.DeletePlot(ctx, id)
+}
+
+func (s *service) RestorePlot(ctx context.Context, id uuid.UUID) error {
+	return s.repo.RestorePlot(ctx, id)
+}
+
+func (s *service) GetAllPlotsIncludingDeleted(ctx context.Context) ([]models.Plot, error) {
+	return s.repo.GetAllPlotsIncludingDeleted(ctx)
 }
 
 func (s *service) GetLeasableUnit(ctx context.Context, unitID uuid.UUID) (domain.LeasableUnit, error) {

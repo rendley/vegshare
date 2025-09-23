@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import type { Camera } from '../../features/api/apiSlice';
+import type { Camera, Plot } from '../../features/api/apiSlice';
 import {
     useGetRegionsQuery,
     useGetLandParcelsByRegionQuery,
     useGetStructuresByLandParcelQuery,
-    useGetPlotsByStructureQuery,
+    useGetPlotsQuery,
     useGetCamerasByUnitQuery,
     useCreateCameraMutation,
     useUpdateCameraMutation,
@@ -56,7 +56,7 @@ const CreateCameraForm = () => {
     const { data: regions, isLoading: isLoadingRegions } = useGetRegionsQuery();
     const { data: landParcels, isLoading: isLoadingParcels } = useGetLandParcelsByRegionQuery(regionId, { skip: !regionId });
     const { data: structures, isLoading: isLoadingStructures } = useGetStructuresByLandParcelQuery(landParcelId, { skip: !landParcelId });
-    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsByStructureQuery(structureId, { skip: !structureId });
+    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsQuery(structureId, { skip: !structureId });
     const [createCamera, { isLoading }] = useCreateCameraMutation();
 
     useEffect(() => { setLandParcelId(''); setStructureId(''); setUnitId(''); }, [regionId]);
@@ -93,7 +93,7 @@ const CreateCameraForm = () => {
                     <FormControl fullWidth margin="normal" required><InputLabel>Регион</InputLabel><Select value={regionId} label="Регион" onChange={(e) => setRegionId(e.target.value)} disabled={isLoadingRegions}>{regions?.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}</Select></FormControl>
                     <FormControl fullWidth margin="normal" required disabled={!regionId || isLoadingParcels}><InputLabel>Участок</InputLabel><Select value={landParcelId} label="Участок" onChange={(e) => setLandParcelId(e.target.value)}>{landParcels?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
                     <FormControl fullWidth margin="normal" required disabled={!landParcelId || isLoadingStructures}><InputLabel>Сооружение</InputLabel><Select value={structureId} label="Сооружение" onChange={(e) => setStructureId(e.target.value)}>{structures?.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select></FormControl>
-                    <FormControl fullWidth margin="normal" required disabled={!structureId || isLoadingPlots}><InputLabel>Грядка (Юнит)</InputLabel><Select value={unitId} label="Грядка (Юнит)" onChange={(e) => setUnitId(e.target.value)}>{plots?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
+                    <FormControl fullWidth margin="normal" required disabled={!structureId || isLoadingPlots}><InputLabel>Грядка (Юнит)</InputLabel><Select value={unitId} label="Грядка (Юнит)" onChange={(e) => setUnitId(e.target.value)}>{plots?.map((p: Plot) => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
                 </>
             ) : (
                 <TextField label="Unit ID" value={unitId} onChange={(e) => setUnitId(e.target.value)} fullWidth margin="normal" required />

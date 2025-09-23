@@ -46,6 +46,7 @@ export interface Plot {
   structure_id: string;
   size?: string;
   status: string;
+  deleted_at?: string;
 }
 
 export interface Camera {
@@ -155,8 +156,8 @@ export const apiSlice = createApi({
       query: () => 'farm/structures/types',
       providesTags: ['StructureType'],
     }),
-    getPlotsByStructure: builder.query<Plot[], string>({
-      query: (structureId) => `plots?structure_id=${structureId}`,
+    getPlots: builder.query<Plot[], string | void>({ // Updated: can accept a string or nothing
+      query: (structureId) => structureId ? `plots?structure_id=${structureId}` : 'plots',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Plot' as const, id })), { type: 'Plot', id: 'LIST' }] : [{ type: 'Plot', id: 'LIST' }],
     }),
     getCamerasByUnit: builder.query<Camera[], { unitId: string; unitType: string }>({
@@ -236,6 +237,10 @@ export const apiSlice = createApi({
       query: () => 'admin/farm/structures/all',
       providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Structure' as const, id })), { type: 'Structure', id: 'LIST' }] : [{ type: 'Structure', id: 'LIST' }],
     }),
+    getPlotsForAdmin: builder.query<Plot[], void>({
+      query: () => 'admin/plots/all',
+      providesTags: (result) => result ? [...result.map(({ id }) => ({ type: 'Plot' as const, id })), { type: 'Plot', id: 'LIST' }] : [{ type: 'Plot', id: 'LIST' }],
+    }),
 
     // Admin Mutations
     restoreRegion: builder.mutation<void, string>({
@@ -258,6 +263,13 @@ export const apiSlice = createApi({
         method: 'POST',
       }),
       invalidatesTags: [{ type: 'Structure', id: 'LIST' }],
+    }),
+    restorePlot: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `admin/plots/${id}/restore`,
+        method: 'POST',
+      }),
+      invalidatesTags: [{ type: 'Plot', id: 'LIST' }],
     }),
     updateUserRole: builder.mutation<User, { userId: string; role: string }>({
       query: ({ userId, role }) => ({
@@ -445,7 +457,7 @@ export const {
   useGetStructuresByLandParcelQuery,
   useGetAllStructuresQuery,
   useGetStructureTypesQuery,
-  useGetPlotsByStructureQuery,
+  useGetPlotsQuery, // Renamed
   useGetCamerasByUnitQuery,
   useGetMyLeasesQuery,
   useGetCatalogItemsQuery,
@@ -485,4 +497,6 @@ export const {
   useRestoreLandParcelMutation,
   useGetStructuresForAdminQuery,
   useRestoreStructureMutation,
+  useGetPlotsForAdminQuery, // Added
+  useRestorePlotMutation, // Added
 } = apiSlice;

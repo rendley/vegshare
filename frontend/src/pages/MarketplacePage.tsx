@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useGetRegionsQuery, useGetLandParcelsByRegionQuery, useGetStructuresByLandParcelQuery, useGetPlotsByStructureQuery, useLeasePlotMutation } from '../features/api/apiSlice';
+import { useGetRegionsQuery, useGetLandParcelsByRegionQuery, useGetStructuresByLandParcelQuery, useGetPlotsQuery, useLeasePlotMutation } from '../features/api/apiSlice';
+import type { Plot } from '../features/api/apiSlice';
 import { Box, Typography, FormControl, InputLabel, Select, MenuItem, Button, CircularProgress, Grid, Card, CardContent, CardActions } from '@mui/material';
 
 export const MarketplacePage = () => {
@@ -10,7 +11,7 @@ export const MarketplacePage = () => {
     const { data: regions, isLoading: isLoadingRegions } = useGetRegionsQuery();
     const { data: parcels, isLoading: isLoadingParcels } = useGetLandParcelsByRegionQuery(selectedRegion, { skip: !selectedRegion });
     const { data: structures, isLoading: isLoadingStructures } = useGetStructuresByLandParcelQuery(selectedParcel, { skip: !selectedParcel });
-    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsByStructureQuery(selectedStructure, { skip: !selectedStructure });
+    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsQuery(selectedStructure, { skip: !selectedStructure });
 
     const [leasePlot, { isLoading: isLeasing }] = useLeasePlotMutation();
 
@@ -58,7 +59,7 @@ export const MarketplacePage = () => {
             {isLoadingPlots && <CircularProgress />}
 
             <Grid container spacing={3}>
-                {plots?.map(plot => (
+                {plots?.map((plot: Plot) => (
                     <Grid key={plot.id} size={{ xs: 12, sm: 6, md: 4 }}>
                         <Card>
                             <CardContent>

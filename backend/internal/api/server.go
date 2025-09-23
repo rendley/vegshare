@@ -188,6 +188,12 @@ func (s *Server) Start() error {
 					r.Post("/{structureID}/restore", s.FarmHandler.RestoreStructure)
 				})
 
+				// Управление грядками (админ)
+				r.Route("/plots", func(r chi.Router) {
+					r.Get("/all", s.PlotHandler.GetAllPlotsIncludingDeleted)
+					r.Post("/{plotID}/restore", s.PlotHandler.RestorePlot)
+				})
+
 				// Управление пользователями
 				r.Route("/users", func(r chi.Router) {
 					r.Get("/", s.UserHandler.GetAllUsers)

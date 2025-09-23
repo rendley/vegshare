@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Plot } from '../../features/api/apiSlice';
 import {
-    useGetRegionsQuery,
-    useGetLandParcelsByRegionQuery,
-    useGetStructuresByLandParcelQuery,
-    useGetPlotsByStructureQuery,
+    useGetRegionsForAdminQuery,
+    useGetLandParcelsForAdminQuery,
+    useGetStructuresForAdminQuery,
+    useGetPlotsForAdminQuery,
     useCreatePlotMutation,
     useUpdatePlotMutation,
-    useDeletePlotMutation
+    useDeletePlotMutation,
+    useRestorePlotMutation
 } from '../../features/api/apiSlice';
 import {
     Box,
@@ -32,10 +33,14 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem
+    MenuItem,
+    Switch,
+    FormControlLabel,
+    Tooltip
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import RestoreFromTrashIcon from '@mui/icons-material/RestoreFromTrash';
 
 // --- Форма создания ---
 const CreatePlotForm = () => {
@@ -45,13 +50,10 @@ const CreatePlotForm = () => {
     const [landParcelId, setLandParcelId] = useState('');
     const [structureId, setStructureId] = useState('');
 
-    const { data: regions, isLoading: isLoadingRegions } = useGetRegionsQuery();
-    const { data: landParcels, isLoading: isLoadingParcels } = useGetLandParcelsByRegionQuery(regionId, { skip: !regionId });
-    const { data: structures, isLoading: isLoadingStructures } = useGetStructuresByLandParcelQuery(landParcelId, { skip: !landParcelId });
+    const { data: regions, isLoading: isLoadingRegions } = useGetRegionsForAdminQuery();
+    const { data: landParcels, isLoading: isLoadingParcels } = useGetLandParcelsForAdminQuery();
+    const { data: structures, isLoading: isLoadingStructures } = useGetStructuresForAdminQuery();
     const [createPlot, { isLoading }] = useCreatePlotMutation();
-
-    useEffect(() => { setLandParcelId(''); setStructureId(''); }, [regionId]);
-    useEffect(() => { setStructureId(''); }, [landParcelId]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,12 +68,15 @@ const CreatePlotForm = () => {
         }
     };
 
+    const filteredParcels = useMemo(() => landParcels?.filter(p => p.region_id === regionId && !p.deleted_at) || [], [landParcels, regionId]);
+    const filteredStructures = useMemo(() => structures?.filter(s => s.land_parcel_id === landParcelId && !s.deleted_at) || [], [structures, landParcelId]);
+
     return (
         <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
             <Typography variant="h6">Создать новую грядку</Typography>
-            <FormControl fullWidth margin="normal" required><InputLabel>Регион</InputLabel><Select value={regionId} label="Регион" onChange={(e) => setRegionId(e.target.value)} disabled={isLoadingRegions}>{regions?.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" required disabled={!regionId || isLoadingParcels}><InputLabel>Участок</InputLabel><Select value={landParcelId} label="Участок" onChange={(e) => setLandParcelId(e.target.value)}>{landParcels?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
-            <FormControl fullWidth margin="normal" required disabled={!landParcelId || isLoadingStructures}><InputLabel>Сооружение</InputLabel><Select value={structureId} label="Сооружение" onChange={(e) => setStructureId(e.target.value)}>{structures?.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select></FormControl>
+            <FormControl fullWidth margin="normal" required><InputLabel>Регион</InputLabel><Select value={regionId} label="Регион" onChange={(e) => setRegionId(e.target.value)} disabled={isLoadingRegions}>{regions?.filter(r => !r.deleted_at).map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}</Select></FormControl>
+            <FormControl fullWidth margin="normal" required disabled={!regionId || isLoadingParcels}><InputLabel>Участок</InputLabel><Select value={landParcelId} label="Участок" onChange={(e) => setLandParcelId(e.target.value)}>{filteredParcels.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select></FormControl>
+            <FormControl fullWidth margin="normal" required disabled={!landParcelId || isLoadingStructures}><InputLabel>Сооружение</InputLabel><Select value={structureId} label="Сооружение" onChange={(e) => setStructureId(e.target.value)}>{filteredStructures.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select></FormControl>
             <TextField label="Название грядки" value={name} onChange={(e) => setName(e.target.value)} fullWidth margin="normal" required />
             <TextField label="Размер (опционально)" value={size} onChange={(e) => setSize(e.target.value)} fullWidth margin="normal" />
             <Button type="submit" variant="contained" disabled={isLoading || !structureId}>{isLoading ? <CircularProgress size={24} /> : 'Создать'}</Button>
@@ -84,14 +89,16 @@ const PlotManagementPage = () => {
     const [selectedRegion, setSelectedRegion] = useState('');
     const [selectedParcel, setSelectedParcel] = useState('');
     const [selectedStructure, setSelectedStructure] = useState('');
+    const [showDeleted, setShowDeleted] = useState(false);
 
-    const { data: regions, isLoading: isLoadingRegions } = useGetRegionsQuery();
-    const { data: parcels, isLoading: isLoadingParcels } = useGetLandParcelsByRegionQuery(selectedRegion, { skip: !selectedRegion });
-    const { data: structures, isLoading: isLoadingStructures } = useGetStructuresByLandParcelQuery(selectedParcel, { skip: !selectedParcel });
-    const { data: plots, isLoading: isLoadingPlots } = useGetPlotsByStructureQuery(selectedStructure, { skip: !selectedStructure });
+    const { data: regions, isLoading: isLoadingRegions } = useGetRegionsForAdminQuery();
+    const { data: parcels, isLoading: isLoadingParcels } = useGetLandParcelsForAdminQuery();
+    const { data: structures, isLoading: isLoadingStructures } = useGetStructuresForAdminQuery();
+    const { data: allPlots, isLoading: isLoadingPlots } = useGetPlotsForAdminQuery();
 
     const [deletePlot] = useDeletePlotMutation();
     const [updatePlot] = useUpdatePlotMutation();
+    const [restorePlot] = useRestorePlotMutation();
 
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -99,8 +106,47 @@ const PlotManagementPage = () => {
     const [editedName, setEditedName] = useState('');
     const [editedSize, setEditedSize] = useState('');
 
-    useEffect(() => { setSelectedParcel(''); setSelectedStructure(''); }, [selectedRegion]);
-    useEffect(() => { setSelectedStructure(''); }, [selectedParcel]);
+    const { structureMap, parcelMap, regionMap } = useMemo(() => {
+        const sMap = new Map<string, { name: string, land_parcel_id: string }>();
+        structures?.forEach(s => sMap.set(s.id, { name: s.name, land_parcel_id: s.land_parcel_id }));
+        const pMap = new Map<string, { name: string, region_id: string }>();
+        parcels?.forEach(p => pMap.set(p.id, { name: p.name, region_id: p.region_id }));
+        const rMap = new Map<string, string>();
+        regions?.forEach(r => rMap.set(r.id, r.name));
+        return { structureMap: sMap, parcelMap: pMap, regionMap: rMap };
+    }, [structures, parcels, regions]);
+
+    const filteredPlots = useMemo(() => {
+        let plots = allPlots || [];
+        if (selectedStructure) {
+            return plots.filter(p => p.structure_id === selectedStructure);
+        }
+        if (selectedParcel) {
+            const structureIds = structures?.filter(s => s.land_parcel_id === selectedParcel).map(s => s.id) || [];
+            return plots.filter(p => structureIds.includes(p.structure_id));
+        }
+        if (selectedRegion) {
+            const parcelIds = parcels?.filter(p => p.region_id === selectedRegion).map(p => p.id) || [];
+            const structureIds = structures?.filter(s => parcelIds.includes(s.land_parcel_id)).map(s => s.id) || [];
+            return plots.filter(p => structureIds.includes(p.structure_id));
+        }
+        return plots;
+    }, [allPlots, selectedRegion, selectedParcel, selectedStructure, parcels, structures]);
+
+    const { activePlots, deletedPlots }: { activePlots: Plot[], deletedPlots: Plot[] } = useMemo(() => {
+        const active: Plot[] = [];
+        const deleted: Plot[] = [];
+        filteredPlots?.forEach((plot: Plot) => {
+            if (plot.deleted_at) {
+                deleted.push(plot);
+            } else {
+                active.push(plot);
+            }
+        });
+        return { activePlots: active, deletedPlots: deleted };
+    }, [filteredPlots]);
+
+    const plotsToDisplay = showDeleted ? deletedPlots : activePlots;
 
     const handleOpenEditModal = (plot: Plot) => {
         setSelectedPlot(plot);
@@ -127,6 +173,10 @@ const PlotManagementPage = () => {
         }
     };
 
+    const handleRestore = (id: string) => {
+        restorePlot(id);
+    };
+
     const handleUpdate = () => {
         if (selectedPlot && editedName.trim()) {
             updatePlot({ id: selectedPlot.id, name: editedName.trim(), size: editedSize });
@@ -134,54 +184,83 @@ const PlotManagementPage = () => {
         }
     };
 
+    if (isLoadingRegions || isLoadingParcels || isLoadingStructures || isLoadingPlots) return <CircularProgress />;
+
     return (
         <Box>
             <CreatePlotForm />
-            <Typography variant="h6" sx={{ mb: 2 }}>Список грядок</Typography>
+            <Typography variant="h6" sx={{ mb: 2, mt: 4 }}>Список грядок</Typography>
             <FormControl fullWidth margin="normal">
                 <InputLabel>Фильтр по региону</InputLabel>
-                <Select value={selectedRegion} label="Фильтр по региону" onChange={(e) => setSelectedRegion(e.target.value)} disabled={isLoadingRegions}>{regions?.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}</Select>
+                <Select value={selectedRegion} label="Фильтр по региону" onChange={(e) => setSelectedRegion(e.target.value)}>{regions?.filter(r => !r.deleted_at).map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}</Select>
             </FormControl>
-            <FormControl fullWidth margin="normal" disabled={!selectedRegion || isLoadingParcels}>
+            <FormControl fullWidth margin="normal" disabled={!selectedRegion}>
                 <InputLabel>Фильтр по участку</InputLabel>
-                <Select value={selectedParcel} label="Фильтр по участку" onChange={(e) => setSelectedParcel(e.target.value)}>{parcels?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select>
+                <Select value={selectedParcel} label="Фильтр по участку" onChange={(e) => setSelectedParcel(e.target.value)}>{parcels?.filter(p => p.region_id === selectedRegion && !p.deleted_at).map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</Select>
             </FormControl>
-            <FormControl fullWidth margin="normal" disabled={!selectedParcel || isLoadingStructures}>
+            <FormControl fullWidth margin="normal" disabled={!selectedParcel}>
                 <InputLabel>Фильтр по сооружению</InputLabel>
-                <Select value={selectedStructure} label="Фильтр по сооружению" onChange={(e) => setSelectedStructure(e.target.value)}>{structures?.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select>
+                <Select value={selectedStructure} label="Фильтр по сооружению" onChange={(e) => setSelectedStructure(e.target.value)}>{structures?.filter(s => s.land_parcel_id === selectedParcel && !s.deleted_at).map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</Select>
             </FormControl>
 
-            {isLoadingPlots && <CircularProgress />}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: 2 }}>
+                <Typography variant="h6">{showDeleted ? 'Удаленные грядки' : 'Активные грядки'}</Typography>
+                <FormControlLabel
+                    control={<Switch checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />}
+                    label="Показать удаленные"
+                />
+            </Box>
 
-            {selectedStructure && plots && (
-                <TableContainer component={Paper} sx={{mt: 2}}>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>ID</TableCell>
-                                <TableCell>Название</TableCell>
-                                <TableCell>Размер</TableCell>
-                                <TableCell>Статус</TableCell>
-                                <TableCell align="right">Действия</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {plots.map((plot) => (
-                                <TableRow key={plot.id}>
-                                    <TableCell>{plot.id}</TableCell>
+            <TableContainer component={Paper} sx={{mt: 2}}>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Название</TableCell>
+                            <TableCell>Размер</TableCell>
+                            <TableCell>Статус</TableCell>
+                            <TableCell>Сооружение</TableCell>
+                            <TableCell>Участок</TableCell>
+                            <TableCell>Регион</TableCell>
+                            {showDeleted && <TableCell>Дата удаления</TableCell>}
+                            <TableCell align="right">Действия</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {plotsToDisplay.map((plot: Plot) => {
+                            const structure = structureMap.get(plot.structure_id);
+                            const parcel = structure ? parcelMap.get(structure.land_parcel_id) : undefined;
+                            const region = parcel ? regionMap.get(parcel.region_id) : undefined;
+                            return (
+                                <TableRow key={plot.id} sx={{ backgroundColor: showDeleted ? '#f5f5f5' : 'inherit' }}>
                                     <TableCell>{plot.name}</TableCell>
                                     <TableCell>{plot.size}</TableCell>
                                     <TableCell>{plot.status}</TableCell>
+                                    <TableCell>{structure?.name || 'N/A'}</TableCell>
+                                    <TableCell>{parcel?.name || 'N/A'}</TableCell>
+                                    <TableCell>{region || 'N/A'}</TableCell>
+                                    {showDeleted && <TableCell>{plot.deleted_at ? new Date(plot.deleted_at).toLocaleString() : '-'}</TableCell>}
                                     <TableCell align="right">
-                                        <IconButton onClick={() => handleOpenEditModal(plot)}><EditIcon /></IconButton>
-                                        <IconButton onClick={() => handleOpenDeleteDialog(plot)}><DeleteIcon /></IconButton>
+                                        {showDeleted ? (
+                                            <Tooltip title="Восстановить">
+                                                <IconButton onClick={() => handleRestore(plot.id)}><RestoreFromTrashIcon /></IconButton>
+                                            </Tooltip>
+                                        ) : (
+                                            <>
+                                                <Tooltip title="Редактировать">
+                                                    <IconButton onClick={() => handleOpenEditModal(plot)}><EditIcon /></IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Удалить">
+                                                    <IconButton onClick={() => handleOpenDeleteDialog(plot)}><DeleteIcon /></IconButton>
+                                                </Tooltip>
+                                            </>
+                                        )}
                                     </TableCell>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            )}
+                            );
+                        })}
+                    </TableBody>
+                </Table>
+            </TableContainer>
 
             <Modal open={editModalOpen} onClose={handleClose}>
                 <Box sx={{ ...modalStyle }}>
